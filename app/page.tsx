@@ -19,7 +19,7 @@ const LANG_OPTIONS = [
   { label: "English", value: "en" },
   { label: "中文（繁體）", value: "zh-Hant" },
 ];
-const GENRE_OPTIONS = ["Animals", "Fantasy", "Adventure", "Friendship", "Magic"];
+const GENRE_OPTIONS = ["Animals", "Adventure", "Fantasy", "Friendship", "Family", "Magic", "Nature", "Space", "Underwater", "Holiday", "Fairy Tale", ,"Mystery", "Superhero", "Bedtime Classic"];
 const LENGTH_OPTIONS = [
   { label: "Short (1–2 min)", value: "short" },
   { label: "Medium (3–5 min)", value: "medium" },
