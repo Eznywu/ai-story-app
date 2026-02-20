@@ -44,6 +44,23 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing text" }, { status: 400 });
     }
 
+    // ✅ Step 1: 中文文本前處理（提升斷句/標點自然度）
+    const cleanedText = String(text)
+      // 統一換行
+      .replace(/\r\n/g, "\n")
+      // 避免太多空行
+      .replace(/\n{3,}/g, "\n\n")
+      // 去掉中文標點後的怪空白（但保留標點）
+      .replace(/([，。！？；：、])\s*/g, "$1")
+      // 常見全形符號統一（可選，但通常更穩）
+      .replace(/[（]/g, "(")
+      .replace(/[）]/g, ")")
+      .replace(/[“”]/g, '"')
+      .replace(/[‘’]/g, "'")
+      // 空白收斂
+      .replace(/[ \t]{2,}/g, " ")
+      .trim();
+
     // clamp to safe ranges
     const s = Math.max(0.7, Math.min(1.2, Number(speed)));
 
@@ -52,11 +69,13 @@ export async function POST(req: Request) {
     if (Number.isFinite(eNum) && eNum > 1) eNum = eNum / 100;
     const e = Math.max(0, Math.min(1, eNum));
 
+    // 你原本的映射邏輯不動（只是 text 變 cleanedText）
     const stability = 0.65 - e * 0.45; // 0.65..0.20
     const style = 0.15 + e * 0.8;      // 0.15..0.95
 
     const body: any = {
-      text,
+      // ✅ Step 2: 這裡改用 cleanedText
+      text: cleanedText,
       model_id: "eleven_multilingual_v2",
       voice_settings: {
         stability,
