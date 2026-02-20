@@ -14,6 +14,13 @@ type StoryItem = {
   createdAt?: string;
 };
 
+// ✅ NEW: voice type
+type VoiceItem = {
+  id: string;
+  name?: string;
+  language?: string;
+};
+
 const AGE_OPTIONS = ["3 months", "6 months", "9 months", "1 year", "2 years"];
 const LANG_OPTIONS = [
   { label: "English", value: "en" },
@@ -38,6 +45,10 @@ export default function Page() {
   const [genre, setGenre] = useState<string>("Animals");
   const [length, setLength] = useState<string>("short");
   const [title, setTitle] = useState<string>("");
+
+  // ✅ NEW: voices + selection
+  const [voices, setVoices] = useState<VoiceItem[]>([]);
+  const [selectedVoiceId, setSelectedVoiceId] = useState<string>("");
 
   // Right controls
   const [speed, setSpeed] = useState<number>(0.95); // 0.6–1.3
@@ -74,6 +85,37 @@ export default function Page() {
     }),
     []
   );
+
+  // ✅ NEW: fetch voices
+  async function fetchVoices() {
+    try {
+      const res = await fetch("/api/voices", { method: "GET" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return;
+
+      // accept either { voices: [...] } or [...]
+      const list = Array.isArray(data) ? data : Array.isArray(data?.voices) ? data.voices : [];
+      const normalized: VoiceItem[] = list
+        .filter((v: any) => v && (v.id || v.voiceId))
+        .map((v: any) => ({
+          id: String(v.id ?? v.voiceId),
+          name: v.name ? String(v.name) : undefined,
+          language: v.language ? String(v.language) : undefined,
+        }));
+
+      setVoices(normalized);
+
+      // pick a default if none selected yet
+      setSelectedVoiceId((prev) => {
+        if (prev) return prev;
+        // prefer matching language
+        const match = normalized.find((v) => v.language === language);
+        return match?.id ?? normalized[0]?.id ?? "";
+      });
+    } catch {
+      // not fatal
+    }
+  }
 
   async function generateStory() {
     setError("");
@@ -172,6 +214,8 @@ export default function Page() {
           emotion,
           // Optional: could pass language/voice style if you support it
           language,
+          // ✅ NEW: voice id
+          voiceId: selectedVoiceId || undefined,
         }),
       });
 
@@ -211,8 +255,19 @@ export default function Page() {
 
   useEffect(() => {
     refreshLibrary();
+    fetchVoices(); // ✅ NEW
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ✅ NEW: if language changes, auto-pick a voice of same language (only if user hasn't manually picked)
+  useEffect(() => {
+    if (!voices.length) return;
+    if (!selectedVoiceId) {
+      const match = voices.find((v) => v.language === language);
+      if (match) setSelectedVoiceId(match.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [language, voices.length]);
 
   // Layout styles (no need to touch globals.css)
   const card: React.CSSProperties = {
@@ -290,7 +345,7 @@ export default function Page() {
             {/* Playback card (top-right) */}
             <div style={{ ...card, padding: 14, width: 360 }}>
               <div style={{ fontWeight: 900, opacity: 0.8, marginBottom: 10 }}>Playback</div>
-              <audio ref={audioRef} controls src={audioUrl} style={{ width: "100%" }} />
+              <audio ref={audioRef} controls src={audioUrl || undefined} style={{ width: "100%" }} />
               <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
                 <button style={btn} onClick={play} type="button">
                   Play
@@ -337,6 +392,37 @@ export default function Page() {
                       </option>
                     ))}
                   </select>
+                </div>
+
+                {/* ✅ NEW: Voice selector */}
+                <div>
+                  <div style={label}>Voice</div>
+                  <select
+                    style={select}
+                    value={selectedVoiceId}
+                    onChange={(e) => setSelectedVoiceId(e.target.value)}
+                    disabled={voices.length === 0}
+                  >
+                    {voices.length === 0 ? (
+                      <option value="">(No voices found — check /api/voices)</option>
+                    ) : (
+                      <>
+                        <option value="">(Auto / Default)</option>
+                        {voices
+                           // keep it simple: show matching language first
+                          .map((v) => (
+                            <option key={v.id} value={v.id}>
+                              {v.name ?? v.id}
+                            </option>
+                          ))}
+                      </>
+                    )}
+                  </select>
+                  {voices.length === 0 ? (
+                    <div style={{ fontSize: 12, opacity: 0.65, marginTop: 6 }}>
+                      Tip: implement <code>GET /api/voices</code> to return your voice list.
+                    </div>
+                  ) : null}
                 </div>
 
                 <div>

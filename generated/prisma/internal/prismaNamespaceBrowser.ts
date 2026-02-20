@@ -51,7 +51,8 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
-  Story: 'Story'
+  Story: 'Story',
+  Voice: 'Voice'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -77,6 +78,17 @@ export const StoryScalarFieldEnum = {
 } as const
 
 export type StoryScalarFieldEnum = (typeof StoryScalarFieldEnum)[keyof typeof StoryScalarFieldEnum]
+
+
+export const VoiceScalarFieldEnum = {
+  id: 'id',
+  displayName: 'displayName',
+  provider: 'provider',
+  voiceId: 'voiceId',
+  createdAt: 'createdAt'
+} as const
+
+export type VoiceScalarFieldEnum = (typeof VoiceScalarFieldEnum)[keyof typeof VoiceScalarFieldEnum]
 
 
 export const SortOrder = {

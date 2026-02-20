@@ -44,3 +44,8 @@ export { Prisma }
  * 
  */
 export type Story = Prisma.StoryModel
+/**
+ * Model Voice
+ * 
+ */
+export type Voice = Prisma.VoiceModel

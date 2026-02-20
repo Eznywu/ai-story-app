@@ -15,3 +15,11 @@ model Story {
   text      String
   createdAt DateTime @default(now())
 }
+
+model Voice {
+  id          String   @id @default(cuid())
+  displayName String
+  provider    String   @default("elevenlabs")
+  voiceId     String
+  createdAt   DateTime @default(now())
+}

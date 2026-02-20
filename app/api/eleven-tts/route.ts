@@ -1,14 +1,35 @@
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma"; // ✅ ADD (adjust path if yours differs)
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {
-    const { text, speed = 0.95, emotion = 0.65 } = await req.json();
+    // ✅ ADD voiceId from body (db id)
+    const { text, speed = 0.95, emotion = 0.65, voiceId: voiceDbId } = await req.json();
 
     const apiKey = process.env.ELEVENLABS_API_KEY;
-    const voiceId = process.env.ELEVENLABS_VOICE_ID;
+    const fallbackVoiceId = process.env.ELEVENLABS_VOICE_ID; // ✅ rename just for clarity
     if (!apiKey) return NextResponse.json({ error: "Missing ELEVENLABS_API_KEY" }, { status: 500 });
+
+    // ✅ NEW: resolve ElevenLabs voice id
+    let voiceId = fallbackVoiceId;
+
+    // If UI provided a db voice id, load it and use its `voiceId` (ElevenLabs ID)
+    if (voiceDbId) {
+      const v = await prisma.voice.findUnique({
+        where: { id: String(voiceDbId) },
+        select: { voiceId: true },
+      });
+
+      if (!v?.voiceId) {
+        return NextResponse.json({ error: "Selected voice not found or missing voiceId" }, { status: 400 });
+      }
+
+      voiceId = v.voiceId;
+    }
+
+    // If no db selection, we still need fallback env voice id
     if (!voiceId) return NextResponse.json({ error: "Missing ELEVENLABS_VOICE_ID" }, { status: 500 });
 
     // clamp to safe ranges
