@@ -1,595 +1,565 @@
+// app/page.tsx
 "use client";
 
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
-type AgeOption = {
-  value: "3m" | "6m" | "9m" | "1y" | "2y";
-  label: string;
-  guidance: string;
+type StoryItem = {
+  id?: string;
+  title?: string;
+  genre?: string;
+  age?: string;
+  language?: string;
+  mainCharacterName?: string;
+  story?: string;
+  createdAt?: string;
 };
 
-type LangOption = {
-  value: "en" | "zh";
-  label: string;
-};
-
-const AGE_OPTIONS: AgeOption[] = [
-  { value: "3m", label: "3 months", guidance: "Very short, soothing, repetitive sounds and simple words." },
-  { value: "6m", label: "6 months", guidance: "Short, rhythmic, gentle repetition, easy-to-hear words." },
-  { value: "9m", label: "9 months", guidance: "Simple scenes, a few actions, comforting repetition." },
-  { value: "1y", label: "1 year", guidance: "Simple plot, clear actions, 1–2 new words repeated." },
-  { value: "2y", label: "2 years", guidance: "Tiny story arc, feelings, simple lesson, playful language." },
+const AGE_OPTIONS = ["3 months", "6 months", "9 months", "1 year", "2 years"];
+const LANG_OPTIONS = [
+  { label: "English", value: "en" },
+  { label: "中文（繁體）", value: "zh-Hant" },
 ];
-
-const LANG_OPTIONS: LangOption[] = [
-  { value: "en", label: "English" },
-  { value: "zh", label: "中文（繁體）" },
+const GENRE_OPTIONS = ["Animals", "Fantasy", "Adventure", "Friendship", "Magic"];
+const LENGTH_OPTIONS = [
+  { label: "Short (1–2 min)", value: "short" },
+  { label: "Medium (3–5 min)", value: "medium" },
+  { label: "Long (6–9 min)", value: "long" },
 ];
-
-// 10 popular kids topics
-const GENRES = [
-  "Animals",
-  "Bedtime & Sleep",
-  "Friendship",
-  "Adventure",
-  "Fantasy",
-  "Dinosaurs",
-  "Space",
-  "Princesses & Knights",
-  "Vehicles",
-  "Superheroes",
-] as const;
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
 }
 
 export default function Page() {
+  // Left form
+  const [age, setAge] = useState<string>("6 months");
+  const [language, setLanguage] = useState<string>("zh-Hant");
+  const [mainCharacterName, setMainCharacterName] = useState<string>("嚕嚕");
+  const [genre, setGenre] = useState<string>("Animals");
+  const [length, setLength] = useState<string>("short");
+  const [title, setTitle] = useState<string>("");
+
+  // Right controls
+  const [speed, setSpeed] = useState<number>(0.95); // 0.6–1.3
+  const [emotion, setEmotion] = useState<number>(40); // 0–100
+
+  // Output + audio
+  const [story, setStory] = useState<string>("");
+  const [error, setError] = useState<string>("");
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [isMakingMp3, setIsMakingMp3] = useState<boolean>(false);
+
+  const [audioUrl, setAudioUrl] = useState<string>("");
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Form state
-  const [age, setAge] = useState<AgeOption["value"]>("6m");
-  const [language, setLanguage] = useState<LangOption["value"]>("en");
-  const [characterName, setCharacterName] = useState("嚕嚕");
-  const [genre, setGenre] = useState<(typeof GENRES)[number]>("Animals");
-  const [length, setLength] = useState<"short" | "medium" | "long">("short");
-  const [title, setTitle] = useState("");
+  // Library (bottom)
+  const [library, setLibrary] = useState<StoryItem[]>([]);
+  const [loadingLibrary, setLoadingLibrary] = useState<boolean>(false);
 
-  // Speed + emotion
-  // speed here is for MP3 generation (ElevenLabs request) AND also we apply it to browser playbackRate
-  const [speed, setSpeed] = useState(0.95); // 0.80–1.20
-  const [emotion, setEmotion] = useState(40); // 0–100 (warmth/expressiveness)
+  const bgStyle = useMemo<React.CSSProperties>(() => {
+    return {
+      minHeight: "100vh",
+      backgroundImage: "url('/lulu-bg.jpg')",
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundRepeat: "no-repeat",
+    };
+  }, []);
 
-  // Output state
-  const [story, setStory] = useState("");
-  const [mp3Url, setMp3Url] = useState<string | null>(null);
-
-  const [busyStory, setBusyStory] = useState(false);
-  const [busyMp3, setBusyMp3] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const ageInfo = useMemo(() => AGE_OPTIONS.find(a => a.value === age)!, [age]);
-
-  // Apply playback speed instantly (optional but nice)
-  const applyPlaybackRate = (rate: number) => {
-    const el = audioRef.current;
-    if (!el) return;
-    el.playbackRate = rate;
-  };
-
-  const onSpeedChange = (next: number) => {
-    const v = Math.round(clamp(next, 0.8, 1.2) * 100) / 100;
-    setSpeed(v);
-    applyPlaybackRate(v);
-  };
-
-  const onEmotionChange = (next: number) => {
-    setEmotion(clamp(Math.round(next), 0, 100));
-  };
+  const fontStyle = useMemo<React.CSSProperties>(
+    () => ({
+      fontFamily:
+        '"Arial Rounded MT Bold","Arial Rounded MT","Trebuchet MS",Arial,sans-serif',
+    }),
+    []
+  );
 
   async function generateStory() {
-    setError(null);
-    setBusyStory(true);
-
+    setError("");
+    setIsGenerating(true);
     try {
       const res = await fetch("/api/story", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // IMPORTANT: keep payload simple; avoid sending nested objects that cause "undefined level" bugs
         body: JSON.stringify({
-          age: ageInfo.label,
-          age_guidance: ageInfo.guidance,
+          age,
           language,
-          character_name: characterName?.trim() || "Lulu",
+          mainCharacterName,
           genre,
           length,
-          title: title?.trim() || "",
-          // Optional: tell the model the intended tone (not required)
-          bedtime_tone: "gentle, cozy, calming, bedtime storyteller",
+          title,
         }),
       });
 
-      const data = await res.json().catch(() => null);
-
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(data?.error || `Story API failed (${res.status})`);
       }
-
-      if (!data?.story) {
-        throw new Error("Story API returned no story text.");
-      }
-
-      setStory(String(data.story));
-
-      // clear old audio when new story is generated
-      if (mp3Url) URL.revokeObjectURL(mp3Url);
-      setMp3Url(null);
+      setStory(String(data?.story ?? ""));
     } catch (e: any) {
-      setError(e?.message || "Failed to generate story.");
+      setError(e?.message ?? "Failed to generate story.");
     } finally {
-      setBusyStory(false);
+      setIsGenerating(false);
+    }
+  }
+
+  async function saveStory() {
+    setError("");
+    setIsSaving(true);
+    try {
+      // If you don't have /api/stories implemented on prod yet,
+      // this may fail — that's okay; generation + MP3 still works.
+      const res = await fetch("/api/stories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          age,
+          language,
+          mainCharacterName,
+          genre,
+          length,
+          title,
+          story,
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.error || `Save failed (${res.status})`);
+      }
+      await refreshLibrary();
+    } catch (e: any) {
+      setError(e?.message ?? "Failed to save.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function refreshLibrary() {
+    setError("");
+    setLoadingLibrary(true);
+    try {
+      const res = await fetch("/api/stories", { method: "GET" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.error || `Fetch library failed (${res.status})`);
+      }
+      setLibrary(Array.isArray(data?.stories) ? data.stories : []);
+    } catch (e: any) {
+      // Not fatal
+      setLibrary([]);
+    } finally {
+      setLoadingLibrary(false);
     }
   }
 
   async function makeMp3() {
-    setError(null);
-
-    if (!story.trim()) {
-      setError("Please generate a story first.");
-      return;
-    }
-
-    setBusyMp3(true);
-
+    setError("");
+    setIsMakingMp3(true);
     try {
-      // Emotion mapping (generic): higher emotion => higher "style"/lower stability
-      // Your /api/eleven-tts route should forward these to ElevenLabs voice_settings.
-      // If your route ignores them, MP3 still works (just less expressive).
-      const voiceSettings = {
-        // ElevenLabs typical fields: stability(0-1), similarity_boost(0-1), style(0-1), speaker_boost(boolean)
-        stability: clamp(0.75 - emotion / 200, 0.2, 0.85),          // emotion ↑ => stability ↓
-        similarity_boost: 0.85,
-        style: clamp(emotion / 100, 0, 1),                           // emotion 0–100 => style 0–1
-        speaker_boost: true,
-      };
+      if (!story.trim()) throw new Error("Generate a story first.");
 
+      // Expect your API route to accept { text, speed, emotion }.
+      // If your /api/eleven-tts currently only accepts { text },
+      // update that route later — UI still ready.
       const res = await fetch("/api/eleven-tts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text: story,
-          // interpret speed as "speaking rate" for your server (if supported) AND also for client playback
           speed,
           emotion,
-          voice_settings: voiceSettings,
-          // If your route supports passing model_id etc:
-          model_id: language === "zh" ? "eleven_multilingual_v2" : "eleven_multilingual_v2",
+          // Optional: could pass language/voice style if you support it
+          language,
         }),
       });
 
       if (!res.ok) {
-        const maybeJson = await res.json().catch(() => null);
-        throw new Error(maybeJson?.error || `TTS failed (${res.status})`);
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error || `TTS failed (${res.status})`);
       }
 
       const blob = await res.blob();
-      if (!blob || blob.size < 1000) {
-        throw new Error("TTS returned an empty/invalid audio file.");
-      }
-
-      if (mp3Url) URL.revokeObjectURL(mp3Url);
       const url = URL.createObjectURL(blob);
-      setMp3Url(url);
 
-      // Update audio element
+      // cleanup old
+      setAudioUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return url;
+      });
+
+      // autoplay
       setTimeout(() => {
-        if (audioRef.current) {
-          audioRef.current.load();
-          audioRef.current.playbackRate = speed;
-        }
+        audioRef.current?.play().catch(() => {});
       }, 50);
     } catch (e: any) {
-      setError(e?.message || "Failed to create MP3.");
+      setError(e?.message ?? "Failed to make MP3.");
     } finally {
-      setBusyMp3(false);
+      setIsMakingMp3(false);
     }
   }
 
-  const play = () => audioRef.current?.play();
-  const stop = () => {
-    const el = audioRef.current;
-    if (!el) return;
-    el.pause();
-    el.currentTime = 0;
+  function play() {
+    audioRef.current?.play().catch(() => {});
+  }
+  function stop() {
+    if (!audioRef.current) return;
+    audioRef.current.pause();
+    audioRef.current.currentTime = 0;
+  }
+
+  useEffect(() => {
+    refreshLibrary();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Layout styles (no need to touch globals.css)
+  const card: React.CSSProperties = {
+    background: "rgba(255,255,255,0.82)",
+    border: "1px solid rgba(255,255,255,0.35)",
+    borderRadius: 18,
+    boxShadow: "0 12px 30px rgba(0,0,0,0.10)",
+    backdropFilter: "blur(6px)",
+  };
+
+  const label: React.CSSProperties = {
+    fontSize: 14,
+    fontWeight: 800,
+    opacity: 0.85,
+    marginBottom: 6,
+  };
+
+  const select: React.CSSProperties = {
+    width: "100%",
+    padding: "10px 12px",
+    borderRadius: 12,
+    border: "1px solid rgba(0,0,0,0.12)",
+    outline: "none",
+    background: "rgba(255,255,255,0.9)",
+  };
+
+  const input: React.CSSProperties = {
+    width: "100%",
+    padding: "10px 12px",
+    borderRadius: 12,
+    border: "1px solid rgba(0,0,0,0.12)",
+    outline: "none",
+    background: "rgba(255,255,255,0.9)",
+  };
+
+  const btn: React.CSSProperties = {
+    padding: "10px 14px",
+    borderRadius: 12,
+    border: "1px solid rgba(0,0,0,0.12)",
+    background: "rgba(255,255,255,0.92)",
+    fontWeight: 800,
+    cursor: "pointer",
+  };
+
+  const primaryBtn: React.CSSProperties = {
+    ...btn,
+    background: "rgba(16, 185, 129, 0.92)", // emerald-ish
+    color: "#0b2a1f",
+    border: "1px solid rgba(0,0,0,0.10)",
   };
 
   return (
-    <div className="lulu-bg">
-      <div className="lulu-overlay" />
-
-      <main className="lulu-shell">
-        <header className="lulu-header">
-          <h1 className="lulu-title">Bedtime Story</h1>
-          <p className="lulu-sub">
-            Generate a cozy story, then turn it into bedtime audio with your ElevenLabs voice.
-          </p>
-        </header>
-
-        <section className="lulu-grid">
-          {/* LEFT: Create */}
-          <div className="card">
-            <div className="cardTitle">Create</div>
-
-            <label className="field">
-              <span className="label">For what age</span>
-              <select className="input" value={age} onChange={(e) => setAge(e.target.value as any)}>
-                {AGE_OPTIONS.map((a) => (
-                  <option key={a.value} value={a.value}>{a.label}</option>
-                ))}
-              </select>
-              <div className="hint">{ageInfo.guidance}</div>
-            </label>
-
-            <label className="field">
-              <span className="label">Language</span>
-              <select className="input" value={language} onChange={(e) => setLanguage(e.target.value as any)}>
-                {LANG_OPTIONS.map((l) => (
-                  <option key={l.value} value={l.value}>{l.label}</option>
-                ))}
-              </select>
-            </label>
-
-            <label className="field">
-              <span className="label">Main character name</span>
-              <input
-                className="input"
-                value={characterName}
-                onChange={(e) => setCharacterName(e.target.value)}
-                placeholder="e.g. Lulu / 嚕嚕"
-              />
-            </label>
-
-            <label className="field">
-              <span className="label">Story type</span>
-              <select className="input" value={genre} onChange={(e) => setGenre(e.target.value as any)}>
-                {GENRES.map((g) => (
-                  <option key={g} value={g}>{g}</option>
-                ))}
-              </select>
-            </label>
-
-            <label className="field">
-              <span className="label">Length</span>
-              <select className="input" value={length} onChange={(e) => setLength(e.target.value as any)}>
-                <option value="short">Short (1–2 min)</option>
-                <option value="medium">Medium (3–4 min)</option>
-                <option value="long">Long (5–7 min)</option>
-              </select>
-            </label>
-
-            <label className="field">
-              <span className="label">Title (optional)</span>
-              <input
-                className="input"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Lulu and the Moon"
-              />
-            </label>
-
-            {/* Buttons row with Speed + Emotion next to Generate */}
-            <div className="actionsRow">
-              <button
-                className="btn primary"
-                onClick={generateStory}
-                disabled={busyStory}
-                title="Generate story text"
-              >
-                {busyStory ? "Generating..." : "Generate"}
-              </button>
-
-              <div className="miniControl">
-                <div className="miniLabel">Speed</div>
-                <div className="stepper">
-                  <button className="stepBtn" onClick={() => onSpeedChange(speed - 0.05)}>-</button>
-                  <div className="stepVal">{speed.toFixed(2)}x</div>
-                  <button className="stepBtn" onClick={() => onSpeedChange(speed + 0.05)}>+</button>
-                </div>
+    <div style={{ ...bgStyle, ...fontStyle }}>
+      {/* soft overlay */}
+      <div
+        style={{
+          minHeight: "100vh",
+          background:
+            "linear-gradient(180deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.10) 55%, rgba(0,0,0,0.05) 100%)",
+          padding: "28px 18px 40px",
+        }}
+      >
+        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+          {/* Header */}
+          <div style={{ display: "flex", gap: 16, alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap" }}>
+            <div>
+              <div style={{ fontSize: 56, fontWeight: 900, letterSpacing: -1, color: "rgba(0,0,0,0.78)" }}>
+                Bedtime Story
               </div>
-
-              <div className="miniControl">
-                <div className="miniLabel">Emotion</div>
-                <div className="stepper">
-                  <button className="stepBtn" onClick={() => onEmotionChange(emotion - 10)}>-</button>
-                  <div className="stepVal">Warm · {emotion}%</div>
-                  <button className="stepBtn" onClick={() => onEmotionChange(emotion + 10)}>+</button>
-                </div>
+              <div style={{ fontSize: 16, fontWeight: 700, opacity: 0.7, marginTop: 6 }}>
+                Generate stories, save them, and turn them into bedtime audio with your ElevenLabs voice.
               </div>
-
-              <button
-                className="btn"
-                onClick={makeMp3}
-                disabled={busyMp3}
-                title="Generate MP3 from the current story using the current Speed/Emotion"
-              >
-                {busyMp3 ? "Making MP3..." : "Make MP3"}
-              </button>
             </div>
 
-            {error && <div className="errorBox">{error}</div>}
-
-            <div className="storyBox">
-              <div className="storyHint">{story ? "Story generated:" : "(Your story will appear here)"}</div>
-              <pre className="storyText">{story}</pre>
+            {/* Playback card (top-right) */}
+            <div style={{ ...card, padding: 14, width: 360 }}>
+              <div style={{ fontWeight: 900, opacity: 0.8, marginBottom: 10 }}>Playback</div>
+              <audio ref={audioRef} controls src={audioUrl} style={{ width: "100%" }} />
+              <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+                <button style={btn} onClick={play} type="button">
+                  Play
+                </button>
+                <button style={btn} onClick={stop} type="button">
+                  Stop
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* RIGHT: Playback on top of Story Output */}
-          <div className="rightCol">
-            <div className="card playbackCard">
-              <div className="cardTitle">Playback</div>
-              <audio ref={audioRef} controls className="audio" src={mp3Url ?? undefined} />
-              <div className="playButtons">
-                <button className="btn small" onClick={play} disabled={!mp3Url}>Play</button>
-                <button className="btn small" onClick={stop} disabled={!mp3Url}>Stop</button>
-              </div>
-              <div className="hint">
-                Tip: Speed/Emotion apply when generating audio (Make MP3). Speed also updates playback rate.
+          {/* Main grid */}
+          <div
+            style={{
+              marginTop: 18,
+              display: "grid",
+              gridTemplateColumns: "1.05fr 0.95fr",
+              gap: 16,
+              alignItems: "start",
+            }}
+          >
+            {/* LEFT: Create */}
+            <div style={{ ...card, padding: 16 }}>
+              <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 10, opacity: 0.8 }}>Create</div>
+
+              <div style={{ display: "grid", gap: 12 }}>
+                <div>
+                  <div style={label}>For what age</div>
+                  <select style={select} value={age} onChange={(e) => setAge(e.target.value)}>
+                    {AGE_OPTIONS.map((a) => (
+                      <option key={a} value={a}>
+                        {a}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <div style={label}>Language</div>
+                  <select style={select} value={language} onChange={(e) => setLanguage(e.target.value)}>
+                    {LANG_OPTIONS.map((l) => (
+                      <option key={l.value} value={l.value}>
+                        {l.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <div style={label}>Main character name</div>
+                  <input
+                    style={input}
+                    value={mainCharacterName}
+                    onChange={(e) => setMainCharacterName(e.target.value)}
+                    placeholder="e.g. 嚕嚕"
+                  />
+                </div>
+
+                <div>
+                  <div style={label}>Story type (genre)</div>
+                  <select style={select} value={genre} onChange={(e) => setGenre(e.target.value)}>
+                    {GENRE_OPTIONS.map((g) => (
+                      <option key={g} value={g}>
+                        {g}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <div style={label}>Length</div>
+                  <select style={select} value={length} onChange={(e) => setLength(e.target.value)}>
+                    {LENGTH_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <div style={label}>Title (optional)</div>
+                  <input
+                    style={input}
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="e.g. Lulu and the Moon"
+                  />
+                </div>
+
+                {/* Actions */}
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 2 }}>
+                  <button style={primaryBtn} onClick={generateStory} disabled={isGenerating} type="button">
+                    {isGenerating ? "Generating..." : "Generate"}
+                  </button>
+                  <button style={btn} onClick={saveStory} disabled={isSaving || !story.trim()} type="button">
+                    {isSaving ? "Saving..." : "Save"}
+                  </button>
+                  <button style={btn} onClick={makeMp3} disabled={isMakingMp3 || !story.trim()} type="button">
+                    {isMakingMp3 ? "Making MP3..." : "Make MP3"}
+                  </button>
+                </div>
+
+                {/* Error */}
+                {error ? (
+                  <div
+                    style={{
+                      marginTop: 6,
+                      padding: "10px 12px",
+                      borderRadius: 12,
+                      background: "rgba(239,68,68,0.12)",
+                      border: "1px solid rgba(239,68,68,0.25)",
+                      color: "rgba(153,27,27,0.95)",
+                      fontWeight: 800,
+                    }}
+                  >
+                    {error}
+                  </div>
+                ) : null}
               </div>
             </div>
 
-            <div className="card">
-              <div className="cardTitle">Story Output</div>
-              <div className="outputBox">
-                {story ? (
-                  <div className="outputText">{story}</div>
-                ) : (
-                  <div className="outputPlaceholder">Generate a story to see it here.</div>
-                )}
+            {/* RIGHT: Speed + Emotion + Story Output */}
+            <div style={{ display: "grid", gap: 16 }}>
+              {/* Controls */}
+              <div style={{ ...card, padding: 16 }}>
+                <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center" }}>
+                  <div style={{ flex: "1 1 220px" }}>
+                    <div style={label}>Speed</div>
+                    <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                      <button
+                        type="button"
+                        style={btn}
+                        onClick={() => setSpeed((s) => Number((clamp(s - 0.05, 0.6, 1.3)).toFixed(2)))}
+                      >
+                        −
+                      </button>
+                      <div style={{ fontWeight: 900, minWidth: 70 }}>{speed.toFixed(2)}x</div>
+                      <button
+                        type="button"
+                        style={btn}
+                        onClick={() => setSpeed((s) => Number((clamp(s + 0.05, 0.6, 1.3)).toFixed(2)))}
+                      >
+                        +
+                      </button>
+                    </div>
+                    <div style={{ fontSize: 12, opacity: 0.65, marginTop: 6 }}>
+                      Tip: 0.85–1.00 feels like a calm bedtime pace.
+                    </div>
+                  </div>
+
+                  <div style={{ flex: "1 1 220px" }}>
+                    <div style={label}>Emotion</div>
+                    <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                      <button type="button" style={btn} onClick={() => setEmotion((v) => clamp(v - 5, 0, 100))}>
+                        −
+                      </button>
+                      <div style={{ fontWeight: 900, minWidth: 120 }}>
+                        Warm · {emotion}%
+                      </div>
+                      <button type="button" style={btn} onClick={() => setEmotion((v) => clamp(v + 5, 0, 100))}>
+                        +
+                      </button>
+                    </div>
+                    <div style={{ fontSize: 12, opacity: 0.65, marginTop: 6 }}>
+                      Higher = more expressive; 30–55 is usually “bedtime storyteller”.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Story Output */}
+              <div style={{ ...card, padding: 16 }}>
+                <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 10, opacity: 0.8 }}>
+                  Story Output
+                </div>
+                <div
+                  style={{
+                    minHeight: 360,
+                    padding: 14,
+                    borderRadius: 14,
+                    border: "1px solid rgba(0,0,0,0.10)",
+                    background: "rgba(255,255,255,0.72)",
+                    whiteSpace: "pre-wrap",
+                    lineHeight: 1.75,
+                    fontWeight: 700,
+                    opacity: story ? 0.95 : 0.65,
+                  }}
+                >
+                  {story?.trim() ? story : "(Your story will appear here)"}
+                </div>
               </div>
             </div>
           </div>
-        </section>
 
-        <footer className="lulu-footer">
-          Background: /public/lulu-bg.jpg · Font: Arial Rounded MT (fallbacks included)
-        </footer>
+          {/* BOTTOM: My Library */}
+          <div style={{ ...card, padding: 16, marginTop: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+              <div style={{ fontSize: 18, fontWeight: 900, opacity: 0.8 }}>My Library</div>
+              <button style={btn} onClick={refreshLibrary} disabled={loadingLibrary} type="button">
+                {loadingLibrary ? "Refreshing..." : "Refresh"}
+              </button>
+            </div>
 
-        <style jsx>{`
-          /* Page-specific layout sizing (smaller interface) */
-          .lulu-bg {
-            min-height: 100vh;
-            background-image: url("/lulu-bg.jpg");
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            position: relative;
-            font-family: "Arial Rounded MT Bold","Arial Rounded MT","Arial Rounded MT Std","Arial Rounded", Arial, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-          }
-          .lulu-overlay {
-            position: absolute;
-            inset: 0;
-            background: rgba(255,255,255,0.22);
-            backdrop-filter: blur(2px);
-          }
-          .lulu-shell {
-            position: relative;
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 22px 16px 18px;
-          }
-          .lulu-header { margin-bottom: 12px; }
-          .lulu-title {
-            margin: 0;
-            font-size: 44px;
-            font-weight: 900;
-            letter-spacing: 0.2px;
-            color: #111;
-          }
-          .lulu-sub {
-            margin: 6px 0 0;
-            font-size: 14px;
-            color: rgba(0,0,0,0.7);
-            font-weight: 600;
-          }
-          .lulu-grid {
-            display: grid;
-            grid-template-columns: 1.05fr 0.95fr;
-            gap: 14px;
-            align-items: start;
-          }
-          .rightCol {
-            display: grid;
-            gap: 14px;
-          }
-          .card {
-            background: rgba(255,255,255,0.82);
-            border: 1px solid rgba(0,0,0,0.08);
-            border-radius: 16px;
-            padding: 14px;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
-          }
-          .cardTitle {
-            font-size: 16px;
-            font-weight: 900;
-            margin-bottom: 10px;
-            color: #111;
-          }
-          .field { display: block; margin-bottom: 10px; }
-          .label {
-            display: block;
-            font-size: 12px;
-            font-weight: 900;
-            margin-bottom: 6px;
-            color: rgba(0,0,0,0.75);
-          }
-          .input {
-            width: 100%;
-            height: 40px;
-            border-radius: 12px;
-            border: 1px solid rgba(0,0,0,0.12);
-            padding: 0 12px;
-            font-size: 14px;
-            background: rgba(255,255,255,0.95);
-            outline: none;
-          }
-          .input:focus {
-            border-color: rgba(18, 130, 255, 0.45);
-            box-shadow: 0 0 0 3px rgba(18, 130, 255, 0.15);
-          }
-          .hint {
-            margin-top: 6px;
-            font-size: 12px;
-            color: rgba(0,0,0,0.6);
-            font-weight: 600;
-            line-height: 1.25;
-          }
+            <div style={{ fontSize: 13, opacity: 0.75, marginTop: 6, fontWeight: 700 }}>
+              If <code>/api/stories</code> isn’t deployed, this list may stay empty (generation & MP3 still work).
+            </div>
 
-          .actionsRow {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            align-items: center;
-            margin-top: 6px;
-            margin-bottom: 10px;
-          }
+            <div style={{ marginTop: 12 }}>
+              {library.length === 0 ? (
+                <div
+                  style={{
+                    padding: 14,
+                    borderRadius: 14,
+                    border: "1px dashed rgba(0,0,0,0.18)",
+                    background: "rgba(255,255,255,0.55)",
+                    fontWeight: 800,
+                    opacity: 0.8,
+                  }}
+                >
+                  No saved stories yet.
+                  <div style={{ fontSize: 12, opacity: 0.75, marginTop: 6 }}>
+                    Tip: Put your background image at <code>/public/lulu-bg.jpg</code>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: "grid", gap: 10 }}>
+                  {library.slice(0, 20).map((s, idx) => (
+                    <button
+                      key={s.id ?? idx}
+                      type="button"
+                      onClick={() => {
+                        setStory(s.story ?? "");
+                        setTitle(s.title ?? "");
+                        setGenre(s.genre ?? genre);
+                        setAge(s.age ?? age);
+                        setLanguage(s.language ?? language);
+                        setMainCharacterName(s.mainCharacterName ?? mainCharacterName);
+                      }}
+                      style={{
+                        textAlign: "left",
+                        padding: 12,
+                        borderRadius: 14,
+                        border: "1px solid rgba(0,0,0,0.12)",
+                        background: "rgba(255,255,255,0.70)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <div style={{ fontWeight: 900, opacity: 0.85 }}>
+                        {s.title?.trim() ? s.title : "(Untitled)"}{" "}
+                        <span style={{ fontWeight: 800, opacity: 0.55, marginLeft: 8 }}>
+                          {s.age ?? ""} · {s.genre ?? ""}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 13, opacity: 0.7, marginTop: 6 }}>
+                        {(s.story ?? "").slice(0, 120)}
+                        {(s.story ?? "").length > 120 ? "…" : ""}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
 
-          .btn {
-            height: 40px;
-            padding: 0 14px;
-            border-radius: 12px;
-            border: 1px solid rgba(0,0,0,0.12);
-            background: rgba(255,255,255,0.95);
-            font-weight: 900;
-            cursor: pointer;
-          }
-          .btn:hover { filter: brightness(0.98); }
-          .btn:disabled { opacity: 0.6; cursor: not-allowed; }
-
-          .btn.primary {
-            background: linear-gradient(180deg, rgba(40, 200, 130, 1), rgba(25, 160, 105, 1));
-            border: none;
-            color: #fff;
-            box-shadow: 0 10px 24px rgba(25,160,105,0.25);
-          }
-          .btn.small { height: 36px; border-radius: 10px; padding: 0 12px; }
-
-          .miniControl {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            padding: 6px 8px;
-            border-radius: 12px;
-            border: 1px solid rgba(0,0,0,0.10);
-            background: rgba(255,255,255,0.75);
-          }
-          .miniLabel {
-            font-size: 11px;
-            font-weight: 900;
-            color: rgba(0,0,0,0.70);
-            line-height: 1;
-          }
-          .stepper {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-          }
-          .stepBtn {
-            width: 30px;
-            height: 30px;
-            border-radius: 10px;
-            border: 1px solid rgba(0,0,0,0.12);
-            background: rgba(255,255,255,0.9);
-            font-weight: 900;
-            cursor: pointer;
-          }
-          .stepVal {
-            min-width: 92px;
-            text-align: center;
-            font-size: 13px;
-            font-weight: 900;
-            color: rgba(0,0,0,0.78);
-          }
-
-          .errorBox {
-            margin-top: 8px;
-            background: rgba(255, 80, 80, 0.12);
-            border: 1px solid rgba(255, 80, 80, 0.35);
-            color: rgba(120, 0, 0, 0.9);
-            padding: 10px 12px;
-            border-radius: 12px;
-            font-weight: 800;
-            font-size: 13px;
-          }
-
-          .storyBox {
-            margin-top: 10px;
-            border-radius: 14px;
-            border: 1px solid rgba(0,0,0,0.10);
-            background: rgba(255,255,255,0.80);
-            padding: 12px;
-          }
-          .storyHint {
-            font-size: 12px;
-            font-weight: 900;
-            color: rgba(0,0,0,0.55);
-            margin-bottom: 8px;
-          }
-          .storyText {
-            margin: 0;
-            white-space: pre-wrap;
-            font-size: 14px;
-            line-height: 1.55;
-            color: rgba(0,0,0,0.82);
-            max-height: 220px;
-            overflow: auto;
-          }
-
-          .playbackCard .audio {
-            width: 100%;
-            margin-top: 6px;
-          }
-          .playButtons {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-          }
-
-          .outputBox {
-            border-radius: 14px;
-            border: 1px solid rgba(0,0,0,0.10);
-            background: rgba(255,255,255,0.78);
-            padding: 12px;
-            min-height: 340px;
-            max-height: 460px;
-            overflow: auto;
-          }
-          .outputText {
-            white-space: pre-wrap;
-            font-size: 15px;
-            line-height: 1.6;
-            color: rgba(0,0,0,0.82);
-            font-weight: 600;
-          }
-          .outputPlaceholder {
-            font-size: 14px;
-            font-weight: 800;
-            color: rgba(0,0,0,0.45);
-          }
-
-          .lulu-footer {
-            margin-top: 12px;
-            font-size: 11px;
-            font-weight: 800;
-            color: rgba(0,0,0,0.55);
-          }
-
-          @media (max-width: 920px) {
-            .lulu-grid { grid-template-columns: 1fr; }
-            .outputBox { min-height: 220px; }
-          }
-        `}</style>
-      </main>
+          {/* footer spacing */}
+          <div style={{ height: 16 }} />
+        </div>
+      </div>
     </div>
   );
 }
