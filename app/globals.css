@@ -1,26 +1,35 @@
-@import "tailwindcss";
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+:root{
+  --bg1:#FFF6E6;
+  --bg2:#F6E3C6;
+  --card:rgba(255,255,255,0.72);
+  --card2:rgba(255,255,255,0.58);
+  --border:rgba(90,59,46,0.16);
+  --text:#5A3B2E;
+  --muted:rgba(90,59,46,0.70);
+  --accent:#6BB58A;      /* leaf green */
+  --accent2:#FFB38A;     /* peach */
+  --capy:#B8845B;        /* capybara brown */
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+html, body{
+  color: var(--text);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.lulu-bg{
+  background:
+    radial-gradient(1000px 500px at 15% 10%, rgba(255,179,138,0.35), transparent 60%),
+    radial-gradient(900px 450px at 85% 20%, rgba(107,181,138,0.28), transparent 55%),
+    linear-gradient(180deg, var(--bg1), var(--bg2));
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.lulu-card{
+  background: var(--card);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(10px);
+}
+
+.lulu-card-soft{
+  background: var(--card2);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(10px);
 }
