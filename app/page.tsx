@@ -1,636 +1,411 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
 type StoryRow = {
   id: string;
-  title: string;
+  title: string | null;
   genre: string;
   length: string;
-  text: string;
-  createdAt: string;
+  story: string;
+  createdAt?: string;
 };
 
-export default function Home() {
-  // --- Story generation + library ---
-  const [genre, setGenre] = useState("fantasy");
+const AGE_OPTIONS = [
+  { value: "3m", label: "3 months" },
+  { value: "6m", label: "6 months" },
+  { value: "9m", label: "9 months" },
+  { value: "1y", label: "1 year old" },
+  { value: "2y", label: "2 years old" },
+];
+
+const LANG_OPTIONS = [
+  { value: "zh", label: "中文（繁體）" },
+  { value: "en", label: "English" },
+] as const;
+
+const GENRE_OPTIONS = [
+  "Animals",
+  "Bedtime",
+  "Fantasy",
+  "Adventure",
+  "Friendship",
+  "Space",
+  "Dinosaurs",
+];
+
+const LENGTH_OPTIONS = [
+  { value: "short", label: "Short (1–2 min)" },
+  { value: "medium", label: "Medium (3–5 min)" },
+  { value: "long", label: "Long (6–8 min)" },
+];
+
+function card(): React.CSSProperties {
+  return { border: "1px solid #e6e6e6", borderRadius: 16, padding: 18 };
+}
+function input(): React.CSSProperties {
+  return {
+    width: "100%",
+    padding: "12px 12px",
+    borderRadius: 12,
+    border: "1px solid #ddd",
+    fontSize: 16,
+  };
+}
+function select(): React.CSSProperties {
+  return {
+    width: "100%",
+    padding: "12px 12px",
+    borderRadius: 12,
+    border: "1px solid #ddd",
+    fontSize: 16,
+    background: "white",
+  };
+}
+function btn(opts?: { primary?: boolean }): React.CSSProperties {
+  const primary = opts?.primary;
+  return {
+    padding: "10px 14px",
+    borderRadius: 12,
+    border: "1px solid #ddd",
+    background: primary ? "black" : "white",
+    color: primary ? "white" : "black",
+    cursor: "pointer",
+    fontWeight: 700,
+  };
+}
+function Label({ children }: { children: React.ReactNode }) {
+  return <div style={{ fontWeight: 700, marginTop: 14, marginBottom: 6 }}>{children}</div>;
+}
+
+export default function Page() {
+  // Criteria
+  const [age, setAge] = useState("6m");
+  const [language, setLanguage] = useState<(typeof LANG_OPTIONS)[number]["value"]>("zh");
+  const [mainCharacter, setMainCharacter] = useState("嗚嗚");
+
+  // Base fields
+  const [genre, setGenre] = useState("Animals");
   const [length, setLength] = useState("short");
+  const [title, setTitle] = useState("Test");
 
-  const [title, setTitle] = useState("");
+  // Story + loading
   const [story, setStory] = useState("");
+  const [busyGenerate, setBusyGenerate] = useState(false);
 
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-
-  const [library, setLibrary] = useState<StoryRow[]>([]);
-  const [selected, setSelected] = useState<StoryRow | null>(null);
-
-  // --- Browser speech (optional fallback) ---
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [canSpeak, setCanSpeak] = useState(false);
-
-  // --- MP3 TTS ---
-  const [voice, setVoice] = useState("alloy");
-  const [audioUrl, setAudioUrl] = useState<string>("");
-  const [isTtsLoading, setIsTtsLoading] = useState(false);
+  // MP3 playback
+  const [busyMp3, setBusyMp3] = useState(false);
+  const [mp3Url, setMp3Url] = useState("");
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // --- Voice recorder (mic) ---
-  const [recorder, setRecorder] = useState<MediaRecorder | null>(null);
-  const [recording, setRecording] = useState(false);
-  const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
-  const [recordedUrl, setRecordedUrl] = useState<string>("");
-  const [uploadStatus, setUploadStatus] = useState<string>("");
+  // Library
+  const [library, setLibrary] = useState<StoryRow[]>([]);
+  const [busyLibrary, setBusyLibrary] = useState(false);
 
-  useEffect(() => {
-    setCanSpeak(typeof window !== "undefined" && "speechSynthesis" in window);
-    loadLibrary();
+  const ageLabel = useMemo(
+    () => AGE_OPTIONS.find((x) => x.value === age)?.label ?? age,
+    [age]
+  );
 
-    return () => {
-      // cleanup object URLs on unmount
-      if (audioUrl) URL.revokeObjectURL(audioUrl);
-      if (recordedUrl) URL.revokeObjectURL(recordedUrl);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  async function loadLibrary() {
-    const res = await fetch("/api/stories");
-    const data = await res.json();
-    setLibrary(Array.isArray(data) ? data : []);
+  function stopAudio() {
+    if (!audioRef.current) return;
+    audioRef.current.pause();
+    audioRef.current.currentTime = 0;
   }
 
-  async function generateStory() {
+  async function refreshLibrary() {
+    setBusyLibrary(true);
     try {
-      setIsGenerating(true);
-
-      // reset selection + audio
-      setSelected(null);
-      setStory("Generating...");
-      setTitle("");
-      stopBrowserSpeech();
-      clearMp3();
-
-      const res = await fetch("/api/story", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ genre, length }),
-      });
-
-      const text = await res.text();
-
-      let data: any;
-      try {
-        data = JSON.parse(text);
-      } catch {
-        setStory(`Server returned non-JSON:\n\n${text.slice(0, 800)}`);
-        return;
-      }
-
-      if (!res.ok) {
-        setStory(`Error: ${data?.error ?? "Failed to generate story"}`);
-        return;
-      }
-
-      setStory(data.story);
-      setTitle(`${genre.toUpperCase()} • ${new Date().toLocaleDateString()}`);
-    } catch (err: any) {
-      setStory(`Error: ${err?.message ?? "Failed to generate story"}`);
+      const res = await fetch("/api/stories", { cache: "no-store" });
+      const data = await res.json();
+      setLibrary(Array.isArray(data) ? data : []);
+    } catch {
+      setLibrary([]);
     } finally {
-      setIsGenerating(false);
+      setBusyLibrary(false);
     }
   }
 
-  async function saveStory() {
-    if (!story || story === "Generating..." || story.startsWith("Error:")) return;
+  useEffect(() => {
+    refreshLibrary();
+  }, []);
+
+  async function generateStory() {
+    setBusyGenerate(true);
+    setStory("");
+    setMp3Url("");
+    stopAudio();
 
     try {
-      setIsSaving(true);
-
-      const res = await fetch("/api/stories", {
+      const res = await fetch("/api/story", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: title || "Untitled Story",
           genre,
           length,
-          text: story,
+          age,
+          language,
+          mainCharacter,
         }),
       });
 
       const data = await res.json();
-
-      if (!res.ok) {
-        alert(data?.error ?? "Failed to save");
-        return;
-      }
-
-      await loadLibrary();
-      setSelected(data);
+      if (!res.ok) throw new Error(data?.error || "Generate failed");
+      setStory(data?.story || "");
+    } catch (e: any) {
+      alert(e?.message ?? "Generate failed");
     } finally {
-      setIsSaving(false);
+      setBusyGenerate(false);
     }
   }
 
-  // -----------------------
-  // Browser speech controls
-  // -----------------------
-  function speakBrowser(textToSpeak: string) {
-    if (!canSpeak || !textToSpeak) return;
-
-    window.speechSynthesis.cancel();
-
-    const u = new SpeechSynthesisUtterance(textToSpeak);
-    u.rate = 1.0;
-    u.pitch = 1.0;
-
-    u.onstart = () => setIsSpeaking(true);
-    u.onend = () => setIsSpeaking(false);
-    u.onerror = () => setIsSpeaking(false);
-
-    window.speechSynthesis.speak(u);
-  }
-
-  function stopBrowserSpeech() {
-    if (!canSpeak) return;
-    window.speechSynthesis.cancel();
-    setIsSpeaking(false);
-  }
-
-  // -----------
-  // MP3 controls
-  // -----------
-  function clearMp3() {
-    if (audioUrl) URL.revokeObjectURL(audioUrl);
-    setAudioUrl("");
-  }
-
-  async function makeMp3AndPlay() {
-    const textToRead = selected ? selected.text : story;
-    if (!textToRead) return;
-
+  async function saveStory() {
+    if (!story) return;
     try {
-      setIsTtsLoading(true);
-      stopBrowserSpeech();
-      clearMp3();
-
-      const res = await fetch("/api/tts", {
+      const res = await fetch("/api/stories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: textToRead, voice }),
+        body: JSON.stringify({
+          title,
+          genre,
+          length,
+          story,
+          age,
+          language,
+          mainCharacter,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Save failed");
+      await refreshLibrary();
+      alert("Saved!");
+    } catch (e: any) {
+      alert(e?.message ?? "Save failed");
+    }
+  }
+
+  // ✅ This uses your ElevenLabs cloned voice via /api/eleven-tts
+  async function makeMp3() {
+    if (!story) return;
+
+    setBusyMp3(true);
+    setMp3Url("");
+    stopAudio();
+
+    try {
+      const res = await fetch("/api/eleven-tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: story }),
       });
 
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        alert(err?.error ?? "TTS failed");
-        return;
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error || "Eleven TTS failed");
       }
 
       const blob = await res.blob(); // audio/mpeg
       const url = URL.createObjectURL(blob);
-      setAudioUrl(url);
+      setMp3Url(url);
 
-      // auto play
-      setTimeout(() => {
-        audioRef.current?.play().catch(() => {});
-      }, 0);
+      // optional autoplay
+      setTimeout(() => audioRef.current?.play(), 50);
+    } catch (e: any) {
+      alert(e?.message ?? "MP3 failed");
     } finally {
-      setIsTtsLoading(false);
+      setBusyMp3(false);
     }
   }
-
-  // -----------------
-  // Recorder controls
-  // -----------------
-  async function startRecording() {
-    setUploadStatus("");
-    setRecordedBlob(null);
-
-    if (recordedUrl) URL.revokeObjectURL(recordedUrl);
-    setRecordedUrl("");
-
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const mr = new MediaRecorder(stream);
-    const chunks: BlobPart[] = [];
-
-    mr.ondataavailable = (e) => {
-      if (e.data.size > 0) chunks.push(e.data);
-    };
-
-    mr.onstop = () => {
-      stream.getTracks().forEach((t) => t.stop());
-
-      const blob = new Blob(chunks, { type: "audio/webm" });
-      setRecordedBlob(blob);
-      const url = URL.createObjectURL(blob);
-      setRecordedUrl(url);
-    };
-
-    mr.start();
-    setRecorder(mr);
-    setRecording(true);
-  }
-
-  function stopRecording() {
-    recorder?.stop();
-    setRecording(false);
-    setRecorder(null);
-  }
-
-  async function uploadRecording() {
-    if (!recordedBlob) return;
-
-    setUploadStatus("Uploading...");
-
-    const form = new FormData();
-    form.append(
-      "file",
-      new File([recordedBlob], "voice.webm", { type: "audio/webm" })
-    );
-
-    const res = await fetch("/api/voice-sample", {
-      method: "POST",
-      body: form,
-    });
-
-    const data = await res.json().catch(() => ({}));
-
-    if (!res.ok) {
-      setUploadStatus(`Upload failed: ${data?.error ?? "unknown error"}`);
-      return;
-    }
-
-    setUploadStatus(`Uploaded ✅ (${data.filename})`);
-  }
-
-  // Current displayed text (selected story takes priority)
-  const currentText = selected ? selected.text : story;
 
   return (
-    <main style={{ padding: 24, maxWidth: 1040, fontFamily: "system-ui" }}>
-      <h1 style={{ fontSize: 34, marginBottom: 8 }}>My AI Story App</h1>
-      <p style={{ marginTop: 0, marginBottom: 18, opacity: 0.8 }}>
-        Generate stories, save them, and replay anytime.
+    <main style={{ maxWidth: 1100, margin: "0 auto", padding: 24 }}>
+      <h1 style={{ fontSize: 56, margin: "10px 0 8px" }}>My AI Story App</h1>
+      <p style={{ fontSize: 18, color: "#666", marginTop: 0 }}>
+        Generate a baby-friendly story and read it out loud as MP3 (your ElevenLabs cloned voice).
       </p>
 
-      {/* Voice recorder */}
       <div
         style={{
-          marginBottom: 16,
-          padding: 16,
-          border: "1px solid #eee",
-          borderRadius: 14,
+          display: "grid",
+          gridTemplateColumns: "1.2fr 1fr",
+          gap: 18,
+          marginTop: 18,
         }}
       >
-        <h2 style={{ margin: 0, fontSize: 18 }}>Voice Recorder</h2>
-        <p style={{ marginTop: 6, opacity: 0.75 }}>
-          Record a short voice sample (10–30 seconds). We’ll store it (for now)
-          and later you can connect it to custom voice narration if/when you have
-          access.
-        </p>
+        {/* Create */}
+        <section style={card()}>
+          <h2 style={{ marginTop: 0 }}>Create</h2>
 
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          {!recording ? (
-            <button
-              onClick={startRecording}
-              style={{
-                padding: "10px 14px",
-                borderRadius: 10,
-                border: "1px solid #ddd",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              🎙️ Start recording
-            </button>
-          ) : (
-            <button
-              onClick={stopRecording}
-              style={{
-                padding: "10px 14px",
-                borderRadius: 10,
-                border: "1px solid #ddd",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              ⏹ Stop
-            </button>
-          )}
+          <Label>For what age</Label>
+          <select value={age} onChange={(e) => setAge(e.target.value)} style={select()}>
+            {AGE_OPTIONS.map((x) => (
+              <option key={x.value} value={x.value}>
+                {x.label}
+              </option>
+            ))}
+          </select>
 
-          <button
-            onClick={uploadRecording}
-            disabled={!recordedBlob}
-            style={{
-              padding: "10px 14px",
-              borderRadius: 10,
-              border: "1px solid #ddd",
-              fontWeight: 600,
-              cursor: recordedBlob ? "pointer" : "not-allowed",
-              opacity: recordedBlob ? 1 : 0.5,
-            }}
-          >
-            ⬆️ Upload sample
-          </button>
-        </div>
+          <Label>Language</Label>
+          <select value={language} onChange={(e) => setLanguage(e.target.value as any)} style={select()}>
+            {LANG_OPTIONS.map((x) => (
+              <option key={x.value} value={x.value}>
+                {x.label}
+              </option>
+            ))}
+          </select>
 
-        {recordedUrl ? (
-          <div style={{ marginTop: 12 }}>
-            <audio controls src={recordedUrl} style={{ width: "100%" }} />
-          </div>
-        ) : null}
+          <Label>Main character name</Label>
+          <input
+            value={mainCharacter}
+            onChange={(e) => setMainCharacter(e.target.value)}
+            placeholder="e.g., 嗚嗚 / Eason / Luna"
+            style={input()}
+          />
 
-        {uploadStatus ? <p style={{ marginTop: 10 }}>{uploadStatus}</p> : null}
-      </div>
+          <Label>Story type (genre)</Label>
+          <select value={genre} onChange={(e) => setGenre(e.target.value)} style={select()}>
+            {GENRE_OPTIONS.map((g) => (
+              <option key={g} value={g}>
+                {g}
+              </option>
+            ))}
+          </select>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-        {/* Left: Create */}
-        <div
-          style={{
-            display: "grid",
-            gap: 12,
-            padding: 16,
-            border: "1px solid #eee",
-            borderRadius: 14,
-            background: "#fafafa",
-          }}
-        >
-          <h2 style={{ margin: 0, fontSize: 18 }}>Create</h2>
+          <Label>Length</Label>
+          <select value={length} onChange={(e) => setLength(e.target.value)} style={select()}>
+            {LENGTH_OPTIONS.map((x) => (
+              <option key={x.value} value={x.value}>
+                {x.label}
+              </option>
+            ))}
+          </select>
 
-          <label>
-            Story type (genre)
-            <br />
-            <select
-              value={genre}
-              onChange={(e) => setGenre(e.target.value)}
-              style={{ width: "100%", padding: 10, marginTop: 6 }}
-              disabled={isGenerating}
-            >
-              <option value="fantasy">Fantasy</option>
-              <option value="sci-fi">Sci-Fi</option>
-              <option value="mystery">Mystery</option>
-              <option value="romance">Romance</option>
-              <option value="kids">Kids</option>
-            </select>
-          </label>
+          <Label>Title</Label>
+          <input value={title} onChange={(e) => setTitle(e.target.value)} style={input()} />
 
-          <label>
-            Length
-            <br />
-            <select
-              value={length}
-              onChange={(e) => setLength(e.target.value)}
-              style={{ width: "100%", padding: 10, marginTop: 6 }}
-              disabled={isGenerating}
-            >
-              <option value="short">Short (1–2 min)</option>
-              <option value="medium">Medium (~5 min)</option>
-              <option value="long">Long (10+ min)</option>
-            </select>
-          </label>
-
-          <label>
-            Title (edit if you want)
-            <br />
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Give it a name..."
-              style={{ width: "100%", padding: 10, marginTop: 6 }}
-              disabled={isGenerating}
-            />
-          </label>
-
-          <label>
-            MP3 Voice
-            <br />
-            <select
-              value={voice}
-              onChange={(e) => setVoice(e.target.value)}
-              style={{ width: "100%", padding: 10, marginTop: 6 }}
-            >
-              {[
-                "alloy",
-                "ash",
-                "ballad",
-                "coral",
-                "echo",
-                "fable",
-                "onyx",
-                "nova",
-                "sage",
-                "shimmer",
-                "verse",
-                "marin",
-                "cedar",
-              ].map((v) => (
-                <option key={v} value={v}>
-                  {v}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <button
-              onClick={generateStory}
-              disabled={isGenerating}
-              style={{
-                padding: "10px 14px",
-                borderRadius: 10,
-                border: "1px solid #ddd",
-                cursor: isGenerating ? "not-allowed" : "pointer",
-                fontWeight: 600,
-                opacity: isGenerating ? 0.6 : 1,
-              }}
-            >
-              {isGenerating ? "Generating..." : "Generate"}
+          <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
+            <button disabled={busyGenerate} onClick={generateStory} style={btn({ primary: true })}>
+              {busyGenerate ? "Generating..." : "Generate"}
             </button>
 
-            <button
-              onClick={saveStory}
-              disabled={
-                isSaving ||
-                !story ||
-                story === "Generating..." ||
-                story.startsWith("Error:")
-              }
-              style={{
-                padding: "10px 14px",
-                borderRadius: 10,
-                border: "1px solid #ddd",
-                cursor: "pointer",
-                fontWeight: 600,
-                opacity:
-                  isSaving ||
-                  !story ||
-                  story === "Generating..." ||
-                  story.startsWith("Error:")
-                    ? 0.5
-                    : 1,
-              }}
-            >
-              {isSaving ? "Saving..." : "Save"}
+            <button disabled={!story} onClick={saveStory} style={btn()}>
+              Save
             </button>
 
-            {/* MP3 */}
-            <button
-              onClick={makeMp3AndPlay}
-              disabled={!currentText || isTtsLoading}
-              style={{
-                padding: "10px 14px",
-                borderRadius: 10,
-                border: "1px solid #ddd",
-                cursor: !currentText || isTtsLoading ? "not-allowed" : "pointer",
-                fontWeight: 600,
-                opacity: !currentText || isTtsLoading ? 0.5 : 1,
-              }}
-            >
-              {isTtsLoading ? "Making MP3..." : "Make MP3"}
+            <button disabled={!story || busyMp3} onClick={makeMp3} style={btn()}>
+              {busyMp3 ? "Making MP3..." : "Make MP3 (My Voice)"}
             </button>
 
-            {/* Browser fallback */}
-            <button
-              onClick={() => speakBrowser(currentText)}
-              disabled={!currentText || !canSpeak || isSpeaking}
-              style={{
-                padding: "10px 14px",
-                borderRadius: 10,
-                border: "1px solid #ddd",
-                cursor:
-                  currentText && canSpeak && !isSpeaking
-                    ? "pointer"
-                    : "not-allowed",
-                fontWeight: 600,
-                opacity: !currentText || !canSpeak || isSpeaking ? 0.5 : 1,
-              }}
-            >
-              Browser Play
+            <button disabled={!mp3Url} onClick={() => audioRef.current?.play()} style={btn()}>
+              Play
             </button>
 
-            <button
-              onClick={stopBrowserSpeech}
-              disabled={!canSpeak || !isSpeaking}
-              style={{
-                padding: "10px 14px",
-                borderRadius: 10,
-                border: "1px solid #ddd",
-                cursor: canSpeak && isSpeaking ? "pointer" : "not-allowed",
-                fontWeight: 600,
-                opacity: canSpeak && isSpeaking ? 1 : 0.5,
-              }}
-            >
+            <button onClick={stopAudio} style={btn()}>
               Stop
             </button>
           </div>
 
-          {/* Story text */}
-          {currentText ? (
-            <pre
-              style={{
-                whiteSpace: "pre-wrap",
-                padding: 16,
-                border: "1px solid #eee",
-                borderRadius: 14,
-                background: "white",
-                margin: 0,
-                minHeight: 220,
-              }}
-            >
-              {currentText}
-            </pre>
-          ) : (
-            <p style={{ opacity: 0.7, margin: 0 }}>
-              No story yet — choose options and hit Generate.
-            </p>
-          )}
+          <div style={{ marginTop: 14, color: "#666", fontSize: 14 }}>
+            Selected: <b>{ageLabel}</b> • <b>{language}</b> • Main character: <b>{mainCharacter || "—"}</b>
+          </div>
 
-          {/* MP3 player */}
-          {audioUrl ? (
+          <div style={{ marginTop: 14 }}>
+            {story ? (
+              <div
+                style={{
+                  border: "1px solid #ececec",
+                  borderRadius: 12,
+                  padding: 14,
+                  background: "#fafafa",
+                  maxHeight: 360,
+                  overflow: "auto",
+                }}
+              >
+                <pre style={{ margin: 0, whiteSpace: "pre-wrap", lineHeight: 1.6 }}>{story}</pre>
+              </div>
+            ) : (
+              <div style={{ color: "#666" }}>No story yet — choose options and hit Generate.</div>
+            )}
+          </div>
+
+          {mp3Url ? (
             <div style={{ marginTop: 12 }}>
-              <audio
-                ref={audioRef}
-                controls
-                src={audioUrl}
-                style={{ width: "100%" }}
-              />
+              <audio ref={audioRef} controls src={mp3Url} />
+              <div style={{ marginTop: 6, fontSize: 13, color: "#666" }}>
+                (This audio is generated from <code>/api/eleven-tts</code>)
+              </div>
             </div>
           ) : null}
-        </div>
+        </section>
 
-        {/* Right: Library */}
-        <div
-          style={{
-            padding: 16,
-            border: "1px solid #eee",
-            borderRadius: 14,
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: 12,
-              alignItems: "center",
-            }}
-          >
-            <h2 style={{ margin: 0, fontSize: 18 }}>My Library</h2>
-            <button
-              onClick={loadLibrary}
-              style={{
-                padding: "8px 12px",
-                borderRadius: 10,
-                border: "1px solid #ddd",
-                cursor: "pointer",
-                fontWeight: 600,
-              }}
-            >
-              Refresh
+        {/* Library */}
+        <section style={card()}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <h2 style={{ marginTop: 0 }}>My Library</h2>
+            <button disabled={busyLibrary} onClick={refreshLibrary} style={btn()}>
+              {busyLibrary ? "..." : "Refresh"}
             </button>
           </div>
 
-          <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
-            {library.length === 0 ? (
-              <p style={{ opacity: 0.7, margin: 0 }}>
-                No saved stories yet. Generate one and hit Save.
-              </p>
-            ) : (
-              library.map((s) => (
-                <button
+          {library.length === 0 ? (
+            <p style={{ color: "#666" }}>
+              No saved stories yet (or your /api/stories isn’t deployed locally). Generate one and hit Save.
+            </p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {library.map((s) => (
+                <div
                   key={s.id}
-                  onClick={() => {
-                    setSelected(s);
-                    setTitle(s.title);
-                    setStory("");
-                    stopBrowserSpeech();
-                    clearMp3();
-                  }}
                   style={{
-                    textAlign: "left",
-                    padding: 12,
-                    borderRadius: 12,
                     border: "1px solid #eee",
-                    cursor: "pointer",
-                    background: selected?.id === s.id ? "#f5f5f5" : "white",
+                    borderRadius: 14,
+                    padding: 14,
+                    background: "#fff",
                   }}
                 >
-                  <div style={{ fontWeight: 700 }}>{s.title}</div>
-                  <div style={{ opacity: 0.7, fontSize: 13 }}>
-                    {s.genre} • {s.length} •{" "}
-                    {new Date(s.createdAt).toLocaleString()}
+                  <div style={{ fontWeight: 800 }}>
+                    {s.title || "(Untitled)"}{" "}
+                    <span style={{ color: "#666", fontWeight: 400, marginLeft: 8 }}>
+                      {s.genre} • {s.length}
+                    </span>
                   </div>
-                </button>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
+                  <div style={{ color: "#666", fontSize: 13, marginTop: 6 }}>
+                    {s.story.slice(0, 140)}
+                    {s.story.length > 140 ? "…" : ""}
+                  </div>
+                  <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <button
+                      style={btn()}
+                      onClick={() => {
+                        setTitle(s.title || "");
+                        setGenre(s.genre);
+                        setLength(s.length);
+                        setStory(s.story);
+                        setMp3Url("");
+                        stopAudio();
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }}
+                    >
+                      Load
+                    </button>
 
-      <p style={{ marginTop: 18, opacity: 0.65, fontSize: 13 }}>
-        Note: “Use my recorded voice for AI narration” typically requires a
-        Custom Voice enrollment + explicit consent. This app stores your samples
-        now so you’re ready for that upgrade later.
-      </p>
+                    <button
+                      style={btn()}
+                      onClick={async () => {
+                        setStory(s.story);
+                        await makeMp3();
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }}
+                    >
+                      Make MP3 (My Voice)
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
     </main>
   );
 }
