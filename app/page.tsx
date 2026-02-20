@@ -1,409 +1,595 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 
-type AgeOption = "3m" | "6m" | "9m" | "1y" | "2y";
-type LangOption = "zh" | "en";
-type LengthOption = "short" | "medium" | "long";
+type AgeOption = {
+  value: "3m" | "6m" | "9m" | "1y" | "2y";
+  label: string;
+  guidance: string;
+};
 
-function ageLabel(age: AgeOption) {
-  switch (age) {
-    case "3m":
-      return "3 months";
-    case "6m":
-      return "6 months";
-    case "9m":
-      return "9 months";
-    case "1y":
-      return "1 year old";
-    case "2y":
-      return "2 years old";
-  }
-}
+type LangOption = {
+  value: "en" | "zh";
+  label: string;
+};
 
-function langLabel(lang: LangOption) {
-  return lang === "zh" ? "中文（繁體）" : "English";
+const AGE_OPTIONS: AgeOption[] = [
+  { value: "3m", label: "3 months", guidance: "Very short, soothing, repetitive sounds and simple words." },
+  { value: "6m", label: "6 months", guidance: "Short, rhythmic, gentle repetition, easy-to-hear words." },
+  { value: "9m", label: "9 months", guidance: "Simple scenes, a few actions, comforting repetition." },
+  { value: "1y", label: "1 year", guidance: "Simple plot, clear actions, 1–2 new words repeated." },
+  { value: "2y", label: "2 years", guidance: "Tiny story arc, feelings, simple lesson, playful language." },
+];
+
+const LANG_OPTIONS: LangOption[] = [
+  { value: "en", label: "English" },
+  { value: "zh", label: "中文（繁體）" },
+];
+
+// 10 popular kids topics
+const GENRES = [
+  "Animals",
+  "Bedtime & Sleep",
+  "Friendship",
+  "Adventure",
+  "Fantasy",
+  "Dinosaurs",
+  "Space",
+  "Princesses & Knights",
+  "Vehicles",
+  "Superheroes",
+] as const;
+
+function clamp(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, n));
 }
 
 export default function Page() {
-  // --- form ---
-  const [age, setAge] = useState<AgeOption>("3m");
-  const [language, setLanguage] = useState<LangOption>("zh");
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Form state
+  const [age, setAge] = useState<AgeOption["value"]>("6m");
+  const [language, setLanguage] = useState<LangOption["value"]>("en");
   const [characterName, setCharacterName] = useState("嚕嚕");
-  const [genre, setGenre] = useState("Animals");
-  const [length, setLength] = useState<LengthOption>("short");
-  const [title, setTitle] = useState("Test");
+  const [genre, setGenre] = useState<(typeof GENRES)[number]>("Animals");
+  const [length, setLength] = useState<"short" | "medium" | "long">("short");
+  const [title, setTitle] = useState("");
 
-  // --- story output ---
+  // Speed + emotion
+  // speed here is for MP3 generation (ElevenLabs request) AND also we apply it to browser playbackRate
+  const [speed, setSpeed] = useState(0.95); // 0.80–1.20
+  const [emotion, setEmotion] = useState(40); // 0–100 (warmth/expressiveness)
+
+  // Output state
   const [story, setStory] = useState("");
-  const [loadingStory, setLoadingStory] = useState(false);
+  const [mp3Url, setMp3Url] = useState<string | null>(null);
 
-  // --- mp3 ---
-  const [audioUrl, setAudioUrl] = useState<string>("");
-  const [loadingMp3, setLoadingMp3] = useState(false);
+  const [busyStory, setBusyStory] = useState(false);
+  const [busyMp3, setBusyMp3] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // cleanup blob URLs
-  useEffect(() => {
-    return () => {
-      if (audioUrl?.startsWith("blob:")) URL.revokeObjectURL(audioUrl);
-    };
-  }, [audioUrl]);
+  const ageInfo = useMemo(() => AGE_OPTIONS.find(a => a.value === age)!, [age]);
 
-  // default title hint (optional)
-  const suggestedTitle = useMemo(() => {
-    const d = new Date();
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${langLabel(language)} · ${ageLabel(age)} · ${characterName} · ${genre} · ${yyyy}-${mm}-${dd}`;
-  }, [age, language, characterName, genre]);
+  // Apply playback speed instantly (optional but nice)
+  const applyPlaybackRate = (rate: number) => {
+    const el = audioRef.current;
+    if (!el) return;
+    el.playbackRate = rate;
+  };
+
+  const onSpeedChange = (next: number) => {
+    const v = Math.round(clamp(next, 0.8, 1.2) * 100) / 100;
+    setSpeed(v);
+    applyPlaybackRate(v);
+  };
+
+  const onEmotionChange = (next: number) => {
+    setEmotion(clamp(Math.round(next), 0, 100));
+  };
 
   async function generateStory() {
-    setLoadingStory(true);
-    setStory("");
-    setAudioUrl("");
+    setError(null);
+    setBusyStory(true);
 
     try {
       const res = await fetch("/api/story", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        // IMPORTANT: keep payload simple; avoid sending nested objects that cause "undefined level" bugs
         body: JSON.stringify({
-          age,
+          age: ageInfo.label,
+          age_guidance: ageInfo.guidance,
           language,
-          characterName,
+          character_name: characterName?.trim() || "Lulu",
           genre,
           length,
-          title: title?.trim() ? title.trim() : suggestedTitle,
+          title: title?.trim() || "",
+          // Optional: tell the model the intended tone (not required)
+          bedtime_tone: "gentle, cozy, calming, bedtime storyteller",
         }),
       });
 
+      const data = await res.json().catch(() => null);
+
       if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(txt || `Story API failed: ${res.status}`);
+        throw new Error(data?.error || `Story API failed (${res.status})`);
       }
 
-      const data = await res.json();
-      setStory(data.story ?? "");
+      if (!data?.story) {
+        throw new Error("Story API returned no story text.");
+      }
+
+      setStory(String(data.story));
+
+      // clear old audio when new story is generated
+      if (mp3Url) URL.revokeObjectURL(mp3Url);
+      setMp3Url(null);
     } catch (e: any) {
-      setStory(`Error: ${e?.message ?? "Unknown error"}`);
+      setError(e?.message || "Failed to generate story.");
     } finally {
-      setLoadingStory(false);
+      setBusyStory(false);
     }
   }
 
   async function makeMp3() {
-    if (!story || story.startsWith("Error:")) return;
+    setError(null);
 
-    setLoadingMp3(true);
-    setAudioUrl("");
+    if (!story.trim()) {
+      setError("Please generate a story first.");
+      return;
+    }
+
+    setBusyMp3(true);
 
     try {
+      // Emotion mapping (generic): higher emotion => higher "style"/lower stability
+      // Your /api/eleven-tts route should forward these to ElevenLabs voice_settings.
+      // If your route ignores them, MP3 still works (just less expressive).
+      const voiceSettings = {
+        // ElevenLabs typical fields: stability(0-1), similarity_boost(0-1), style(0-1), speaker_boost(boolean)
+        stability: clamp(0.75 - emotion / 200, 0.2, 0.85),          // emotion ↑ => stability ↓
+        similarity_boost: 0.85,
+        style: clamp(emotion / 100, 0, 1),                           // emotion 0–100 => style 0–1
+        speaker_boost: true,
+      };
+
       const res = await fetch("/api/eleven-tts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          // Use the story you just generated
           text: story,
-          // Optional: pass language if your API route supports it
-          language,
+          // interpret speed as "speaking rate" for your server (if supported) AND also for client playback
+          speed,
+          emotion,
+          voice_settings: voiceSettings,
+          // If your route supports passing model_id etc:
+          model_id: language === "zh" ? "eleven_multilingual_v2" : "eleven_multilingual_v2",
         }),
       });
 
       if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(txt || `TTS failed: ${res.status}`);
+        const maybeJson = await res.json().catch(() => null);
+        throw new Error(maybeJson?.error || `TTS failed (${res.status})`);
       }
 
       const blob = await res.blob();
+      if (!blob || blob.size < 1000) {
+        throw new Error("TTS returned an empty/invalid audio file.");
+      }
+
+      if (mp3Url) URL.revokeObjectURL(mp3Url);
       const url = URL.createObjectURL(blob);
-      setAudioUrl(url);
+      setMp3Url(url);
+
+      // Update audio element
+      setTimeout(() => {
+        if (audioRef.current) {
+          audioRef.current.load();
+          audioRef.current.playbackRate = speed;
+        }
+      }, 50);
     } catch (e: any) {
-      alert(e?.message ?? "Make MP3 failed");
+      setError(e?.message || "Failed to create MP3.");
     } finally {
-      setLoadingMp3(false);
+      setBusyMp3(false);
     }
   }
 
-  function saveStoryLocal() {
-    // Simple local save (safe + works even if your DB route changes)
-    // You can later replace this with POST /api/stories if you want.
-    try {
-      const key = "lulu_saved_stories_v1";
-      const raw = localStorage.getItem(key);
-      const arr = raw ? JSON.parse(raw) : [];
-      arr.unshift({
-        id: Date.now(),
-        title: title?.trim() ? title.trim() : suggestedTitle,
-        age,
-        language,
-        characterName,
-        genre,
-        length,
-        story,
-        createdAt: new Date().toISOString(),
-      });
-      localStorage.setItem(key, JSON.stringify(arr));
-      alert("Saved locally ✅ (on this device/browser)");
-    } catch {
-      alert("Save failed (localStorage blocked).");
-    }
-  }
+  const play = () => audioRef.current?.play();
+  const stop = () => {
+    const el = audioRef.current;
+    if (!el) return;
+    el.pause();
+    el.currentTime = 0;
+  };
 
   return (
-    <div className="page">
-      {/* Soft overlay so text stays readable */}
-      <div className="overlay" />
+    <div className="lulu-bg">
+      <div className="lulu-overlay" />
 
-      <div className="wrap">
-        <h1 className="title">Bedtime Story</h1>
+      <main className="lulu-shell">
+        <header className="lulu-header">
+          <h1 className="lulu-title">Bedtime Story</h1>
+          <p className="lulu-sub">
+            Generate a cozy story, then turn it into bedtime audio with your ElevenLabs voice.
+          </p>
+        </header>
 
-        <div className="layout">
-          {/* LEFT PANEL */}
-          <div className="leftPanel">
-            <div className="formRow">
-              <div className="label">For What Age:</div>
-              <select className="input" value={age} onChange={(e) => setAge(e.target.value as AgeOption)}>
-                <option value="3m">3 months</option>
-                <option value="6m">6 months</option>
-                <option value="9m">9 months</option>
-                <option value="1y">1 year old</option>
-                <option value="2y">2 years old</option>
+        <section className="lulu-grid">
+          {/* LEFT: Create */}
+          <div className="card">
+            <div className="cardTitle">Create</div>
+
+            <label className="field">
+              <span className="label">For what age</span>
+              <select className="input" value={age} onChange={(e) => setAge(e.target.value as any)}>
+                {AGE_OPTIONS.map((a) => (
+                  <option key={a.value} value={a.value}>{a.label}</option>
+                ))}
               </select>
-            </div>
+              <div className="hint">{ageInfo.guidance}</div>
+            </label>
 
-            <div className="formRow">
-              <div className="label">Language</div>
-              <select className="input" value={language} onChange={(e) => setLanguage(e.target.value as LangOption)}>
-                <option value="zh">中文（繁體）</option>
-                <option value="en">English</option>
+            <label className="field">
+              <span className="label">Language</span>
+              <select className="input" value={language} onChange={(e) => setLanguage(e.target.value as any)}>
+                {LANG_OPTIONS.map((l) => (
+                  <option key={l.value} value={l.value}>{l.label}</option>
+                ))}
               </select>
-            </div>
+            </label>
 
-            <div className="formRow">
-              <div className="label">Main Character Name</div>
+            <label className="field">
+              <span className="label">Main character name</span>
               <input
                 className="input"
                 value={characterName}
                 onChange={(e) => setCharacterName(e.target.value)}
-                placeholder="例如：嚕嚕"
+                placeholder="e.g. Lulu / 嚕嚕"
               />
-            </div>
+            </label>
 
-            <div className="formRow">
-              <div className="label">Story Type</div>
-              <select className="input" value={genre} onChange={(e) => setGenre(e.target.value)}>
-                <option value="Animals">Animals</option>
-                <option value="Fantasy">Fantasy</option>
-                <option value="Adventure">Adventure</option>
-                <option value="Friendship">Friendship</option>
-                <option value="Bedtime">Bedtime</option>
+            <label className="field">
+              <span className="label">Story type</span>
+              <select className="input" value={genre} onChange={(e) => setGenre(e.target.value as any)}>
+                {GENRES.map((g) => (
+                  <option key={g} value={g}>{g}</option>
+                ))}
               </select>
-            </div>
+            </label>
 
-            <div className="formRow">
-              <div className="label">Length</div>
-              <select className="input" value={length} onChange={(e) => setLength(e.target.value as LengthOption)}>
+            <label className="field">
+              <span className="label">Length</span>
+              <select className="input" value={length} onChange={(e) => setLength(e.target.value as any)}>
                 <option value="short">Short (1–2 min)</option>
-                <option value="medium">Medium (3–5 min)</option>
-                <option value="long">Long (6–10 min)</option>
+                <option value="medium">Medium (3–4 min)</option>
+                <option value="long">Long (5–7 min)</option>
               </select>
+            </label>
+
+            <label className="field">
+              <span className="label">Title (optional)</span>
+              <input
+                className="input"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Lulu and the Moon"
+              />
+            </label>
+
+            {/* Buttons row with Speed + Emotion next to Generate */}
+            <div className="actionsRow">
+              <button
+                className="btn primary"
+                onClick={generateStory}
+                disabled={busyStory}
+                title="Generate story text"
+              >
+                {busyStory ? "Generating..." : "Generate"}
+              </button>
+
+              <div className="miniControl">
+                <div className="miniLabel">Speed</div>
+                <div className="stepper">
+                  <button className="stepBtn" onClick={() => onSpeedChange(speed - 0.05)}>-</button>
+                  <div className="stepVal">{speed.toFixed(2)}x</div>
+                  <button className="stepBtn" onClick={() => onSpeedChange(speed + 0.05)}>+</button>
+                </div>
+              </div>
+
+              <div className="miniControl">
+                <div className="miniLabel">Emotion</div>
+                <div className="stepper">
+                  <button className="stepBtn" onClick={() => onEmotionChange(emotion - 10)}>-</button>
+                  <div className="stepVal">Warm · {emotion}%</div>
+                  <button className="stepBtn" onClick={() => onEmotionChange(emotion + 10)}>+</button>
+                </div>
+              </div>
+
+              <button
+                className="btn"
+                onClick={makeMp3}
+                disabled={busyMp3}
+                title="Generate MP3 from the current story using the current Speed/Emotion"
+              >
+                {busyMp3 ? "Making MP3..." : "Make MP3"}
+              </button>
             </div>
 
-            <div className="formRow">
-              <div className="label">Title</div>
-              <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={suggestedTitle} />
-            </div>
+            {error && <div className="errorBox">{error}</div>}
 
-            <div className="buttons">
-              <button className="btn" onClick={generateStory} disabled={loadingStory}>
-                {loadingStory ? "Generating..." : "Generate"}
-              </button>
-
-              <button className="btn" onClick={saveStoryLocal} disabled={!story || story.startsWith("Error:")}>
-                Save
-              </button>
-
-              <button className="btn" onClick={makeMp3} disabled={!story || story.startsWith("Error:") || loadingMp3}>
-                {loadingMp3 ? "Making..." : "Make MP3"}
-              </button>
+            <div className="storyBox">
+              <div className="storyHint">{story ? "Story generated:" : "(Your story will appear here)"}</div>
+              <pre className="storyText">{story}</pre>
             </div>
           </div>
 
-          {/* RIGHT PANEL */}
-          <div className="rightPanel">
-            <div className="rightTop">
-              <div className="rightTitle">Shows Story Output</div>
-
-              <div className="audioFloat">
-                <audio controls src={audioUrl || undefined} />
+          {/* RIGHT: Playback on top of Story Output */}
+          <div className="rightCol">
+            <div className="card playbackCard">
+              <div className="cardTitle">Playback</div>
+              <audio ref={audioRef} controls className="audio" src={mp3Url ?? undefined} />
+              <div className="playButtons">
+                <button className="btn small" onClick={play} disabled={!mp3Url}>Play</button>
+                <button className="btn small" onClick={stop} disabled={!mp3Url}>Stop</button>
+              </div>
+              <div className="hint">
+                Tip: Speed/Emotion apply when generating audio (Make MP3). Speed also updates playback rate.
               </div>
             </div>
 
-            <div className="storyCard">{story ? story : "Your story will appear here..."}</div>
+            <div className="card">
+              <div className="cardTitle">Story Output</div>
+              <div className="outputBox">
+                {story ? (
+                  <div className="outputText">{story}</div>
+                ) : (
+                  <div className="outputPlaceholder">Generate a story to see it here.</div>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        </section>
 
-      <style jsx>{`
-        .page {
-          min-height: 100vh;
-          position: relative;
-          background-image: url("/lulu-bg.jpg"); /* ✅ your image */
-          background-size: cover;
-          background-position: center;
-          background-repeat: no-repeat;
-          font-family: "Arial Rounded MT Bold", "Arial Rounded MT", "Arial", system-ui, sans-serif;
-        }
+        <footer className="lulu-footer">
+          Background: /public/lulu-bg.jpg · Font: Arial Rounded MT (fallbacks included)
+        </footer>
 
-        .overlay {
-          position: absolute;
-          inset: 0;
-          /* Make left side more readable, keep right side more “image visible” */
-          background: linear-gradient(
-            90deg,
-            rgba(255, 255, 255, 0.62) 0%,
-            rgba(255, 255, 255, 0.42) 45%,
-            rgba(255, 255, 255, 0.26) 75%,
-            rgba(255, 255, 255, 0.18) 100%
-          );
-          backdrop-filter: blur(1px);
-        }
-
-        .wrap {
-          position: relative;
-          z-index: 1;
-          padding: 46px 64px;
-        }
-
-        .title {
-          margin: 0 0 24px 0;
-          font-size: 56px;
-          font-weight: 900;
-          color: #000;
-          text-shadow: 0 2px 0 rgba(255, 255, 255, 0.6);
-        }
-
-        .layout {
-          display: grid;
-          grid-template-columns: 420px 1fr;
-          gap: 48px;
-          align-items: start;
-        }
-
-        .leftPanel {
-          padding: 12px 0;
-        }
-
-        .formRow {
-          margin: 14px 0;
-        }
-
-        .label {
-          font-size: 22px;
-          font-weight: 900;
-          color: #000;
-          margin-bottom: 10px;
-        }
-
-        .input {
-          width: 100%;
-          height: 48px;
-          border-radius: 14px;
-          border: 2px solid rgba(0, 0, 0, 0.15);
-          background: rgba(255, 255, 255, 0.55);
-          backdrop-filter: blur(6px);
-          padding: 0 14px;
-          font-size: 18px;
-          outline: none;
-          box-shadow: 0 10px 22px rgba(0, 0, 0, 0.08);
-        }
-
-        .buttons {
-          margin-top: 26px;
-          display: flex;
-          flex-direction: column;
-          gap: 18px;
-          width: 240px;
-        }
-
-        .btn {
-          height: 54px;
-          border-radius: 12px;
-          border: 2px solid rgba(0, 40, 60, 0.35);
-          background: linear-gradient(180deg, #13b39a 0%, #0a9b87 100%);
-          color: #fff;
-          font-size: 30px;
-          font-weight: 900;
-          cursor: pointer;
-          box-shadow: 0 12px 26px rgba(0, 0, 0, 0.18);
-        }
-
-        .btn:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .rightPanel {
-          padding-top: 86px; /* matches your mock: pushes “Shows Story Output” down */
-          min-height: 520px;
-        }
-
-        .rightTop {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 18px;
-        }
-
-        .rightTitle {
-          font-size: 26px;
-          font-weight: 900;
-          color: #000;
-          text-shadow: 0 2px 0 rgba(255, 255, 255, 0.55);
-        }
-
-        .audioFloat {
-          padding: 10px 12px;
-          border-radius: 14px;
-          background: rgba(255, 255, 255, 0.55);
-          border: 2px solid rgba(0, 0, 0, 0.12);
-          backdrop-filter: blur(8px);
-          box-shadow: 0 14px 30px rgba(0, 0, 0, 0.12);
-        }
-
-        .storyCard {
-          margin-top: 18px;
-          max-width: 820px;
-          min-height: 260px;
-          padding: 18px 18px;
-          border-radius: 18px;
-          background: rgba(255, 255, 255, 0.55);
-          border: 2px solid rgba(0, 0, 0, 0.12);
-          backdrop-filter: blur(10px);
-          box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
-          font-size: 18px;
-          line-height: 1.6;
-          white-space: pre-wrap;
-          color: #000;
-        }
-
-        /* Mobile: stack */
-        @media (max-width: 980px) {
-          .wrap {
-            padding: 22px 16px;
+        <style jsx>{`
+          /* Page-specific layout sizing (smaller interface) */
+          .lulu-bg {
+            min-height: 100vh;
+            background-image: url("/lulu-bg.jpg");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            position: relative;
+            font-family: "Arial Rounded MT Bold","Arial Rounded MT","Arial Rounded MT Std","Arial Rounded", Arial, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
           }
-          .layout {
-            grid-template-columns: 1fr;
-            gap: 18px;
+          .lulu-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(255,255,255,0.22);
+            backdrop-filter: blur(2px);
           }
-          .rightPanel {
-            padding-top: 8px;
+          .lulu-shell {
+            position: relative;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 22px 16px 18px;
           }
-          .buttons {
+          .lulu-header { margin-bottom: 12px; }
+          .lulu-title {
+            margin: 0;
+            font-size: 44px;
+            font-weight: 900;
+            letter-spacing: 0.2px;
+            color: #111;
+          }
+          .lulu-sub {
+            margin: 6px 0 0;
+            font-size: 14px;
+            color: rgba(0,0,0,0.7);
+            font-weight: 600;
+          }
+          .lulu-grid {
+            display: grid;
+            grid-template-columns: 1.05fr 0.95fr;
+            gap: 14px;
+            align-items: start;
+          }
+          .rightCol {
+            display: grid;
+            gap: 14px;
+          }
+          .card {
+            background: rgba(255,255,255,0.82);
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 16px;
+            padding: 14px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+          }
+          .cardTitle {
+            font-size: 16px;
+            font-weight: 900;
+            margin-bottom: 10px;
+            color: #111;
+          }
+          .field { display: block; margin-bottom: 10px; }
+          .label {
+            display: block;
+            font-size: 12px;
+            font-weight: 900;
+            margin-bottom: 6px;
+            color: rgba(0,0,0,0.75);
+          }
+          .input {
             width: 100%;
+            height: 40px;
+            border-radius: 12px;
+            border: 1px solid rgba(0,0,0,0.12);
+            padding: 0 12px;
+            font-size: 14px;
+            background: rgba(255,255,255,0.95);
+            outline: none;
           }
-        }
-      `}</style>
+          .input:focus {
+            border-color: rgba(18, 130, 255, 0.45);
+            box-shadow: 0 0 0 3px rgba(18, 130, 255, 0.15);
+          }
+          .hint {
+            margin-top: 6px;
+            font-size: 12px;
+            color: rgba(0,0,0,0.6);
+            font-weight: 600;
+            line-height: 1.25;
+          }
+
+          .actionsRow {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-top: 6px;
+            margin-bottom: 10px;
+          }
+
+          .btn {
+            height: 40px;
+            padding: 0 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(0,0,0,0.12);
+            background: rgba(255,255,255,0.95);
+            font-weight: 900;
+            cursor: pointer;
+          }
+          .btn:hover { filter: brightness(0.98); }
+          .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+          .btn.primary {
+            background: linear-gradient(180deg, rgba(40, 200, 130, 1), rgba(25, 160, 105, 1));
+            border: none;
+            color: #fff;
+            box-shadow: 0 10px 24px rgba(25,160,105,0.25);
+          }
+          .btn.small { height: 36px; border-radius: 10px; padding: 0 12px; }
+
+          .miniControl {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 6px 8px;
+            border-radius: 12px;
+            border: 1px solid rgba(0,0,0,0.10);
+            background: rgba(255,255,255,0.75);
+          }
+          .miniLabel {
+            font-size: 11px;
+            font-weight: 900;
+            color: rgba(0,0,0,0.70);
+            line-height: 1;
+          }
+          .stepper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          }
+          .stepBtn {
+            width: 30px;
+            height: 30px;
+            border-radius: 10px;
+            border: 1px solid rgba(0,0,0,0.12);
+            background: rgba(255,255,255,0.9);
+            font-weight: 900;
+            cursor: pointer;
+          }
+          .stepVal {
+            min-width: 92px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 900;
+            color: rgba(0,0,0,0.78);
+          }
+
+          .errorBox {
+            margin-top: 8px;
+            background: rgba(255, 80, 80, 0.12);
+            border: 1px solid rgba(255, 80, 80, 0.35);
+            color: rgba(120, 0, 0, 0.9);
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-weight: 800;
+            font-size: 13px;
+          }
+
+          .storyBox {
+            margin-top: 10px;
+            border-radius: 14px;
+            border: 1px solid rgba(0,0,0,0.10);
+            background: rgba(255,255,255,0.80);
+            padding: 12px;
+          }
+          .storyHint {
+            font-size: 12px;
+            font-weight: 900;
+            color: rgba(0,0,0,0.55);
+            margin-bottom: 8px;
+          }
+          .storyText {
+            margin: 0;
+            white-space: pre-wrap;
+            font-size: 14px;
+            line-height: 1.55;
+            color: rgba(0,0,0,0.82);
+            max-height: 220px;
+            overflow: auto;
+          }
+
+          .playbackCard .audio {
+            width: 100%;
+            margin-top: 6px;
+          }
+          .playButtons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+          }
+
+          .outputBox {
+            border-radius: 14px;
+            border: 1px solid rgba(0,0,0,0.10);
+            background: rgba(255,255,255,0.78);
+            padding: 12px;
+            min-height: 340px;
+            max-height: 460px;
+            overflow: auto;
+          }
+          .outputText {
+            white-space: pre-wrap;
+            font-size: 15px;
+            line-height: 1.6;
+            color: rgba(0,0,0,0.82);
+            font-weight: 600;
+          }
+          .outputPlaceholder {
+            font-size: 14px;
+            font-weight: 800;
+            color: rgba(0,0,0,0.45);
+          }
+
+          .lulu-footer {
+            margin-top: 12px;
+            font-size: 11px;
+            font-weight: 800;
+            color: rgba(0,0,0,0.55);
+          }
+
+          @media (max-width: 920px) {
+            .lulu-grid { grid-template-columns: 1fr; }
+            .outputBox { min-height: 220px; }
+          }
+        `}</style>
+      </main>
     </div>
   );
 }
