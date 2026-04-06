@@ -1,0 +1,54 @@
+---
+description: How to specify and implement screens—layout, actions, navigation, and states
+globs: app/**/*.tsx,app/**/*.css,app/components/**/*.tsx
+alwaysApply: false
+---
+
+# UI screen specification rules
+
+When designing, documenting, or implementing a **screen** (page or full-view route), capture the following. Use this as a checklist for PRs and for AI-assisted changes so behavior stays explicit.
+
+## Screen
+
+- **Name / route**: e.g. `/`, `/legal/privacy`
+- **Purpose**: One sentence—what job this screen does for the user
+- **Primary user**: Who uses it and in what situation
+
+## Layout
+
+Describe structure in **top → middle → bottom** (or scrolling regions if one column). Call out fixed vs scrollable areas, safe areas on mobile, and max widths on desktop.
+
+- **Top section**: title, nav, filters, summary
+- **Middle section**: main content, lists, forms, player
+- **Bottom section**: primary actions, tab bar, persistent controls
+
+## Buttons and clickable items
+
+For **each** interactive control (button, link, list row, icon), specify:
+
+| Field | Rule |
+|--------|------|
+| **Name** | Visible label or accessibility name |
+| **Position** | Relative to layout section (e.g. bottom bar, header right) |
+| **Action on tap** | What the app does (submit, toggle, play, open picker) |
+| **Destination** | Route, modal, sheet, external URL, or “none” if in-place |
+| **Navigation type** | `push`, `replace`, `back`, `modal`, `sheet`, `deeplink`, `none` |
+| **Data passed** | IDs, query params, route state, or context—be explicit |
+| **Visible when** | Feature flags, auth, content exists, edit mode, etc. |
+| **Disabled when** | Loading, invalid form, offline, permissions |
+| **Success behavior** | Navigate, toast, refresh list, close modal, play audio |
+| **Error behavior** | Inline message, toast, retry affordance—no silent failure |
+
+Prefer one row per control in design notes or PR description; reuse the same table in code comments only when it prevents regression.
+
+## Back behavior
+
+- **Hardware / gesture back**: Where it returns (parent route vs exit app) and whether state is preserved
+- **In-app back affordance**: Matches platform expectation (stack pop vs up to parent)
+- **Unsaved changes**: Confirm discard, save draft, or auto-save—state explicitly
+
+## Implementation alignment
+
+- Interactive elements must have **matching** `aria-label` or visible text to the **Name** above when the control is icon-only or ambiguous
+- **Disabled when** must be reflected in real UI (disabled/aria-disabled), not only ignored clicks
+- **Navigation type** and **Destination** should match Next.js `Link`, `router.push/replace`, or Capacitor/navigation patterns used elsewhere in the app

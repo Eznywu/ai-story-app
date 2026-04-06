@@ -1,11 +1,19 @@
 import { NextResponse } from "next/server";
 import fs from "fs/promises";
 import path from "path";
+import { getErrorMessage } from "@/lib/errors";
+import { isMemberRequest } from "@/lib/memberGate";
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {
+    if (!isMemberRequest(req)) {
+      return NextResponse.json(
+        { error: "Voice samples require membership." },
+        { status: 403 }
+      );
+    }
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
 
@@ -29,7 +37,7 @@ export async function POST(req: Request) {
       filename: safeName,
       size: buffer.length,
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message ?? "Upload failed" }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: getErrorMessage(err, "Upload failed") }, { status: 500 });
   }
 }

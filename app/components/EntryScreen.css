@@ -1,0 +1,58 @@
+.entryScreen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  opacity: 1;
+  transition: opacity 0.7s ease-out;
+  min-height: 100dvh;
+  min-height: 100vh;
+  background: radial-gradient(
+      900px 480px at 18% 12%,
+      var(--accent-glow),
+      transparent 58%
+    ),
+    radial-gradient(
+      820px 420px at 82% 22%,
+      var(--accent-glow-soft),
+      transparent 52%
+    ),
+    linear-gradient(168deg, var(--bg1) 0%, var(--bg2) 48%, var(--bg3) 100%);
+}
+
+.entryScreen--exit {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.entryScreen__brandWrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+    max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  box-sizing: border-box;
+}
+
+.entryScreen__logoBox {
+  width: min(92vw, 420px);
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.entryScreen__brand {
+  width: 100%;
+  height: auto;
+  max-height: min(42vh, 280px);
+  object-fit: contain;
+  object-position: center center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entryScreen {
+    transition-duration: 0.28s;
+  }
+}

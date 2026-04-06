@@ -30,6 +30,11 @@ export type StoryMinAggregateOutputType = {
   genre: string | null
   length: string | null
   text: string | null
+  age: string | null
+  language: string | null
+  mainCharacterName: string | null
+  childGender: string | null
+  posterFilename: string | null
   createdAt: Date | null
 }
 
@@ -39,6 +44,11 @@ export type StoryMaxAggregateOutputType = {
   genre: string | null
   length: string | null
   text: string | null
+  age: string | null
+  language: string | null
+  mainCharacterName: string | null
+  childGender: string | null
+  posterFilename: string | null
   createdAt: Date | null
 }
 
@@ -48,6 +58,11 @@ export type StoryCountAggregateOutputType = {
   genre: number
   length: number
   text: number
+  age: number
+  language: number
+  mainCharacterName: number
+  childGender: number
+  posterFilename: number
   createdAt: number
   _all: number
 }
@@ -59,6 +74,11 @@ export type StoryMinAggregateInputType = {
   genre?: true
   length?: true
   text?: true
+  age?: true
+  language?: true
+  mainCharacterName?: true
+  childGender?: true
+  posterFilename?: true
   createdAt?: true
 }
 
@@ -68,6 +88,11 @@ export type StoryMaxAggregateInputType = {
   genre?: true
   length?: true
   text?: true
+  age?: true
+  language?: true
+  mainCharacterName?: true
+  childGender?: true
+  posterFilename?: true
   createdAt?: true
 }
 
@@ -77,6 +102,11 @@ export type StoryCountAggregateInputType = {
   genre?: true
   length?: true
   text?: true
+  age?: true
+  language?: true
+  mainCharacterName?: true
+  childGender?: true
+  posterFilename?: true
   createdAt?: true
   _all?: true
 }
@@ -159,6 +189,11 @@ export type StoryGroupByOutputType = {
   genre: string
   length: string
   text: string
+  age: string | null
+  language: string | null
+  mainCharacterName: string | null
+  childGender: string | null
+  posterFilename: string | null
   createdAt: Date
   _count: StoryCountAggregateOutputType | null
   _min: StoryMinAggregateOutputType | null
@@ -189,6 +224,11 @@ export type StoryWhereInput = {
   genre?: Prisma.StringFilter<"Story"> | string
   length?: Prisma.StringFilter<"Story"> | string
   text?: Prisma.StringFilter<"Story"> | string
+  age?: Prisma.StringNullableFilter<"Story"> | string | null
+  language?: Prisma.StringNullableFilter<"Story"> | string | null
+  mainCharacterName?: Prisma.StringNullableFilter<"Story"> | string | null
+  childGender?: Prisma.StringNullableFilter<"Story"> | string | null
+  posterFilename?: Prisma.StringNullableFilter<"Story"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Story"> | Date | string
 }
 
@@ -198,6 +238,11 @@ export type StoryOrderByWithRelationInput = {
   genre?: Prisma.SortOrder
   length?: Prisma.SortOrder
   text?: Prisma.SortOrder
+  age?: Prisma.SortOrderInput | Prisma.SortOrder
+  language?: Prisma.SortOrderInput | Prisma.SortOrder
+  mainCharacterName?: Prisma.SortOrderInput | Prisma.SortOrder
+  childGender?: Prisma.SortOrderInput | Prisma.SortOrder
+  posterFilename?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -210,6 +255,11 @@ export type StoryWhereUniqueInput = Prisma.AtLeast<{
   genre?: Prisma.StringFilter<"Story"> | string
   length?: Prisma.StringFilter<"Story"> | string
   text?: Prisma.StringFilter<"Story"> | string
+  age?: Prisma.StringNullableFilter<"Story"> | string | null
+  language?: Prisma.StringNullableFilter<"Story"> | string | null
+  mainCharacterName?: Prisma.StringNullableFilter<"Story"> | string | null
+  childGender?: Prisma.StringNullableFilter<"Story"> | string | null
+  posterFilename?: Prisma.StringNullableFilter<"Story"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Story"> | Date | string
 }, "id">
 
@@ -219,6 +269,11 @@ export type StoryOrderByWithAggregationInput = {
   genre?: Prisma.SortOrder
   length?: Prisma.SortOrder
   text?: Prisma.SortOrder
+  age?: Prisma.SortOrderInput | Prisma.SortOrder
+  language?: Prisma.SortOrderInput | Prisma.SortOrder
+  mainCharacterName?: Prisma.SortOrderInput | Prisma.SortOrder
+  childGender?: Prisma.SortOrderInput | Prisma.SortOrder
+  posterFilename?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.StoryCountOrderByAggregateInput
   _max?: Prisma.StoryMaxOrderByAggregateInput
@@ -234,6 +289,11 @@ export type StoryScalarWhereWithAggregatesInput = {
   genre?: Prisma.StringWithAggregatesFilter<"Story"> | string
   length?: Prisma.StringWithAggregatesFilter<"Story"> | string
   text?: Prisma.StringWithAggregatesFilter<"Story"> | string
+  age?: Prisma.StringNullableWithAggregatesFilter<"Story"> | string | null
+  language?: Prisma.StringNullableWithAggregatesFilter<"Story"> | string | null
+  mainCharacterName?: Prisma.StringNullableWithAggregatesFilter<"Story"> | string | null
+  childGender?: Prisma.StringNullableWithAggregatesFilter<"Story"> | string | null
+  posterFilename?: Prisma.StringNullableWithAggregatesFilter<"Story"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Story"> | Date | string
 }
 
@@ -243,6 +303,11 @@ export type StoryCreateInput = {
   genre: string
   length: string
   text: string
+  age?: string | null
+  language?: string | null
+  mainCharacterName?: string | null
+  childGender?: string | null
+  posterFilename?: string | null
   createdAt?: Date | string
 }
 
@@ -252,6 +317,11 @@ export type StoryUncheckedCreateInput = {
   genre: string
   length: string
   text: string
+  age?: string | null
+  language?: string | null
+  mainCharacterName?: string | null
+  childGender?: string | null
+  posterFilename?: string | null
   createdAt?: Date | string
 }
 
@@ -261,6 +331,11 @@ export type StoryUpdateInput = {
   genre?: Prisma.StringFieldUpdateOperationsInput | string
   length?: Prisma.StringFieldUpdateOperationsInput | string
   text?: Prisma.StringFieldUpdateOperationsInput | string
+  age?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mainCharacterName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  childGender?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  posterFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -270,6 +345,11 @@ export type StoryUncheckedUpdateInput = {
   genre?: Prisma.StringFieldUpdateOperationsInput | string
   length?: Prisma.StringFieldUpdateOperationsInput | string
   text?: Prisma.StringFieldUpdateOperationsInput | string
+  age?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mainCharacterName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  childGender?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  posterFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -279,6 +359,11 @@ export type StoryCreateManyInput = {
   genre: string
   length: string
   text: string
+  age?: string | null
+  language?: string | null
+  mainCharacterName?: string | null
+  childGender?: string | null
+  posterFilename?: string | null
   createdAt?: Date | string
 }
 
@@ -288,6 +373,11 @@ export type StoryUpdateManyMutationInput = {
   genre?: Prisma.StringFieldUpdateOperationsInput | string
   length?: Prisma.StringFieldUpdateOperationsInput | string
   text?: Prisma.StringFieldUpdateOperationsInput | string
+  age?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mainCharacterName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  childGender?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  posterFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -297,6 +387,11 @@ export type StoryUncheckedUpdateManyInput = {
   genre?: Prisma.StringFieldUpdateOperationsInput | string
   length?: Prisma.StringFieldUpdateOperationsInput | string
   text?: Prisma.StringFieldUpdateOperationsInput | string
+  age?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mainCharacterName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  childGender?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  posterFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -306,6 +401,11 @@ export type StoryCountOrderByAggregateInput = {
   genre?: Prisma.SortOrder
   length?: Prisma.SortOrder
   text?: Prisma.SortOrder
+  age?: Prisma.SortOrder
+  language?: Prisma.SortOrder
+  mainCharacterName?: Prisma.SortOrder
+  childGender?: Prisma.SortOrder
+  posterFilename?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -315,6 +415,11 @@ export type StoryMaxOrderByAggregateInput = {
   genre?: Prisma.SortOrder
   length?: Prisma.SortOrder
   text?: Prisma.SortOrder
+  age?: Prisma.SortOrder
+  language?: Prisma.SortOrder
+  mainCharacterName?: Prisma.SortOrder
+  childGender?: Prisma.SortOrder
+  posterFilename?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -324,11 +429,20 @@ export type StoryMinOrderByAggregateInput = {
   genre?: Prisma.SortOrder
   length?: Prisma.SortOrder
   text?: Prisma.SortOrder
+  age?: Prisma.SortOrder
+  language?: Prisma.SortOrder
+  mainCharacterName?: Prisma.SortOrder
+  childGender?: Prisma.SortOrder
+  posterFilename?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
 export type StringFieldUpdateOperationsInput = {
   set?: string
+}
+
+export type NullableStringFieldUpdateOperationsInput = {
+  set?: string | null
 }
 
 export type DateTimeFieldUpdateOperationsInput = {
@@ -343,6 +457,11 @@ export type StorySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   genre?: boolean
   length?: boolean
   text?: boolean
+  age?: boolean
+  language?: boolean
+  mainCharacterName?: boolean
+  childGender?: boolean
+  posterFilename?: boolean
   createdAt?: boolean
 }, ExtArgs["result"]["story"]>
 
@@ -352,6 +471,11 @@ export type StorySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   genre?: boolean
   length?: boolean
   text?: boolean
+  age?: boolean
+  language?: boolean
+  mainCharacterName?: boolean
+  childGender?: boolean
+  posterFilename?: boolean
   createdAt?: boolean
 }, ExtArgs["result"]["story"]>
 
@@ -361,6 +485,11 @@ export type StorySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   genre?: boolean
   length?: boolean
   text?: boolean
+  age?: boolean
+  language?: boolean
+  mainCharacterName?: boolean
+  childGender?: boolean
+  posterFilename?: boolean
   createdAt?: boolean
 }, ExtArgs["result"]["story"]>
 
@@ -370,10 +499,15 @@ export type StorySelectScalar = {
   genre?: boolean
   length?: boolean
   text?: boolean
+  age?: boolean
+  language?: boolean
+  mainCharacterName?: boolean
+  childGender?: boolean
+  posterFilename?: boolean
   createdAt?: boolean
 }
 
-export type StoryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "genre" | "length" | "text" | "createdAt", ExtArgs["result"]["story"]>
+export type StoryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "genre" | "length" | "text" | "age" | "language" | "mainCharacterName" | "childGender" | "posterFilename" | "createdAt", ExtArgs["result"]["story"]>
 
 export type $StoryPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Story"
@@ -384,6 +518,11 @@ export type $StoryPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     genre: string
     length: string
     text: string
+    age: string | null
+    language: string | null
+    mainCharacterName: string | null
+    childGender: string | null
+    posterFilename: string | null
     createdAt: Date
   }, ExtArgs["result"]["story"]>
   composites: {}
@@ -813,6 +952,11 @@ export interface StoryFieldRefs {
   readonly genre: Prisma.FieldRef<"Story", 'String'>
   readonly length: Prisma.FieldRef<"Story", 'String'>
   readonly text: Prisma.FieldRef<"Story", 'String'>
+  readonly age: Prisma.FieldRef<"Story", 'String'>
+  readonly language: Prisma.FieldRef<"Story", 'String'>
+  readonly mainCharacterName: Prisma.FieldRef<"Story", 'String'>
+  readonly childGender: Prisma.FieldRef<"Story", 'String'>
+  readonly posterFilename: Prisma.FieldRef<"Story", 'String'>
   readonly createdAt: Prisma.FieldRef<"Story", 'DateTime'>
 }
     

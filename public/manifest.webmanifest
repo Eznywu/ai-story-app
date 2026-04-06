@@ -1,0 +1,24 @@
+{
+  "name": "Bedtime Story",
+  "short_name": "Bedtime",
+  "description": "Generate gentle personalized bedtime stories, listen with narration, and save your favorites.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ede7f8",
+  "theme_color": "#5e4a9c",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-icon",
+      "type": "image/png",
+      "sizes": "180x180",
+      "purpose": "any"
+    }
+  ]
+}

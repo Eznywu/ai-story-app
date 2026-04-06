@@ -8,6 +8,8 @@ export async function GET() {
     voices: VOICES.map((v) => ({
       id: v.id,
       name: v.name,
+      language: v.language,
+      isDefault: Boolean(v.isDefault),
       provider: "elevenlabs",
       voiceId: v.elevenId,
     })),

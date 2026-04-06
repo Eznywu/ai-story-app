@@ -13,6 +13,11 @@ model Story {
   genre     String
   length    String
   text      String
+  age       String?
+  language  String?
+  mainCharacterName String?
+  childGender String?
+  posterFilename String?
   createdAt DateTime @default(now())
 }
 

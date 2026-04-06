@@ -595,6 +595,11 @@ export const StoryScalarFieldEnum = {
   genre: 'genre',
   length: 'length',
   text: 'text',
+  age: 'age',
+  language: 'language',
+  mainCharacterName: 'mainCharacterName',
+  childGender: 'childGender',
+  posterFilename: 'posterFilename',
   createdAt: 'createdAt'
 } as const
 
@@ -618,6 +623,14 @@ export const SortOrder = {
 } as const
 
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
+
+
+export const NullsOrder = {
+  first: 'first',
+  last: 'last'
+} as const
+
+export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 
 
 

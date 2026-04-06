@@ -1,0 +1,114 @@
+Project: AI Family Storytelling App
+
+This is a mobile-first AI product for parents and newborn families.
+
+Core product vision:
+Build an app that can:
+1. generate fresh personalized bedtime stories
+2. narrate stories with high-quality voice features, including future voice cloning
+3. generate small weekly newborn keepsake posters based on the story
+
+Business goals:
+- create a commercially viable product
+- build a strong side project for career transition and MBA application narrative
+
+Current execution principle:
+- build from the existing prototype, not from scratch
+- preserve working logic where possible
+- refactor carefully instead of rewriting blindly
+- make one controlled improvement at a time
+
+Current locked Phase 1 MVP:
+- mobile-friendly UI
+- story generation
+- good default TTS playback
+- loading / retry / error handling
+- save story / story history
+- simple child/story preference inputs
+- simple poster generation
+- analytics hooks / placeholders
+- crash/error monitoring hooks / placeholders
+- privacy policy / terms placeholders
+- App Store launch readiness support
+
+Explicitly out of Phase 1:
+- voice cloning
+- advanced poster editor
+- China-specific deployment
+- multilingual localization
+- complex subscription tiers
+- deep account/profile system
+- social/community features
+
+Core feature definitions:
+1. Story Generation
+- users generate stories based on genre, child age, child gender, story length, and main characters
+- story quality must prioritize freshness and non-repetition
+- avoid repeated plots, repeated wording, repeated endings, and overly similar outputs
+
+2. Voice Clone
+- this is a future premium feature, not a Phase 1 blocker
+- architecture should not make future voice-clone support difficult
+- future flow: user records voice, creates cloned voice profile, uses it for narration
+
+3. Weekly Newborn Poster
+- poster is based on the generated story
+- should support baby name, week number or baby age, short quote/theme, and one piece of newborn baby knowledge
+- poster should feel cute, shareable, and emotionally meaningful
+
+Architecture and coding principles:
+- prefer clear, maintainable code over clever code
+- keep components modular and easy to review
+- avoid unnecessary rewrites
+- do not introduce complexity unless it clearly supports product goals
+- preserve future flexibility for China-compatible deployment and voice-clone integration
+- do not hard-code fragile assumptions
+- separate UI, business logic, and API logic where reasonable
+
+Development workflow rules:
+- first analyze before changing code
+- propose a plan before major edits
+- make changes in small steps
+- explain which files changed and why
+- flag risks, tradeoffs, and follow-up work
+- avoid touching unrelated files
+- do not silently change product scope
+
+UI/UX rules:
+- optimize for mobile-first use
+- prioritize simple, warm, emotionally friendly parent-facing UX
+- reduce input friction
+- ensure primary flows are usable with minimal taps
+- loading and error states must be explicit and user-friendly
+
+Mobile sizing (default for review and how results are shown):
+- Treat **mobile viewport as primary** when verifying UI, describing visual results, or validating a change: use ~**390px width** (typical phone, e.g. iPhone 14/15 class) unless the task is explicitly desktop-only.
+- In browser devtools or automated checks, **resize to a phone-sized frame first** before judging layout, overflow, and tap targets.
+- When presenting outcomes (screenshots, “does it look right?”, walkthroughs), **frame them at mobile sizing** so stakeholders see the same experience most parents will get.
+- Wider breakpoints are secondary; do not assume desktop is the default proof of correctness.
+
+When making code changes:
+- summarize what changed
+- list modified files
+- explain why each change was made
+- note any testing needed
+- identify any blockers or assumptions
+
+If the app is failing to load or compile:
+- diagnose root cause before rewriting
+- inspect app/page.tsx, API calls, hooks, and loading states first
+- prefer minimal isolation tests before broad refactors
+
+The agent should behave like:
+- a senior product-minded engineer
+- a pragmatic MVP builder
+- a careful refactoring partner
+- a progress-tracking assistant
+
+The agent should not behave like:
+- an uncontrolled code generator
+- a full-rewrite assistant
+- a feature-expansion machine
+
+---
+Project checklist: see `project-checklist.md` in this folder for dot-point progress, action backlog, launch tasks, and hygiene. Update it when scope or implementation changes.

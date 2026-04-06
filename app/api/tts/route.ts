@@ -1,42 +1,35 @@
-import OpenAI from "openai";
 import { NextResponse } from "next/server";
+import { speakWithOpenAI } from "@/lib/tts/openai";
+import { getErrorMessage, getErrorStatus } from "@/lib/errors";
+import { canUseTtsForText } from "@/lib/memberGate";
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json({ error: "Missing OPENAI_API_KEY" }, { status: 500 });
-    }
-
     const { text, voice } = await req.json();
-
-    if (!text) {
-      return NextResponse.json({ error: "Missing text" }, { status: 400 });
+    if (!canUseTtsForText(req, String(text ?? ""))) {
+      return NextResponse.json(
+        {
+          error:
+            "Listen is limited to the sample story until you sign in and join membership.",
+        },
+        { status: 403 }
+      );
     }
+    const chosenVoice = String(voice || "alloy");
+    const buffer = await speakWithOpenAI(String(text ?? ""), chosenVoice);
 
-    const chosenVoice = voice || "alloy";
-    const client = new OpenAI({ apiKey });
-
-    const audio = await client.audio.speech.create({
-      model: "gpt-4o-mini-tts",
-      voice: chosenVoice,
-      input: text,
-    });
-
-    const arrayBuffer = await audio.arrayBuffer();
-
-    return new Response(Buffer.from(arrayBuffer), {
+    return new Response(buffer, {
       headers: {
         "Content-Type": "audio/mpeg",
         "Cache-Control": "no-store",
       },
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     return NextResponse.json(
-      { error: err?.message ?? "TTS failed" },
-      { status: 500 }
+      { error: getErrorMessage(err, "TTS failed") },
+      { status: getErrorStatus(err, 500) }
     );
   }
 }
