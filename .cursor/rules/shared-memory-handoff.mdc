@@ -1,0 +1,34 @@
+---
+description: Read Audio Book OS before assigned work and write a Notion receipt on the same Work item after it.
+alwaysApply: true
+---
+
+# Shared-memory handoff
+
+Project home: [Audio Book OS](https://app.notion.com/p/401f569f891e8044b3b9e9b038fa82b8).
+
+Before work:
+
+- Read the project hub, the assigned Work item, and relevant confirmed decisions through Notion MCP.
+- Inspect repository instructions, the current branch, commit, and local changes.
+- Use Notion for intended scope, priorities, and decisions. Use the repository, tests, and runtime for implementation evidence. Treat historical chats and summary tables as reported until checked.
+
+During work:
+
+- Stay inside the assigned task and its acceptance criteria.
+- Reuse the Work ID and existing baseline or task pages. Do not create duplicate trackers.
+- A role label does not dispatch an agent.
+
+At completion, update that same Work item with:
+
+- Branch, commit, and changed files
+- Checks actually run and their results
+- PR, preview, or run links when they exist
+- Untested areas, blockers, and the next action
+- The actual deployment state
+
+Use QA only when there is a deliverable to review. Use Shipped only after acceptance evidence is checked. Lint success is not proof that generation, playback, or persistence works.
+
+If Notion access fails, report the failure and leave an unsaved receipt. Do not claim synchronized memory.
+
+Do not put credentials, raw voice recordings, or unnecessary personal child data in shared task packets.
