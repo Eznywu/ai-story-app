@@ -244,7 +244,7 @@
 }
 
 .appChromeBar__walletValue {
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 800;
   letter-spacing: 0.01em;
   min-width: 1.3rem;
@@ -295,7 +295,7 @@
   margin-top: var(--space-2);
   color: var(--text-muted);
   font-weight: 650;
-  font-size: clamp(0.95rem, 2.8vw, 1.1rem);
+  font-size: clamp(1rem, 2.8vw, 1.1rem);
   line-height: 1.45;
 }
 
@@ -350,7 +350,7 @@
 }
 
 .label {
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 750;
   color: var(--text);
   letter-spacing: 0.01em;
@@ -602,9 +602,9 @@ textarea::placeholder {
   align-items: center;
   gap: 8px;
   margin-top: 4px;
-  font-size: 13px;
+  font-size: 1rem;
   font-weight: 700;
-  color: rgba(127, 29, 29, 0.95);
+  color: #fecaca;
 }
 
 .fieldErrorText {
@@ -614,24 +614,24 @@ textarea::placeholder {
 
 .buttonInline {
   padding: 8px 12px;
-  min-height: 40px;
-  font-size: 14px;
+  min-height: var(--tap-min);
+  font-size: 1rem;
 }
 
 .voiceRecorder {
   margin-top: 8px;
   padding-top: 10px;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  border-top: 1px solid var(--border-subtle);
   display: grid;
   gap: 8px;
 }
 
 .voiceRecorderHint {
   margin: 0;
-  font-size: 12px;
+  font-size: 1rem;
   font-weight: 600;
   line-height: 1.5;
-  opacity: 0.82;
+  color: var(--text-muted);
 }
 
 .voiceRecorderActions {
@@ -643,9 +643,9 @@ textarea::placeholder {
 
 .voiceRecorderVerify {
   margin: 0;
-  font-size: 12px;
+  font-size: 1rem;
   font-weight: 700;
-  color: rgba(124, 45, 18, 0.95);
+  color: #fecaca;
 }
 
 .loadingBlock {
@@ -687,20 +687,25 @@ textarea::placeholder {
   gap: 10px;
   margin-bottom: 10px;
   font-weight: 800;
-  font-size: 14px;
+  font-size: 1rem;
   opacity: 0.85;
 }
 
 .legalFooter {
   margin-top: var(--space-2);
   text-align: center;
-  font-size: 0.88rem;
+  font-size: 1rem;
   font-weight: 650;
   color: var(--text-soft);
 }
 
 .legalFooter a {
   color: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap-min);
+  padding: 0 8px;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -729,9 +734,9 @@ textarea::placeholder {
 }
 
 .homeTabBar__inner--four .homeTabBar__label {
-  font-size: 0.75rem;
-  letter-spacing: 0.02em;
-  line-height: 1.12;
+  font-size: 0.875rem;
+  letter-spacing: 0;
+  line-height: 1.15;
 }
 
 .homeTabBar__btn {
@@ -740,12 +745,12 @@ textarea::placeholder {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   min-height: 56px;
-  padding: 8px 6px 10px;
+  padding: 8px 2px 10px;
   border: 0;
   background: transparent;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 750;
   color: var(--text-soft);
   cursor: pointer;
@@ -769,13 +774,13 @@ textarea::placeholder {
 }
 
 .homeTabBar__label {
-  font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  line-height: 1.2;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.15;
   text-align: center;
   max-width: 100%;
-  padding: 0 4px;
+  padding: 0 2px;
 }
 
 .homeTabBar__btn--active {
@@ -819,7 +824,7 @@ textarea::placeholder {
   align-items: center;
   gap: 10px;
   color: var(--accent-gold-mid);
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 600;
   letter-spacing: 0.07em;
 }
@@ -832,12 +837,12 @@ textarea::placeholder {
 
 .homeHero__title {
   margin: 0;
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-display), var(--font-geist-sans), ui-serif, Georgia, serif;
   font-size: clamp(2.65rem, 11vw, 4.1rem);
   line-height: 1.04;
   letter-spacing: -0.02em;
-  font-weight: 800;
-  color: #fff;
+  font-weight: 600;
+  color: var(--text);
 }
 
 .homeHero__subtitle {
@@ -866,27 +871,33 @@ textarea::placeholder {
 
 .homeJourney__head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
 
 .homeJourney__title {
   margin: 0;
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
-  font-size: clamp(1.8rem, 7vw, 2.35rem);
-  font-weight: 800;
+  min-width: 0;
+  flex: 1;
+  font-family: var(--font-display), var(--font-geist-sans), ui-serif, Georgia, serif;
+  font-size: clamp(1.55rem, 6.2vw, 2.35rem);
+  font-weight: 600;
   letter-spacing: -0.01em;
-  color: #fff;
+  line-height: 1.15;
+  color: var(--text);
 }
 
 .homeJourney__linkBtn {
   border: 0;
   background: transparent;
   color: var(--accent-gold-mid);
-  font-size: 1.15rem;
-  font-weight: 600;
-  padding: 0;
+  font-size: 1rem;
+  font-weight: 650;
+  min-height: var(--tap-min);
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .homeJourney__linkBtn:disabled {
@@ -1100,7 +1111,7 @@ textarea::placeholder {
 }
 
 .figmaHome__storyMeta {
-  font-size: 0.85rem;
+  font-size: 1rem;
   color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -1108,8 +1119,8 @@ textarea::placeholder {
 }
 
 .figmaHome__storyPlay {
-  width: 40px;
-  height: 40px;
+  width: var(--tap-min);
+  height: var(--tap-min);
   border-radius: 999px;
   border: 1px solid var(--border-subtle);
   background: var(--accent-gold-soft);
@@ -1129,7 +1140,7 @@ textarea::placeholder {
 .figmaHome__muted {
   margin: 0;
   color: var(--text-muted);
-  font-size: 0.95rem;
+  font-size: 1rem;
 }
 
 .figmaHome__auxActions {
@@ -1153,7 +1164,7 @@ textarea::placeholder {
 
 .homeScreen__titleStandalone {
   margin: 0;
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-display), var(--font-geist-sans), ui-serif, Georgia, serif;
   font-size: clamp(2rem, 7vw, 2.4rem);
   font-weight: 850;
   letter-spacing: -0.01em;
@@ -1393,7 +1404,7 @@ textarea::placeholder {
 
 .createHub__hint {
   margin: var(--space-2) 0 var(--space-3);
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 650;
   color: var(--text-muted);
   line-height: 1.45;
@@ -1408,7 +1419,7 @@ textarea::placeholder {
 
 .createHub__empty {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 1rem;
   color: var(--text-soft);
   font-weight: 650;
 }
@@ -1452,14 +1463,18 @@ textarea::placeholder {
 }
 
 .createHub__pickMeta {
-  font-size: 0.88rem;
+  font-size: 1rem;
   font-weight: 650;
   color: var(--text-muted);
 }
 
 .createHub__footer {
   display: flex;
-  justify-content: flex-end;
+  justify-content: stretch;
+}
+
+.createHub__footer .button {
+  width: 100%;
 }
 
 /* Story setup layout */
@@ -1494,7 +1509,7 @@ textarea::placeholder {
 
 .storySetupExtras__lede {
   margin: 0 0 10px;
-  font-size: 13px;
+  font-size: 1rem;
   font-weight: 650;
   opacity: 0.78;
   line-height: 1.4;
@@ -1511,7 +1526,7 @@ textarea::placeholder {
 
 .storySetupSummary__title {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--text-soft);
@@ -1520,7 +1535,7 @@ textarea::placeholder {
 
 .storySetupSummary__body {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 1rem;
   color: var(--text);
   font-weight: 750;
 }
@@ -1641,7 +1656,7 @@ textarea::placeholder {
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-@media (max-width: 390px) {
+@media (max-width: 480px) {
   .ageRangeSlider__ticks {
     display: none;
   }
@@ -1670,7 +1685,7 @@ textarea::placeholder {
   border: 1px solid var(--border-subtle);
   padding: 10px 14px;
   min-height: var(--chip-height);
-  font-size: 0.88rem;
+  font-size: 1rem;
   font-weight: 700;
   background: var(--surface-2);
   color: var(--text);
@@ -1727,26 +1742,26 @@ textarea::placeholder {
 
 .profilePanel__h2 {
   margin: 0 0 8px;
-  font-size: 15px;
-  font-weight: 900;
+  font-size: 1.125rem;
+  font-weight: 700;
 }
 
 .profilePanel__statLine {
   margin: 0;
-  font-size: 14px;
+  font-size: 1rem;
   font-weight: 650;
 }
 
 .profilePanel__muted {
   margin: 0;
-  font-size: 13px;
-  opacity: 0.72;
+  font-size: 1rem;
+  color: var(--text-muted);
 }
 
 .profilePanel__list {
   margin: 0 0 10px;
   padding-left: 1.1rem;
-  font-size: 14px;
+  font-size: 1rem;
   font-weight: 650;
 }
 
@@ -1764,14 +1779,19 @@ textarea::placeholder {
 }
 
 .profilePanel__links a {
-  color: var(--accent);
+  color: var(--accent-gold-mid);
   text-decoration: underline;
   text-underline-offset: 3px;
+  display: flex;
+  align-items: center;
+  min-height: var(--tap-min);
+  font-size: 1rem;
+  font-weight: 700;
 }
 
 .membershipCard__status {
   margin: 0 0 10px;
-  font-size: 14px;
+  font-size: 1rem;
   font-weight: 650;
   line-height: 1.45;
 }
@@ -1795,9 +1815,9 @@ textarea::placeholder {
 
 .membershipCard__error {
   margin: 0;
-  font-size: 13px;
+  font-size: 1rem;
   font-weight: 700;
-  color: #b42318;
+  color: #fecaca;
 }
 
 /* Home: New Release / Top 10 (shared) */
@@ -2080,10 +2100,10 @@ textarea::placeholder {
 
 .bookCardTitle {
   margin-top: 8px;
-  font-size: 11px;
-  font-weight: 800;
+  font-size: 0.875rem;
+  font-weight: 700;
   line-height: 1.25;
-  color: #3d2a22;
+  color: var(--text);
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -2094,8 +2114,8 @@ textarea::placeholder {
   width: 100%;
   max-width: 140px;
   padding: 8px 10px;
-  min-height: 40px;
-  font-size: 13px;
+  min-height: var(--tap-min);
+  font-size: 1rem;
 }
 
 .bookShelfLedge {
@@ -2177,8 +2197,8 @@ textarea::placeholder {
 
 .posterFlashClose {
   flex-shrink: 0;
-  width: 36px;
-  height: 36px;
+  width: var(--tap-min);
+  height: var(--tap-min);
   border-radius: 12px;
   border: 1px solid rgba(90, 70, 55, 0.2);
   background: rgba(255, 255, 255, 0.75);
@@ -2197,19 +2217,18 @@ textarea::placeholder {
 
 .posterFlashHint {
   margin: 8px 0 0;
-  font-size: 13px;
-  font-weight: 700;
-  opacity: 0.72;
-  line-height: 1.35;
+  font-size: 1rem;
+  font-weight: 650;
+  color: #5c4636;
+  line-height: 1.4;
 }
 
 .posterFlashFallbackReason {
   margin: 10px 0 0;
-  font-size: 12px;
+  font-size: 1rem;
   font-weight: 650;
   line-height: 1.45;
-  opacity: 0.88;
-  color: var(--text-soft, rgba(60, 48, 40, 0.92));
+  color: #5c4636;
 }
 
 .posterFlashImageWrap {
@@ -2294,12 +2313,13 @@ textarea::placeholder {
 
 .hint {
   margin: 0;
-  font-size: 12px;
-  opacity: 0.7;
+  font-size: 1rem;
+  line-height: 1.45;
+  color: var(--text-muted);
 }
 
 .fieldHint {
-  font-size: 0.88rem;
+  font-size: 1rem;
   font-weight: 650;
   line-height: 1.45;
   color: var(--text-muted);
@@ -2393,12 +2413,17 @@ textarea::placeholder {
     max(20px, env(safe-area-inset-bottom, 0px))
     max(16px, env(safe-area-inset-left, 0px));
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  overflow-y: auto;
+  box-sizing: border-box;
 }
 
 .onboardingCard {
   width: min(560px, 100%);
+  margin-top: auto;
+  margin-bottom: auto;
   border-radius: var(--radius-xl);
   border: 1px solid var(--border-subtle);
   background: linear-gradient(175deg, rgba(25, 33, 67, 0.98), rgba(16, 22, 48, 0.98));
@@ -2406,11 +2431,12 @@ textarea::placeholder {
   padding: clamp(18px, 4vw, 28px);
   display: grid;
   gap: 14px;
+  box-sizing: border-box;
 }
 
 .onboardingEyebrow {
   margin: 0;
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   font-weight: 800;
@@ -2435,9 +2461,17 @@ textarea::placeholder {
 
 .onboardingLegal {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: var(--text-soft);
   line-height: 1.4;
+}
+
+.onboardingLegal a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-min);
+  padding: 0 2px;
+  color: var(--accent-gold-mid);
 }
 
 .onboardingPrimary {
@@ -2463,7 +2497,7 @@ textarea::placeholder {
   min-height: var(--tap-min);
   text-align: left;
   padding: 12px 14px;
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
 }
@@ -2505,10 +2539,10 @@ textarea::placeholder {
   border: 1px solid var(--border-subtle);
   background: var(--surface-2);
   color: var(--text-muted);
-  min-height: 34px;
-  padding: 0 12px;
-  font-size: 0.82rem;
-  font-weight: 750;
+  min-height: var(--tap-min);
+  padding: 0 14px;
+  font-size: 1rem;
+  font-weight: 700;
   cursor: pointer;
 }
 
@@ -2586,15 +2620,15 @@ textarea::placeholder {
 }
 
 .libraryRowPlay {
-  flex: 0 0 40px !important;
+  flex: 0 0 var(--tap-min) !important;
   flex-shrink: 0;
   align-self: center;
-  width: 40px;
-  min-width: 40px;
-  max-width: 40px;
-  height: 40px;
-  min-height: 40px;
-  max-height: 40px;
+  width: var(--tap-min);
+  min-width: var(--tap-min);
+  max-width: var(--tap-min);
+  height: var(--tap-min);
+  min-height: var(--tap-min);
+  max-height: var(--tap-min);
   border-radius: 999px;
   padding: 0 !important;
   margin: 0;
@@ -2634,7 +2668,7 @@ textarea::placeholder {
 }
 
 .libraryMeta {
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: var(--text-muted);
   font-weight: 400;
   white-space: nowrap;
@@ -2736,8 +2770,8 @@ textarea::placeholder {
   }
 
   .subtitle {
-    font-size: 14px;
-    line-height: 1.35;
+    font-size: 16px;
+    line-height: 1.4;
   }
 
   .mainGrid,
@@ -2755,7 +2789,7 @@ textarea::placeholder {
   }
 
   .label {
-    font-size: 13px;
+    font-size: 16px;
   }
 
   .fieldGrid {
@@ -2778,7 +2812,7 @@ textarea::placeholder {
   }
 
   .errorBox {
-    font-size: 14px;
+    font-size: 16px;
     padding: 10px;
     border-radius: 10px;
   }
@@ -2787,7 +2821,7 @@ textarea::placeholder {
     min-height: 220px;
     padding: 10px;
     border-radius: 12px;
-    font-size: 15px;
+    font-size: 16px;
     line-height: 1.65;
   }
 
@@ -2800,11 +2834,11 @@ textarea::placeholder {
   }
 
   .libraryExcerptPreview {
-    font-size: 12px;
+    font-size: 16px;
   }
 
   .legalFooter {
-    font-size: 12px;
+    font-size: 16px;
   }
 
   .controlsRow {
@@ -2812,12 +2846,12 @@ textarea::placeholder {
   }
 
   .controlBlock .hint {
-    font-size: 11px;
+    font-size: 16px;
   }
 
   .stepperValue {
     min-width: 88px;
-    font-size: 15px;
+    font-size: 16px;
   }
 }
 
@@ -2853,7 +2887,7 @@ textarea::placeholder {
   left: 50%;
   right: auto;
   transform: translateX(-50%);
-  width: min(100vw, 430px);
+  width: min(100%, 430px);
   max-width: 430px;
 }
 
@@ -2885,4 +2919,95 @@ textarea::placeholder {
 
 .pageRoot--uiDesktop .button {
   flex: 1 1 calc(50% - 10px);
+}
+
+.container,
+.onboardingCard,
+.legalDoc {
+  overflow-wrap: break-word;
+}
+
+.settingsLegalLink {
+  margin: 0;
+}
+
+.settingsLegalLink a {
+  display: flex;
+  align-items: center;
+  min-height: var(--tap-min);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent-gold-mid);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.playPageEmpty {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 650;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.legalPage {
+  color: var(--text);
+}
+
+.legalDoc {
+  max-width: 40rem;
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.legalDoc__back {
+  margin-bottom: 4px;
+}
+
+.legalDoc h1,
+.legalDoc h2,
+.legalDoc h3 {
+  font-family: var(--font-display), var(--font-geist-sans), ui-serif, Georgia, serif;
+  color: var(--text);
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.legalDoc h1 {
+  font-size: 2rem;
+  margin: 12px 0 8px;
+}
+
+.legalDoc h2 {
+  font-size: 1.35rem;
+  margin: 1.75rem 0 0.5rem;
+}
+
+.legalDoc h3 {
+  font-size: 1.125rem;
+  margin: 1.1rem 0 0.35rem;
+}
+
+.legalDoc p,
+.legalDoc li {
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.legalDoc__meta {
+  margin-top: 0;
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+.legalDoc a {
+  color: var(--accent-gold-mid);
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 480px) {
+  .homeTabBar {
+    width: 100%;
+    max-width: 100%;
+  }
 }

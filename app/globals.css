@@ -17,7 +17,7 @@
   --tap-min: 44px;
   --btn-height: 54px;
   --input-height: 54px;
-  --chip-height: 40px;
+  --chip-height: 44px;
 
   /* Surfaces */
   --bg-deep: #0a0e22;
@@ -88,6 +88,8 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-size: 16px;
+  background: var(--bg-deep);
 }
 
 button,
