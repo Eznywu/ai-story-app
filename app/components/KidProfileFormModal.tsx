@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import type { KidProfile } from "@/lib/profilesTypes";
-
-const AGE_OPTIONS = ["3 months", "6 months", "9 months", "1 year", "2 years"];
+import type { KidProfile } from "@/lib/profiles/profilesTypes";
+import { AgeRangeSlider } from "@/app/components/AgeRangeSlider";
 const GENRE_OPTIONS = [
   "Animals",
   "Adventure",
@@ -71,23 +70,16 @@ export function KidProfileFormModal({ open, onClose, onSave }: Props) {
             <span className="label">Name</span>
             <input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
           </label>
-          <label className="field">
-            <span className="label">Age</span>
-            <select value={age} onChange={(e) => setAge(e.target.value)}>
-              {AGE_OPTIONS.map((a) => (
-                <option key={a} value={a}>
-                  {a}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="field ageField">
+            <AgeRangeSlider id="kid-profile-age-slider" label="Age" value={age} onChange={setAge} />
+          </div>
           <div className="field">
             <span className="label">Gender</span>
             <div className="profileModal__segmented">
               {(
                 [
-                  ["girl", "Girl"],
                   ["boy", "Boy"],
+                  ["girl", "Girl"],
                   ["other", "Other"],
                 ] as const
               ).map(([v, lab]) => (
@@ -104,6 +96,9 @@ export function KidProfileFormModal({ open, onClose, onSave }: Props) {
           </div>
           <div className="field">
             <span className="label">Interests (story themes)</span>
+            <p className="profileModal__fieldHint">
+              Choose what your child loves — it helps us craft warmer, more personal stories.
+            </p>
             <div className="profileModal__tags">
               {GENRE_OPTIONS.map((g) => (
                 <button

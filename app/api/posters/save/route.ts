@@ -4,7 +4,6 @@ import path from "path";
 import { prisma } from "@/lib/prisma";
 import { getErrorMessage, getErrorStatus } from "@/lib/errors";
 import { captureException } from "@/lib/monitoring";
-import { isMemberRequest } from "@/lib/memberGate";
 
 export const runtime = "nodejs";
 
@@ -35,12 +34,6 @@ function safeStoryId(id: string): boolean {
 
 export async function POST(req: Request) {
   try {
-    if (!isMemberRequest(req)) {
-      return NextResponse.json(
-        { error: "Sign in and join membership to save posters." },
-        { status: 403 }
-      );
-    }
     const body = (await req.json().catch(() => ({}))) as {
       storyId?: string;
       imageBase64?: string;

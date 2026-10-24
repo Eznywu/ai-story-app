@@ -24,6 +24,7 @@ Current locked Phase 1 MVP:
 - good default TTS playback
 - loading / retry / error handling
 - save story / story history
+- optional: scheduled daily story seeds for the home “new releases” feed (see checklist / `lib/stories/dailyAutomatedStories.ts`)
 - simple child/story preference inputs
 - simple poster generation
 - analytics hooks / placeholders
@@ -112,3 +113,11 @@ The agent should not behave like:
 
 ---
 Project checklist: see `project-checklist.md` in this folder for dot-point progress, action backlog, launch tasks, and hygiene. Update it when scope or implementation changes.
+
+Execution order: see `execution-priority-plan.md` — phased roadmap (UX lock → UI/Figma → story → poster → content → polish). Follow the phase rule there before starting lower-priority work.
+
+---
+Proposed operating plan note, 2026-10-24. This file is not replaced.
+Notion page "Operating Plan — Goals, Metrics & Roadmap", proposed v1: https://app.notion.com/p/403f569f891e81968813def2f47c3e2f
+Its numerical targets and dates are recommendations until Eason adopts them. This note does not adopt them.
+Left unresolved on purpose: product name (Happy Horse / Bedtime Story / Emrsy Story / DREAMWEAVER), whether accounts and subscriptions are Phase 1 work, and whether the unchecked phases in execution-priority-plan.md block the runtime journey. Do not delete this file, the checklist, or the execution plan to settle those.

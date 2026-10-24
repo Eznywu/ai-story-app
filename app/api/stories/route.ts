@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import type { StoryCreateInput } from "@/lib/types";
 import { getErrorMessage } from "@/lib/errors";
-import { isMemberRequest } from "@/lib/memberGate";
+import { parseChildGenderFromClient } from "@/lib/profiles/childGender";
 
 export const runtime = "nodejs";
 
@@ -33,12 +33,6 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    if (!isMemberRequest(req)) {
-      return NextResponse.json(
-        { error: "Sign in and join membership to save stories." },
-        { status: 403 }
-      );
-    }
     const body = (await req.json().catch(() => ({}))) as StoryCreateInput;
 
     const titleInput = String(body.title ?? "").trim();
@@ -50,11 +44,7 @@ export async function POST(req: Request) {
     const mainCharacterName = body.mainCharacterName
       ? String(body.mainCharacterName).trim()
       : null;
-    let childGender: string | null = null;
-    if (body.childGender != null && String(body.childGender).trim() !== "") {
-      const g = String(body.childGender).toLowerCase();
-      if (g === "girl" || g === "boy" || g === "any" || g === "nonbinary") childGender = g;
-    }
+    const childGender = parseChildGenderFromClient(body.childGender);
 
     if (!genre || !length || !text) {
       return NextResponse.json(
@@ -82,6 +72,23 @@ export async function POST(req: Request) {
   } catch (error: unknown) {
     return NextResponse.json(
       { error: getErrorMessage(error, "Failed to save story") },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id")?.trim() || "";
+    if (!id) {
+      return NextResponse.json({ error: "Missing story id" }, { status: 400 });
+    }
+    await prisma.story.delete({ where: { id } });
+    return NextResponse.json({ ok: true });
+  } catch (error: unknown) {
+    return NextResponse.json(
+      { error: getErrorMessage(error, "Failed to delete story") },
       { status: 500 }
     );
   }

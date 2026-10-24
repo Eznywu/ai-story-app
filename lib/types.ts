@@ -11,11 +11,13 @@ export type StoryDTO = {
   mainCharacterName: string | null;
   childGender: string | null;
   createdAt: string;
+  /** True when created by `lib/stories/dailyAutomatedStories.ts` (Home "New Release"). */
+  dailyAutomated?: boolean;
   /** Present when a poster PNG was saved for this story. */
   posterUrl?: string | null;
 };
 
-/** Max length for optional story guidance; enforced in `lib/storyGenerator.ts`. */
+/** Max length for optional story guidance; enforced in `lib/stories/storyGenerator.ts`. */
 export const STORY_INPUT_MAX_CHARS = 360;
 
 export type StoryCreateInput = {

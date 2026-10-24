@@ -1,60 +1,30 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
-import type { KidProfile, StoryCharacterProfile } from "@/lib/profilesTypes";
-import type { ReadingStatsState } from "@/lib/profilesTypes";
-import { MembershipCard } from "@/app/components/MembershipCard";
+import type { KidProfile, StoryCharacterProfile } from "@/lib/profiles/profilesTypes";
+import type { ReadingStatsState } from "@/lib/profiles/profilesTypes";
 
 type Props = {
   stats: ReadingStatsState | null;
   kids: KidProfile[];
   characters: StoryCharacterProfile[];
   onGoToCreateHub: () => void;
-  authLoading: boolean;
-  loggedIn: boolean;
-  member: boolean;
-  email: string | null;
-  onLogin: (email: string, password: string) => Promise<void>;
-  onLogout: () => Promise<void>;
-  onJoinMembership: (code: string) => Promise<void>;
 };
 
-export function ProfilePanel({
-  stats,
-  kids,
-  characters,
-  onGoToCreateHub,
-  authLoading,
-  loggedIn,
-  member,
-  email,
-  onLogin,
-  onLogout,
-  onJoinMembership,
-}: Props) {
+export function ProfilePanel({ stats, kids, characters, onGoToCreateHub }: Props) {
   return (
-    <section className="profilePanel" aria-labelledby="profile-heading">
+    <section className="profilePanel fadeEnter" aria-labelledby="profile-heading">
       <h1 id="profile-heading" className="profilePanel__title">
-        Profile
+        Family Profile
       </h1>
-      <p className="profilePanel__lede">Parent tools, saved profiles, and app settings.</p>
-
-      <MembershipCard
-        loading={authLoading}
-        loggedIn={loggedIn}
-        member={member}
-        email={email}
-        onLogin={onLogin}
-        onLogout={onLogout}
-        onJoinMembership={onJoinMembership}
-      />
+      <p className="profilePanel__lede">Your reading companion settings and saved story profiles.</p>
 
       <div className="profilePanel__card">
         <h2 className="profilePanel__h2">Reading snapshot</h2>
         <p className="profilePanel__statLine">
           <strong>{stats?.storiesReadToday ?? 0}</strong> reads today · <strong>{stats?.streakDays ?? 0}</strong> day streak
         </p>
+        <p className="profilePanel__muted">Last story: {stats?.lastStoryTitle?.trim() || "None yet"}</p>
       </div>
 
       <div className="profilePanel__card">
@@ -71,7 +41,7 @@ export function ProfilePanel({
           </ul>
         )}
         <button type="button" className="button buttonPrimary profilePanel__btn" onClick={onGoToCreateHub}>
-          Manage in Create
+          Create with This Profile
         </button>
       </div>
 
@@ -90,24 +60,23 @@ export function ProfilePanel({
           </ul>
         )}
         <button type="button" className="button buttonPrimary profilePanel__btn" onClick={onGoToCreateHub}>
-          Manage in Create
+          Use in Story
         </button>
       </div>
 
       <div className="profilePanel__card">
-        <h2 className="profilePanel__h2">Settings</h2>
+        <h2 className="profilePanel__h2">Settings, legal, support</h2>
         <ul className="profilePanel__links">
           <li>
-            <Link href="/settings">App &amp; legal</Link>
+            <a href="/settings">Settings</a>
           </li>
           <li>
-            <Link href="/legal/privacy">Privacy</Link>
+            <a href="/legal/privacy">Privacy Policy</a>
           </li>
           <li>
-            <Link href="/legal/terms">Terms</Link>
+            <a href="/legal/terms">Terms of Use</a>
           </li>
         </ul>
-        <p className="profilePanel__muted">Notifications coming soon.</p>
       </div>
     </section>
   );

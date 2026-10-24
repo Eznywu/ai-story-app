@@ -41,6 +41,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .entryScreen__brand {
@@ -49,10 +51,67 @@
   max-height: min(42vh, 280px);
   object-fit: contain;
   object-position: center center;
+  animation: entryFloat 2.2s ease-in-out infinite;
+}
+
+.entryScreen__tagline {
+  margin: 0;
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.03em;
+}
+
+.entryScreen__spark {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 248, 194, 0.85);
+  box-shadow: 0 0 20px rgba(228, 188, 60, 0.4);
+  animation: entrySpark 2.8s ease-in-out infinite;
+}
+
+.entryScreen__spark--one {
+  top: 31%;
+  left: 28%;
+}
+
+.entryScreen__spark--two {
+  top: 40%;
+  right: 26%;
+  animation-delay: 0.8s;
+}
+
+@keyframes entryFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes entrySpark {
+  0%,
+  100% {
+    transform: scale(0.9);
+    opacity: 0.35;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.95;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .entryScreen {
     transition-duration: 0.28s;
+  }
+
+  .entryScreen__brand,
+  .entryScreen__spark {
+    animation: none;
   }
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { VOICES } from "@/lib/voices";
+import { VOICES } from "@/lib/voices/voices";
 
 export const runtime = "nodejs";
 

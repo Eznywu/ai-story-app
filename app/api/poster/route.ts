@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { getErrorMessage, getErrorStatus } from "@/lib/errors";
+import { getErrorMessage } from "@/lib/errors";
 import { captureException } from "@/lib/monitoring";
-import { generatePosterPngBuffer } from "@/lib/posterImage";
-import { isMemberRequest } from "@/lib/memberGate";
+import { posterRoutePublicError } from "@/lib/posters/posterDiagnostics";
+import { generatePosterPngBuffer } from "@/lib/posters/posterImage";
 
 export const runtime = "nodejs";
 
@@ -28,12 +28,6 @@ function bufferLooksLikePng(buf: Buffer): boolean {
 
 export async function POST(req: Request) {
   try {
-    if (!isMemberRequest(req)) {
-      return NextResponse.json(
-        { error: "Sign in and join membership to create posters." },
-        { status: 403 }
-      );
-    }
     const body = (await req.json().catch(() => ({}))) as Body;
     const title = typeof body.title === "string" ? body.title : "";
     const story = typeof body.story === "string" ? body.story : "";
@@ -69,20 +63,14 @@ export async function POST(req: Request) {
     });
   } catch (err: unknown) {
     captureException(err, { route: "/api/poster" });
-    const message = getErrorMessage(err, "Poster image failed.");
+    const detail = getErrorMessage(err, "Poster image failed.");
+    const { status, error, logReason } = posterRoutePublicError(err);
     console.error("[/api/poster] failed", {
-      message,
-      err: err instanceof Error ? err.stack ?? err.message : String(err),
+      logReason,
+      httpStatus: status,
+      publicError: error,
+      detail: detail.slice(0, 400),
     });
-    const status = getErrorStatus(
-      err,
-      message.includes("OPENAI_API_KEY") ||
-        message.includes("Gemini API key") ||
-        message.includes("GEMINI_API_KEY") ||
-        message.includes("POSTER_IMAGE_PROVIDER")
-        ? 500
-        : 502
-    );
-    return NextResponse.json({ error: message }, { status });
+    return NextResponse.json({ error }, { status });
   }
 }

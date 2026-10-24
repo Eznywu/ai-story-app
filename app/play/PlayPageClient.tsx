@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
 import { AppChromeBar } from "@/app/components/AppChromeBar";
+import { BackButton } from "@/app/components/BackButton";
 import "@/app/page.css";
 
 const URL_KEY = "emrsy.lastAudioUrl";
@@ -13,12 +13,15 @@ export function PlayPageClient() {
   const [title, setTitle] = useState("");
 
   useEffect(() => {
-    try {
-      setAudioUrl(sessionStorage.getItem(URL_KEY));
-      setTitle(sessionStorage.getItem(TITLE_KEY) || "");
-    } catch {
-      setAudioUrl(null);
-    }
+    const id = setTimeout(() => {
+      try {
+        setAudioUrl(sessionStorage.getItem(URL_KEY));
+        setTitle(sessionStorage.getItem(TITLE_KEY) || "");
+      } catch {
+        setAudioUrl(null);
+      }
+    }, 0);
+    return () => clearTimeout(id);
   }, []);
 
   return (
@@ -47,11 +50,9 @@ export function PlayPageClient() {
               </p>
             </div>
           )}
-          <p style={{ marginTop: 16 }}>
-            <Link href="/" className="button">
-              ← Back to app
-            </Link>
-          </p>
+          <div style={{ marginTop: 16 }}>
+            <BackButton className="button">← Back</BackButton>
+          </div>
         </div>
       </div>
     </main>

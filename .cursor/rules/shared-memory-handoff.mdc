@@ -7,6 +7,8 @@ alwaysApply: true
 
 Project home: [Audio Book OS](https://app.notion.com/p/401f569f891e8044b3b9e9b038fa82b8).
 
+Operating plan: [proposed v1, 2026-10-24](https://app.notion.com/p/403f569f891e81968813def2f47c3e2f). Read that page's current version before assigned work. Its targets and dates stay proposed until Eason adopts them. In the task receipt, name the plan version and date, the task milestone, affected metrics, scope conflicts, and the commit tested. Do not copy the plan into the repo. Older files in `audiobook-project-rules/` stay as history when they disagree.
+
 Before work:
 
 - Read the project hub, the assigned Work item, and relevant confirmed decisions through Notion MCP.

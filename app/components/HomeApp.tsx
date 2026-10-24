@@ -6,6 +6,7 @@ import { StoryForm } from "@/app/components/StoryForm";
 import { AppChromeBar } from "@/app/components/AppChromeBar";
 import { StoryOutput } from "@/app/components/StoryOutput";
 import { TtsControls } from "@/app/components/TtsControls";
+import { StoryResultActions } from "@/app/components/StoryResultActions";
 import { LibraryPanel } from "@/app/components/LibraryPanel";
 import { HomeScreenPanel } from "@/app/components/HomeScreenPanel";
 import { CreateHubPanel } from "@/app/components/CreateHubPanel";
@@ -16,22 +17,27 @@ import { CharacterFormModal } from "@/app/components/CharacterFormModal";
 import { HomeTabBar, type HomeTabId } from "@/app/components/HomeTabBar";
 import { PosterFlashCard } from "@/app/components/PosterFlashCard";
 import { EntryScreen } from "@/app/components/EntryScreen";
+import { OnboardingFlow } from "@/app/components/OnboardingFlow";
 import { useStoryGeneration } from "@/app/hooks/useStoryGeneration";
 import { useStoryLibrary } from "@/app/hooks/useStoryLibrary";
 import { useTts } from "@/app/hooks/useTts";
-import { useAuth } from "@/app/hooks/useAuth";
-import { isDefaultStoryText } from "@/lib/defaultStory";
 import { useKidProfiles } from "@/app/hooks/useKidProfiles";
 import { useStoryCharacters } from "@/app/hooks/useStoryCharacters";
 import { useReadingStats } from "@/app/hooks/useReadingStats";
-import { createStoryPoster } from "@/lib/poster";
-import type { PosterCreateOutcome } from "@/lib/poster";
+import { createStoryPoster } from "@/lib/posters/poster";
+import type { PosterCreateOutcome } from "@/lib/posters/poster";
 import { getErrorMessage } from "@/lib/errors";
 import { trackEvent } from "@/lib/analytics";
 import type { AppBannerError, AppBannerSource } from "@/lib/types";
 import { STORY_INPUT_MAX_CHARS } from "@/lib/types";
+import { normalizeChildGenderForStoryInput } from "@/lib/profiles/childGender";
 import type { StoryLibraryItem } from "@/app/hooks/useStoryLibrary";
-import type { KidProfile, StoryCharacterProfile } from "@/lib/profilesTypes";
+import type { KidProfile, StoryCharacterProfile } from "@/lib/profiles/profilesTypes";
+import {
+  loadOnboardingState,
+  saveOnboardingState,
+  type OnboardingIntent,
+} from "@/lib/profiles/localProfilesStorage";
 
 export type HomeUiMode = "responsive" | "mobile" | "desktop";
 
@@ -40,6 +46,7 @@ type PosterPreviewState = {
   title: string;
   outcome: PosterCreateOutcome;
   blob: Blob;
+  fallbackHint?: string;
 };
 
 type CreatePhase = "hub" | "story";
@@ -103,15 +110,15 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
   const [linkedStoryId, setLinkedStoryId] = useState<string | null>(null);
   const [banner, setBanner] = useState<AppBannerError | null>(null);
   const [showEntry, setShowEntry] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [activeTab, setActiveTab] = useState<HomeTabId>("home");
   const [createPhase, setCreatePhase] = useState<CreatePhase>("hub");
+  const [showAdvancedSetup, setShowAdvancedSetup] = useState(false);
+  const [selectedProfileSummary, setSelectedProfileSummary] = useState("No profile selected yet.");
   const [kidModalOpen, setKidModalOpen] = useState(false);
   const [charModalOpen, setCharModalOpen] = useState(false);
   const [posterPreview, setPosterPreview] = useState<PosterPreviewState | null>(null);
   const posterPreviewUrlRef = useRef<string | null>(null);
-
-  const { loading: authLoading, auth, login, logout, joinMembership } = useAuth();
-  const member = auth?.member ?? false;
 
   const { story, setStory, isGenerating, generateStory } = useStoryGeneration();
   const {
@@ -123,6 +130,7 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
     refreshLibrary,
     saveStory,
     savePosterForStory,
+    deleteStory,
   } = useStoryLibrary();
   const {
     voices,
@@ -151,25 +159,13 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
   );
 
   useEffect(() => {
+    void refreshLibrary();
     void fetchVoices();
+    const onboarding = loadOnboardingState();
+    setShowOnboarding(!onboarding.completed);
+    applyOnboardingIntent(onboarding.selectedIntent ?? null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  useEffect(() => {
-    if (authLoading) return;
-    void refreshLibrary();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authLoading, member]);
-
-  useEffect(() => {
-    if (authLoading || !auth) return;
-    if (!member) {
-      setTitle(auth.defaultStory.title);
-      setStory(auth.defaultStory.text);
-    }
-  }, [authLoading, member, auth?.defaultStory.text, auth?.defaultStory.title]);
-
-  const canPlayNarration = useMemo(() => member || isDefaultStoryText(story), [member, story]);
 
   useEffect(() => {
     clearAudio();
@@ -207,6 +203,7 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
     const base = k.interests.length ? `Interests: ${k.interests.join(", ")}` : "";
     setStoryInput(base.slice(0, STORY_INPUT_MAX_CHARS));
     setCreatePhase("story");
+    setSelectedProfileSummary(`${k.name} · ${k.age}${k.interests.length ? ` · ${k.interests.slice(0, 2).join(", ")}` : ""}`);
   }, []);
 
   const applyCharacterProfile = useCallback((c: StoryCharacterProfile) => {
@@ -222,10 +219,10 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
     const packed = parts.join(". ");
     setStoryInput(packed.slice(0, STORY_INPUT_MAX_CHARS));
     setCreatePhase("story");
+    setSelectedProfileSummary(`${c.name}${c.characterType ? ` · ${c.characterType}` : ""}`);
   }, []);
 
   async function onGenerate() {
-    if (!member) return;
     setBanner(null);
     setLinkedStoryId(null);
     const guidance = buildGuidance(storyInput, theme, mood, seriesMode, educationalGoal, moralLesson);
@@ -250,7 +247,6 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
   }
 
   async function onSave() {
-    if (!member) return;
     setBanner(null);
     try {
       const saved = await saveStory({
@@ -276,15 +272,8 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
 
   async function onMakeMp3() {
     setBanner(null);
-    if (!member && !isDefaultStoryText(story)) {
-      setBanner({
-        source: "tts",
-        message: "Log in and join membership to narrate your own stories, or use the sample story text only.",
-      });
-      return;
-    }
     try {
-      await makeMp3(story, speed, emotion, language);
+      await makeMp3(story, speed, emotion, language, linkedStoryId ?? undefined);
     } catch (e: unknown) {
       setBanner({
         source: "tts",
@@ -297,7 +286,7 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
     setBanner(null);
     const lang = item.language?.trim() || language;
     try {
-      await makeMp3(item.story, speed, emotion, lang);
+      await makeMp3(item.story, speed, emotion, lang, item.id);
       onStoryPlayed(item.id, item.title?.trim() || "Story");
       trackEvent("library_play", { storyId: item.id });
     } catch (e: unknown) {
@@ -308,13 +297,65 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
     }
   }
 
+  async function onDeleteLibraryStory(item: StoryLibraryItem) {
+    setBanner(null);
+    try {
+      await deleteStory(item.id);
+      if (linkedStoryId === item.id) {
+        setLinkedStoryId(null);
+      }
+    } catch (e: unknown) {
+      setBanner({
+        source: "save",
+        message: getErrorMessage(e, "Could not delete this story."),
+      });
+    }
+  }
+
+  async function onCreatePosterFromLibrary(item: StoryLibraryItem) {
+    setBanner(null);
+    setIsMakingPoster(true);
+    try {
+      const { outcome, blob, fallbackReason } = await createStoryPoster({
+        title: item.title ?? "",
+        story: item.story ?? "",
+        genre: item.genre ?? "",
+      });
+      if (posterPreviewUrlRef.current) {
+        URL.revokeObjectURL(posterPreviewUrlRef.current);
+        posterPreviewUrlRef.current = null;
+      }
+      const imageUrl = URL.createObjectURL(blob);
+      posterPreviewUrlRef.current = imageUrl;
+      setPosterPreview({
+        imageUrl,
+        title: item.title?.trim() || "Bedtime Story",
+        outcome,
+        blob,
+        fallbackHint: outcome === "text_fallback" ? fallbackReason : undefined,
+      });
+      if (item.id) {
+        await savePosterForStory(item.id, blob);
+      }
+    } catch (e: unknown) {
+      setBanner({
+        source: "poster",
+        message: getErrorMessage(e, "Poster could not be created."),
+      });
+    } finally {
+      setIsMakingPoster(false);
+    }
+  }
+
+  // Capacitor/iOS: poster calls POST /api/poster on the loaded origin. If `capacitor.config`
+  // has no `server.url`, the shell serves bundled `www/` and poster requests miss your Next dev
+  // server — you’ll get genre fallback + “could not reach your app server”. Use CAP_SERVER_URL + cap:sync (see docs/CAPACITOR_IOS_DEV.md).
   async function onCreatePoster() {
-    if (!member) return;
     setIsMakingPoster(true);
     setBanner(null);
     try {
-      const { outcome, blob } = await createStoryPoster({ title, story, genre });
-      trackEvent("poster_created", { layout: outcome });
+      const { outcome, blob, fallbackReason } = await createStoryPoster({ title, story, genre });
+      trackEvent("poster_created", { layout: outcome, textFallback: outcome === "text_fallback" });
       if (posterPreviewUrlRef.current) {
         URL.revokeObjectURL(posterPreviewUrlRef.current);
         posterPreviewUrlRef.current = null;
@@ -326,6 +367,7 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
         title: title.trim() || "Bedtime Story",
         outcome,
         blob,
+        fallbackHint: outcome === "text_fallback" ? fallbackReason : undefined,
       });
       if (linkedStoryId) {
         try {
@@ -381,8 +423,8 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
     setAge(item.age ?? "6 months");
     setLanguage(item.language ?? "zh-Hant");
     setMainCharacterName(item.mainCharacterName ?? "嚕嚕");
-    const g = item.childGender?.toLowerCase();
-    setChildGender(g === "girl" || g === "boy" || g === "any" || g === "nonbinary" ? g : "any");
+    setChildGender(normalizeChildGenderForStoryInput(item.childGender));
+    setSelectedProfileSummary(item.mainCharacterName?.trim() ? `${item.mainCharacterName} · from library` : "Loaded from library");
   }
 
   function onOpenStoryInEditor(item: StoryLibraryItem) {
@@ -402,6 +444,40 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
     }
   }
 
+  function applyOnboardingIntent(intent: OnboardingIntent | null) {
+    if (intent === "create_story") {
+      setActiveTab("create");
+      setCreatePhase("hub");
+      setShowAdvancedSetup(false);
+      return;
+    }
+    if (intent === "build_kid_profile") {
+      setActiveTab("create");
+      setCreatePhase("hub");
+      setShowAdvancedSetup(false);
+      setKidModalOpen(true);
+      return;
+    }
+    if (intent === "create_character") {
+      setActiveTab("create");
+      setCreatePhase("hub");
+      setShowAdvancedSetup(false);
+      setCharModalOpen(true);
+      return;
+    }
+    if (intent === "continue_reading") {
+      if (canContinueReading) {
+        handleContinueReading();
+      } else {
+        setActiveTab("home");
+      }
+      return;
+    }
+    if (intent === "explore_library") {
+      setActiveTab("library");
+    }
+  }
+
   const rootClass = ["pageRoot", "pageRoot--tabs", uiMode === "mobile" && "pageRoot--uiMobile", uiMode === "desktop" && "pageRoot--uiDesktop"]
     .filter(Boolean)
     .join(" ");
@@ -409,6 +485,30 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
   return (
     <>
       {showEntry ? <EntryScreen onFinished={() => setShowEntry(false)} /> : null}
+      {!showEntry && showOnboarding ? (
+        <OnboardingFlow
+          onCreateKid={({ name, age, interests }) => {
+            const created = addKid({
+              name,
+              age,
+              gender: "other",
+              interests,
+            });
+            applyKidProfile(created);
+            setActiveTab("create");
+          }}
+          onFinish={({ skippedCreateKid, intent }) => {
+            saveOnboardingState({
+              completed: true,
+              skippedCreateKid,
+              selectedIntent: intent,
+              consentedToVoice: true,
+            });
+            setShowOnboarding(false);
+            applyOnboardingIntent(intent);
+          }}
+        />
+      ) : null}
       <main className={rootClass}>
         <div className="overlay overlay--withTabs">
           <div className="container">
@@ -428,7 +528,14 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
               {activeTab === "create" && createPhase === "story" ? (
                 <>
                   <div className="createStoryHeader">
-                    <button type="button" className="button createStoryHeader__back" onClick={() => setCreatePhase("hub")}>
+                    <button
+                      type="button"
+                      className="button createStoryHeader__back"
+                      onClick={() => {
+                        setCreatePhase("hub");
+                        setShowAdvancedSetup(false);
+                      }}
+                    >
                       ← Back
                     </button>
                     <div className="title createStoryHeader__title">Story setup</div>
@@ -438,8 +545,8 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
               ) : null}
               {activeTab === "library" ? (
                 <>
-                  <div className="title">My Library</div>
-                  <div className="subtitle">Browse, open, and play your saved stories.</div>
+                  <div className="title">My Stories</div>
+                  <div className="subtitle">Browse, listen, and reopen your saved bedtime stories.</div>
                 </>
               ) : null}
             </header>
@@ -484,6 +591,7 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
                 onQuickCreate={() => {
                   setActiveTab("create");
                   setCreatePhase("hub");
+                  setShowAdvancedSetup(false);
                 }}
                 onAddKid={() => {
                   setActiveTab("create");
@@ -493,16 +601,6 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
                   setActiveTab("create");
                   setCharModalOpen(true);
                 }}
-                member={member}
-                onPlaySampleStory={() => {
-                  if (auth?.defaultStory) {
-                    setTitle(auth.defaultStory.title);
-                    setStory(auth.defaultStory.text);
-                  }
-                  setActiveTab("create");
-                  setCreatePhase("story");
-                }}
-                onGoToMembership={() => setActiveTab("profile")}
               />
             ) : null}
 
@@ -514,26 +612,37 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
                 onAddCharacter={() => setCharModalOpen(true)}
                 onChooseKid={applyKidProfile}
                 onChooseCharacter={applyCharacterProfile}
-                creationLocked={!member}
-                onGoToMembership={() => setActiveTab("profile")}
               />
             ) : null}
 
             {activeTab === "create" && createPhase === "story" ? (
               <div className="mainGrid mainGrid--storySetup">
                 <div className="leftColumnStory">
-                  <StorySetupExtras
-                    theme={theme}
-                    mood={mood}
-                    seriesMode={seriesMode}
-                    educationalGoal={educationalGoal}
-                    moralLesson={moralLesson}
-                    onThemeChange={setTheme}
-                    onMoodChange={setMood}
-                    onSeriesModeChange={setSeriesMode}
-                    onEducationalGoalChange={setEducationalGoal}
-                    onMoralLessonChange={setMoralLesson}
-                  />
+                  <div className="storySetupSummary">
+                    <p className="storySetupSummary__title">Selected profile</p>
+                    <p className="storySetupSummary__body">{selectedProfileSummary}</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="button storySetupAdvancedToggle"
+                    onClick={() => setShowAdvancedSetup((prev) => !prev)}
+                  >
+                    {showAdvancedSetup ? "Hide advanced setup" : "Show advanced setup"}
+                  </button>
+                  {showAdvancedSetup ? (
+                    <StorySetupExtras
+                      theme={theme}
+                      mood={mood}
+                      seriesMode={seriesMode}
+                      educationalGoal={educationalGoal}
+                      moralLesson={moralLesson}
+                      onThemeChange={setTheme}
+                      onMoodChange={setMood}
+                      onSeriesModeChange={setSeriesMode}
+                      onEducationalGoalChange={setEducationalGoal}
+                      onMoralLessonChange={setMoralLesson}
+                    />
+                  ) : null}
                   <StoryForm
                     age={age}
                     language={language}
@@ -567,18 +676,26 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
                     voicesError={voicesError}
                     onRetryVoices={() => void fetchVoices()}
                     hasClonedVoice={hasClonedVoice}
-                    onRegisterClonedVoice={(voiceId, label, _requiresVerification) =>
-                      void registerClonedVoice(voiceId, label)
-                    }
+                    onRegisterClonedVoice={(voiceId, label) => void registerClonedVoice(voiceId, label)}
                     onClearClonedVoice={() => void clearClonedVoice()}
-                    member={member}
-                    canPlayNarration={canPlayNarration}
+                    showSecondaryActions={false}
                   />
                 </div>
 
                 <div className="rightColumn">
                   <TtsControls speed={speed} emotion={emotion} onSpeedChange={setSpeed} onEmotionChange={setEmotion} />
                   <StoryOutput story={story} isGenerating={isGenerating} />
+                  <StoryResultActions
+                    hasStory={Boolean(story.trim())}
+                    isSaving={isSaving}
+                    isMakingMp3={isMakingMp3}
+                    isMakingPoster={isMakingPoster}
+                    onPlay={() => void onMakeMp3()}
+                    onSave={() => void onSave()}
+                    onPoster={() => void onCreatePoster()}
+                    onRegenerate={() => void onGenerate()}
+                    onEditPrompt={() => setShowAdvancedSetup(true)}
+                  />
                 </div>
               </div>
             ) : null}
@@ -589,7 +706,7 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
                 loadingLibrary={loadingLibrary}
                 libraryError={libraryError}
                 playBusy={isMakingMp3}
-                panelTitle="My Library"
+                panelTitle="My Stories"
                 onRefresh={() => void refreshLibrary()}
                 onDismissLibraryError={() => setLibraryError("")}
                 onLoadStory={(item) => {
@@ -598,6 +715,8 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
                   setCreatePhase("story");
                 }}
                 onPlayStory={(item) => void onPlayLibraryStory(item)}
+                onDeleteStory={(item) => void onDeleteLibraryStory(item)}
+                onCreatePoster={(item) => void onCreatePosterFromLibrary(item)}
               />
             ) : null}
 
@@ -609,14 +728,8 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
                 onGoToCreateHub={() => {
                   setActiveTab("create");
                   setCreatePhase("hub");
+                  setShowAdvancedSetup(false);
                 }}
-                authLoading={authLoading}
-                loggedIn={Boolean(auth?.loggedIn)}
-                member={member}
-                email={auth?.email ?? null}
-                onLogin={login}
-                onLogout={logout}
-                onJoinMembership={joinMembership}
               />
             ) : null}
 
@@ -657,6 +770,7 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
             title={posterPreview.title}
             outcome={posterPreview.outcome}
             blob={posterPreview.blob}
+            fallbackHint={posterPreview.fallbackHint}
             onDismiss={dismissPosterPreview}
           />
         ) : null}

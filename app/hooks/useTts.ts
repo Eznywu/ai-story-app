@@ -7,8 +7,8 @@ import {
   clearStoredClonedVoices,
   mergeClonedVoiceIntoList,
   readStoredClonedVoices,
-} from "@/lib/clonedVoiceStorage";
-import { isCloneVoiceId, makeCloneVoiceId } from "@/lib/voices";
+} from "@/lib/voices/clonedVoiceStorage";
+import { isCloneVoiceId, makeCloneVoiceId } from "@/lib/voices/voices";
 
 export type VoiceItem = {
   id: string;
@@ -100,7 +100,13 @@ export function useTts(language: string) {
     if (fallback?.id) setSelectedVoiceId(fallback.id);
   }, [language, voices, selectedVoiceId]);
 
-  async function makeMp3(text: string, speed: number, emotion: number, lang: string) {
+  async function makeMp3(
+    text: string,
+    speed: number,
+    emotion: number,
+    lang: string,
+    storyId?: string
+  ) {
     setIsMakingMp3(true);
     try {
       if (!text.trim()) throw new Error("Generate a story first.");
@@ -114,6 +120,7 @@ export function useTts(language: string) {
           emotion,
           language: lang,
           voiceId: selectedVoiceId || undefined,
+          storyId: storyId?.trim() || undefined,
         }),
       });
 

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import "@/app/page.css";
 import { AppChromeBar } from "@/app/components/AppChromeBar";
+import { BackButton } from "@/app/components/BackButton";
 
 export const metadata: Metadata = {
   title: "Terms — Bedtime Story",
@@ -23,9 +23,9 @@ export default function TermsPage() {
       }}
     >
       <AppChromeBar />
-      <p>
-        <Link href="/">← Back to app</Link>
-      </p>
+      <div style={{ marginBottom: "0.5rem" }}>
+        <BackButton className="button">← Back</BackButton>
+      </div>
       <h1 style={{ fontSize: "1.5rem", marginTop: "1.5rem", marginBottom: "0.25rem" }}>
         Terms of Use
       </h1>

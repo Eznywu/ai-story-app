@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import type { StoryCharacterProfile } from "@/lib/profilesTypes";
+import type { StoryCharacterProfile } from "@/lib/profiles/profilesTypes";
 
 const GENRE_OPTIONS = [
   "Animals",

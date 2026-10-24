@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 model Story {
@@ -18,6 +18,8 @@ model Story {
   mainCharacterName String?
   childGender String?
   posterFilename String?
+  /** True when created by the daily cron (`lib/stories/dailyAutomatedStories.ts`). Shown in Home "New Release". */
+  dailyAutomated Boolean  @default(false)
   createdAt DateTime @default(now())
 }
 

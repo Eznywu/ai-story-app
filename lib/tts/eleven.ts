@@ -1,6 +1,6 @@
 import { ElevenLabsClient, ElevenLabsError } from "@elevenlabs/elevenlabs-js";
 import type { TextToSpeechRequest } from "@elevenlabs/elevenlabs-js/api/resources/textToSpeech/client/requests/TextToSpeechRequest";
-import { resolveVoiceById } from "@/lib/voices";
+import { resolveVoiceById } from "@/lib/voices/voices";
 import { createError } from "@/lib/errors";
 import { captureMessage } from "@/lib/monitoring";
 

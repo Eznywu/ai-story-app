@@ -1,18 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { ReadingStatsState } from "@/lib/profilesTypes";
+import type { ReadingStatsState } from "@/lib/profiles/profilesTypes";
 import {
   hydrateReadingStats,
   recordStoryRead as persistRead,
   setDraftSummary as persistDraft,
-} from "@/lib/localProfilesStorage";
+} from "@/lib/profiles/localProfilesStorage";
 
 export function useReadingStats() {
   const [stats, setStats] = useState<ReadingStatsState | null>(null);
 
   useEffect(() => {
-    setStats(hydrateReadingStats());
+    const id = setTimeout(() => {
+      setStats(hydrateReadingStats());
+    }, 0);
+    return () => clearTimeout(id);
   }, []);
 
   const refresh = useCallback(() => {

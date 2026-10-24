@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { StoryCharacterProfile } from "@/lib/profilesTypes";
-import { loadStoryCharacters, saveStoryCharacters } from "@/lib/localProfilesStorage";
+import type { StoryCharacterProfile } from "@/lib/profiles/profilesTypes";
+import { loadStoryCharacters, saveStoryCharacters } from "@/lib/profiles/localProfilesStorage";
 
 function newId(): string {
   return typeof crypto !== "undefined" && crypto.randomUUID
@@ -14,7 +14,10 @@ export function useStoryCharacters() {
   const [characters, setCharacters] = useState<StoryCharacterProfile[]>([]);
 
   useEffect(() => {
-    setCharacters(loadStoryCharacters());
+    const id = setTimeout(() => {
+      setCharacters(loadStoryCharacters());
+    }, 0);
+    return () => clearTimeout(id);
   }, []);
 
   const add = useCallback((input: Omit<StoryCharacterProfile, "id">) => {

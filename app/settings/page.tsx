@@ -1,6 +1,7 @@
 import Link from "next/link";
 import "@/app/page.css";
 import { AppChromeBar } from "@/app/components/AppChromeBar";
+import { BackButton } from "@/app/components/BackButton";
 
 export default function SettingsPage() {
   return (
@@ -23,11 +24,9 @@ export default function SettingsPage() {
               <Link href="/legal/terms">Terms of use</Link>
             </p>
           </div>
-          <p style={{ marginTop: 16 }}>
-            <Link href="/" className="button">
-              ← Back to app
-            </Link>
-          </p>
+          <div style={{ marginTop: 16 }}>
+            <BackButton className="button">← Back</BackButton>
+          </div>
         </div>
       </div>
     </main>

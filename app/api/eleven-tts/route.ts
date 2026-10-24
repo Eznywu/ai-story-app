@@ -2,22 +2,12 @@
 import { NextResponse } from "next/server";
 import { speakWithEleven } from "@/lib/tts/eleven";
 import { getErrorMessage, getErrorStatus } from "@/lib/errors";
-import { canUseTtsForText } from "@/lib/memberGate";
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    if (!canUseTtsForText(req, String(body?.text ?? ""))) {
-      return NextResponse.json(
-        {
-          error:
-            "Listen is limited to the sample story until you sign in and join membership.",
-        },
-        { status: 403 }
-      );
-    }
     const audioBuffer = await speakWithEleven({
       text: body?.text,
       speed: body?.speed,

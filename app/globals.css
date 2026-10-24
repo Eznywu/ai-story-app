@@ -1,27 +1,76 @@
 :root {
-  /* Logo purple family (EMRSY STORY) */
-  --logo-purple: #5e4a9c;
-  --logo-purple-deep: #433570;
-  --logo-purple-mid: #7b66b8;
-  --logo-purple-soft: #a896d4;
+  /* -------------------------------------------------------------------------
+     Bedtime design system — midnight navy + warm gold (token-first)
+     ------------------------------------------------------------------------- */
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 22px;
+  --radius-xl: 28px;
+  --radius-pill: 999px;
 
-  --bg1: #f9f6fd;
-  --bg2: #ede7f8;
-  --bg3: #e0d8f0;
+  --space-1: 8px;
+  --space-2: 12px;
+  --space-3: 16px;
+  --space-4: 20px;
+  --space-5: 28px;
 
-  --card: rgba(255, 255, 255, 0.82);
-  --card2: rgba(255, 255, 255, 0.62);
-  --border: rgba(94, 74, 156, 0.22);
-  --text: #3a3358;
-  --muted: rgba(58, 51, 88, 0.72);
+  --tap-min: 44px;
+  --btn-height: 54px;
+  --input-height: 54px;
+  --chip-height: 40px;
 
-  --accent: #6e52c4;
-  --accent2: #a78ee8;
-  --accent-glow: rgba(139, 109, 200, 0.38);
-  --accent-glow-soft: rgba(167, 142, 232, 0.24);
-  --primary-ink: #f8f6ff;
+  /* Surfaces */
+  --bg-deep: #0a0e22;
+  --bg-mid: #111832;
+  --bg-low: #060814;
+  --surface-0: rgba(26, 34, 72, 0.94);
+  --surface-1: rgba(32, 42, 88, 0.78);
+  --surface-2: rgba(48, 58, 118, 0.45);
+  --border-subtle: rgba(186, 198, 255, 0.12);
+  --border-muted: rgba(186, 198, 255, 0.18);
+  --divider: rgba(255, 255, 255, 0.08);
 
-  --capy: #8b77b5;
+  /* Typography colors */
+  --text: #f3f4ff;
+  --text-muted: rgba(203, 210, 242, 0.78);
+  --text-soft: rgba(168, 180, 228, 0.62);
+
+  /* Primary CTA — warm gold */
+  --accent-gold: #e4bc3c;
+  --accent-gold-mid: #f0cf52;
+  --accent-gold-soft: #f5da6a;
+  --accent-ink: #1a1528;
+
+  /* Secondary controls */
+  --control-fill: rgba(52, 62, 120, 0.55);
+  --control-fill-pressed: rgba(62, 74, 140, 0.7);
+
+  /* Legacy / accent aliases (components still reference these) */
+  --logo-purple: #9b8fd9;
+  --logo-purple-deep: #d8d2f5;
+  --logo-purple-mid: #b0a3e8;
+  --logo-purple-soft: rgba(176, 163, 232, 0.35);
+
+  --bg1: var(--bg-deep);
+  --bg2: var(--bg-mid);
+  --bg3: var(--bg-low);
+
+  --card: var(--surface-1);
+  --card2: var(--surface-2);
+  --border: var(--border-muted);
+  --muted: var(--text-muted);
+
+  --accent: var(--accent-gold);
+  --accent2: var(--accent-gold-mid);
+  --accent-glow: rgba(228, 188, 60, 0.2);
+  --accent-glow-soft: rgba(240, 207, 82, 0.12);
+  --primary-ink: var(--accent-ink);
+
+  --capy: #9b8fd9;
+
+  /* Shadow / elevation (subtle, night-friendly) */
+  --shadow-card: 0 16px 40px rgba(0, 0, 0, 0.35);
+  --shadow-glow-gold: 0 0 24px rgba(228, 188, 60, 0.18);
 }
 
 html {
@@ -65,13 +114,13 @@ body {
 }
 
 .lulu-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  backdrop-filter: blur(10px);
+  background: var(--surface-0);
+  border: 1px solid var(--border-subtle);
+  backdrop-filter: blur(14px);
 }
 
 .lulu-card-soft {
-  background: var(--card2);
-  border: 1px solid var(--border);
-  backdrop-filter: blur(10px);
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  backdrop-filter: blur(14px);
 }

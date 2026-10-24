@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { ElevenLabsClient, ElevenLabsError } from "@elevenlabs/elevenlabs-js";
 import { getErrorMessage, getErrorStatus } from "@/lib/errors";
-import { isMemberRequest } from "@/lib/memberGate";
 
 export const runtime = "nodejs";
 
@@ -46,12 +45,6 @@ function errorBodyFromElevenLabsError(err: ElevenLabsError): string {
 
 export async function POST(req: Request) {
   try {
-    if (!isMemberRequest(req)) {
-      return NextResponse.json(
-        { error: "Voice cloning requires membership." },
-        { status: 403 }
-      );
-    }
     const apiKey = process.env.ELEVENLABS_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ error: "Missing ELEVENLABS_API_KEY" }, { status: 500 });

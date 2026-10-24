@@ -3,9 +3,8 @@
 import React from "react";
 import type { VoiceItem } from "@/app/hooks/useTts";
 import { VoiceRecorder } from "@/app/components/VoiceRecorder";
+import { AgeRangeSlider } from "@/app/components/AgeRangeSlider";
 import { STORY_INPUT_MAX_CHARS } from "@/lib/types";
-
-const AGE_OPTIONS = ["3 months", "6 months", "9 months", "1 year", "2 years"];
 const LANG_OPTIONS = [
   { label: "English", value: "en" },
   { label: "中文（繁體）", value: "zh-Hant" },
@@ -73,34 +72,23 @@ type Props = {
   hasClonedVoice?: boolean;
   onRegisterClonedVoice?: (voiceId: string, label: string, requiresVerification: boolean) => void;
   onClearClonedVoice?: () => void;
-  /** Full creation (generate, save, poster, clone) requires membership. */
-  member: boolean;
-  /** Narration works for members, or for guests when the text is the configured sample story. */
-  canPlayNarration: boolean;
+  showSecondaryActions?: boolean;
 };
 
 export function StoryForm(props: Props) {
   return (
     <section className="panel">
       <h2 className="panelTitle">Story details</h2>
-      {!props.member ? (
-        <p className="fieldHint" style={{ marginTop: 0, marginBottom: 12 }}>
-          Sample mode: you can listen to the default story with <strong>Make MP3</strong>. Log in and join membership in
-          Profile to generate and save your own stories.
-        </p>
-      ) : null}
 
       <div className="fieldGrid">
-        <label className="field">
-          <span className="label">For what age</span>
-          <select value={props.age} onChange={(e) => props.onAgeChange(e.target.value)}>
-            {AGE_OPTIONS.map((value) => (
-              <option key={value} value={value}>
-                {value}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="field ageField">
+          <AgeRangeSlider
+            id="story-age-slider"
+            label="For what age"
+            value={props.age}
+            onChange={props.onAgeChange}
+          />
+        </div>
 
         <label className="field">
           <span className="label">Language</span>
@@ -225,38 +213,32 @@ export function StoryForm(props: Props) {
         </label>
 
         <div className="actions">
-          <button
-            className="button buttonPrimary"
-            onClick={props.onGenerate}
-            disabled={props.isGenerating || !props.member}
-            type="button"
-          >
-            {props.isGenerating ? "Generating…" : "Generate"}
+          <button className="button buttonPrimary" onClick={props.onGenerate} disabled={props.isGenerating} type="button">
+            {props.isGenerating ? "Generating…" : "Generate Story"}
           </button>
-          <button
-            className="button"
-            onClick={props.onSave}
-            disabled={props.isSaving || !props.hasStory || !props.member}
-            type="button"
-          >
-            {props.isSaving ? "Saving…" : "Save"}
-          </button>
-          <button
-            className="button"
-            onClick={props.onMakeMp3}
-            disabled={props.isMakingMp3 || !props.hasStory || !props.canPlayNarration}
-            type="button"
-          >
-            {props.isMakingMp3 ? "Making MP3…" : "Make MP3"}
-          </button>
-          <button
-            className="button"
-            onClick={props.onCreatePoster}
-            disabled={props.isMakingPoster || !props.hasStory || !props.member}
-            type="button"
-          >
-            {props.isMakingPoster ? "Creating poster…" : "Create poster"}
-          </button>
+          {props.showSecondaryActions !== false ? (
+            <>
+              <button className="button" onClick={props.onSave} disabled={props.isSaving || !props.hasStory} type="button">
+                {props.isSaving ? "Saving…" : "Save"}
+              </button>
+              <button
+                className="button"
+                onClick={props.onMakeMp3}
+                disabled={props.isMakingMp3 || !props.hasStory}
+                type="button"
+              >
+                {props.isMakingMp3 ? "Making MP3…" : "Make MP3"}
+              </button>
+              <button
+                className="button"
+                onClick={props.onCreatePoster}
+                disabled={props.isMakingPoster || !props.hasStory}
+                type="button"
+              >
+                {props.isMakingPoster ? "Creating poster…" : "Create poster"}
+              </button>
+            </>
+          ) : null}
         </div>
       </div>
     </section>

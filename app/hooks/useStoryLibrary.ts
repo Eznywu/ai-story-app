@@ -25,6 +25,7 @@ function toLibraryItem(raw: Record<string, unknown>): StoryLibraryItem {
     mainCharacterName: raw?.mainCharacterName ? String(raw.mainCharacterName) : null,
     childGender: raw?.childGender ? String(raw.childGender) : null,
     createdAt: String(raw?.createdAt ?? ""),
+    dailyAutomated: Boolean(raw?.dailyAutomated),
     posterUrl,
   };
 }
@@ -124,6 +125,17 @@ export function useStoryLibrary() {
     return { posterUrl: String(data?.posterUrl ?? "") };
   }
 
+  async function deleteStory(storyId: string) {
+    const res = await fetch(`/api/stories?id=${encodeURIComponent(storyId)}`, {
+      method: "DELETE",
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data?.error || `Delete failed (${res.status})`);
+    }
+    await refreshLibrary();
+  }
+
   return {
     library,
     loadingLibrary,
@@ -133,5 +145,6 @@ export function useStoryLibrary() {
     refreshLibrary,
     saveStory,
     savePosterForStory,
+    deleteStory,
   };
 }

@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { KidProfile } from "@/lib/profilesTypes";
-import { loadKidProfiles, saveKidProfiles } from "@/lib/localProfilesStorage";
+import type { KidProfile } from "@/lib/profiles/profilesTypes";
+import { loadKidProfiles, saveKidProfiles } from "@/lib/profiles/localProfilesStorage";
 
 function newId(): string {
   return typeof crypto !== "undefined" && crypto.randomUUID
@@ -14,7 +14,10 @@ export function useKidProfiles() {
   const [profiles, setProfiles] = useState<KidProfile[]>([]);
 
   useEffect(() => {
-    setProfiles(loadKidProfiles());
+    const id = setTimeout(() => {
+      setProfiles(loadKidProfiles());
+    }, 0);
+    return () => clearTimeout(id);
   }, []);
 
   const add = useCallback((input: Omit<KidProfile, "id">) => {
