@@ -15,6 +15,8 @@ export type StoryDTO = {
   dailyAutomated?: boolean;
   /** Present when a poster PNG was saved for this story. */
   posterUrl?: string | null;
+  /** Present when narration MP3 was saved for this story. */
+  audioUrl?: string | null;
 };
 
 /** Max length for optional story guidance; enforced in `lib/stories/storyGenerator.ts`. */
@@ -30,6 +32,8 @@ export type StoryCreateInput = {
   language?: string;
   mainCharacterName?: string;
   childGender?: string;
+  /** When set, update this saved story instead of creating another row. */
+  id?: string;
 };
 
 export type StoryGenerationInput = {

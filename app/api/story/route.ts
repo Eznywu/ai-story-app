@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     const message = getErrorMessage(err, "Unknown error");
     const status = getErrorStatus(
       err,
-      message.includes("Missing OPENAI_API_KEY") ? 500 : 502
+      message.includes("OPENAI_API_KEY") ? 500 : 502
     );
     return NextResponse.json(
       { error: message },

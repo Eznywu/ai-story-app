@@ -100,13 +100,39 @@ export function useTts(language: string) {
     if (fallback?.id) setSelectedVoiceId(fallback.id);
   }, [language, voices, selectedVoiceId]);
 
+  function replaceAudioUrl(next: string) {
+    setAudioUrl((prev) => {
+      if (prev.startsWith("blob:") && prev !== next) URL.revokeObjectURL(prev);
+      return next;
+    });
+    const el = audioRef.current;
+    if (!el || typeof window === "undefined") return;
+    const absolute =
+      next.startsWith("blob:") || next.startsWith("http")
+        ? next
+        : new URL(next, window.location.origin).href;
+    if (el.src !== absolute) el.src = next;
+  }
+
+  function playCurrentAudio() {
+    setTimeout(() => {
+      audioRef.current?.play().catch(() => {});
+    }, 60);
+  }
+
+  async function playSavedAudio(url: string) {
+    if (!url.trim()) throw new Error("This story does not have saved narration yet.");
+    replaceAudioUrl(url);
+    playCurrentAudio();
+  }
+
   async function makeMp3(
     text: string,
     speed: number,
     emotion: number,
     lang: string,
     storyId?: string
-  ) {
+  ): Promise<{ savedAudioUrl: string | null }> {
     setIsMakingMp3(true);
     try {
       if (!text.trim()) throw new Error("Generate a story first.");
@@ -129,20 +155,23 @@ export function useTts(language: string) {
         throw new Error(data?.error || `TTS failed (${res.status})`);
       }
 
+      const contentType = res.headers.get("content-type") || "";
+      if (!contentType.includes("audio")) {
+        throw new Error("Narration did not come back as audio. Try again.");
+      }
+
       const blob = await res.blob();
       if (!blob.size) {
         throw new Error("Voice failed, try again.");
       }
 
-      const url = URL.createObjectURL(blob);
-      setAudioUrl((prev) => {
-        if (prev) URL.revokeObjectURL(prev);
-        return url;
-      });
+      const objectUrl = URL.createObjectURL(blob);
+      replaceAudioUrl(objectUrl);
+      playCurrentAudio();
 
-      setTimeout(() => {
-        audioRef.current?.play().catch(() => {});
-      }, 50);
+      const savedHeader = res.headers.get("X-Audio-Url")?.trim() || "";
+      const savedAudioUrl = savedHeader.startsWith("/api/audio/") ? savedHeader : null;
+      return { savedAudioUrl };
     } finally {
       setIsMakingMp3(false);
     }
@@ -150,7 +179,7 @@ export function useTts(language: string) {
 
   function clearAudio() {
     setAudioUrl((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
+      if (prev.startsWith("blob:")) URL.revokeObjectURL(prev);
       return "";
     });
     if (audioRef.current) {
@@ -190,6 +219,7 @@ export function useTts(language: string) {
     voicesError,
     fetchVoices,
     makeMp3,
+    playSavedAudio,
     clearAudio,
     registerClonedVoice,
     clearClonedVoice,

@@ -140,12 +140,12 @@ export function posterFallbackHintForClient(params: {
     return "AI illustration was unavailable because the image request was blocked (content safety).";
   }
 
-  if (st === 503 || posterProviderTransportFailureMessage(msg)) {
-    return "AI illustration was unavailable due to a connection issue with the image provider.";
+  if (/\btimed out\b|\btimeout\b|took too long/i.test(msg.toLowerCase())) {
+    return "AI illustration was unavailable because the image provider timed out.";
   }
 
-  if (/\btimed out\b|timeout\b/i.test(msg.toLowerCase())) {
-    return "AI illustration was unavailable because the image provider timed out.";
+  if (st === 503 || posterProviderTransportFailureMessage(msg)) {
+    return "AI illustration was unavailable due to a connection issue with the image provider.";
   }
 
   if (st === 502) {

@@ -24,6 +24,8 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+To exercise story, narration, and poster **without provider keys**, set `MOCK_PROVIDERS=1` in `.env` (see `.env.example`). That path is for local testing and is ignored when `VERCEL_ENV=production`. Real narration still needs `ELEVENLABS_API_KEY`; real story text needs `OPENAI_API_KEY`; real posters need `OPENAI_API_KEY` or `GEMINI_API_KEY`.
+
 ## Deploy on Vercel
 
 1. Push the repo to GitHub and import the project in [Vercel](https://vercel.com).

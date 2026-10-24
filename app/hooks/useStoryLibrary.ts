@@ -27,6 +27,8 @@ function toLibraryItem(raw: Record<string, unknown>): StoryLibraryItem {
     createdAt: String(raw?.createdAt ?? ""),
     dailyAutomated: Boolean(raw?.dailyAutomated),
     posterUrl,
+    audioUrl:
+      raw?.audioUrl != null && String(raw.audioUrl).trim() !== "" ? String(raw.audioUrl) : null,
   };
 }
 
@@ -82,6 +84,7 @@ export function useStoryLibrary() {
     length: string;
     title: string;
     story: string;
+    id?: string | null;
   }) {
     setIsSaving(true);
     try {
@@ -97,6 +100,7 @@ export function useStoryLibrary() {
           length: input.length,
           title: input.title,
           text: input.story,
+          ...(input.id ? { id: input.id } : {}),
         }),
       });
       const data = await res.json().catch(() => ({}));

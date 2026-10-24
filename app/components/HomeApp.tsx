@@ -16,6 +16,7 @@ import { KidProfileFormModal } from "@/app/components/KidProfileFormModal";
 import { CharacterFormModal } from "@/app/components/CharacterFormModal";
 import { HomeTabBar, type HomeTabId } from "@/app/components/HomeTabBar";
 import { PosterFlashCard } from "@/app/components/PosterFlashCard";
+import { PlaybackPanel } from "@/app/components/PlaybackPanel";
 import { EntryScreen } from "@/app/components/EntryScreen";
 import { OnboardingFlow } from "@/app/components/OnboardingFlow";
 import { useStoryGeneration } from "@/app/hooks/useStoryGeneration";
@@ -28,6 +29,7 @@ import { createStoryPoster } from "@/lib/posters/poster";
 import type { PosterCreateOutcome } from "@/lib/posters/poster";
 import { getErrorMessage } from "@/lib/errors";
 import { trackEvent } from "@/lib/analytics";
+import { rememberLastAudio } from "@/lib/audio/lastAudio";
 import type { AppBannerError, AppBannerSource } from "@/lib/types";
 import { STORY_INPUT_MAX_CHARS } from "@/lib/types";
 import { normalizeChildGenderForStoryInput } from "@/lib/profiles/childGender";
@@ -143,6 +145,7 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
     voicesError,
     fetchVoices,
     makeMp3,
+    playSavedAudio,
     clearAudio,
     registerClonedVoice,
     clearClonedVoice,
@@ -222,12 +225,32 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
     setSelectedProfileSummary(`${c.name}${c.characterType ? ` · ${c.characterType}` : ""}`);
   }, []);
 
-  async function onGenerate() {
+  async function persistStory(text: string, existingId: string | null) {
+    const trimmed = text.trim();
+    if (!trimmed) throw new Error("Generate a story first.");
+    const saved = await saveStory({
+      age,
+      language,
+      mainCharacterName,
+      childGender,
+      genre,
+      length,
+      title: title.trim() || `${mainCharacterName.trim() || "Bedtime"} story`,
+      story: trimmed,
+      id: existingId,
+    });
+    const sid = saved && typeof saved.id === "string" ? saved.id : null;
+    if (sid) setLinkedStoryId(sid);
+    return sid;
+  }
+
+  async function onGenerate(mode: "new" | "replace" = "new") {
     setBanner(null);
-    setLinkedStoryId(null);
+    const updateId = mode === "replace" ? linkedStoryId : null;
+    if (mode === "new") setLinkedStoryId(null);
     const guidance = buildGuidance(storyInput, theme, mood, seriesMode, educationalGoal, moralLesson);
     try {
-      await generateStory({
+      const text = await generateStory({
         age,
         language,
         mainCharacterName,
@@ -237,7 +260,25 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
         title,
         storyInput: guidance,
       });
+      if (!text.trim()) {
+        setBanner({ source: "story", message: "The story came back empty. Try again." });
+        return;
+      }
       trackEvent("story_generated", { genre, length, language });
+      try {
+        const sid = await persistStory(text, updateId);
+        if (!sid) {
+          setBanner({
+            source: "save",
+            message: "The story was written but could not be saved. Tap Try again.",
+          });
+        }
+      } catch (e: unknown) {
+        setBanner({
+          source: "save",
+          message: getErrorMessage(e, "The story was written but could not be saved. Tap Try again."),
+        });
+      }
     } catch (e: unknown) {
       setBanner({
         source: "story",
@@ -249,18 +290,8 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
   async function onSave() {
     setBanner(null);
     try {
-      const saved = await saveStory({
-        age,
-        language,
-        mainCharacterName,
-        childGender,
-        genre,
-        length,
-        title,
-        story,
-      });
-      const sid = saved && typeof saved.id === "string" ? saved.id : null;
-      if (sid) setLinkedStoryId(sid);
+      const sid = await persistStory(story, linkedStoryId);
+      if (!sid) throw new Error("Could not save this story.");
       trackEvent("story_saved");
     } catch (e: unknown) {
       setBanner({
@@ -273,7 +304,17 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
   async function onMakeMp3() {
     setBanner(null);
     try {
-      await makeMp3(story, speed, emotion, language, linkedStoryId ?? undefined);
+      const sid = await persistStory(story, linkedStoryId);
+      const result = await makeMp3(story, speed, emotion, language, sid ?? undefined);
+      if (result.savedAudioUrl) {
+        rememberLastAudio(result.savedAudioUrl, title.trim() || mainCharacterName.trim() || "Story");
+        void refreshLibrary();
+      } else if (sid) {
+        setBanner({
+          source: "tts",
+          message: "Narration is ready, but it could not be saved on this story. Tap Try again.",
+        });
+      }
     } catch (e: unknown) {
       setBanner({
         source: "tts",
@@ -284,10 +325,27 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
 
   async function onPlayLibraryStory(item: StoryLibraryItem) {
     setBanner(null);
-    const lang = item.language?.trim() || language;
+    const label = item.title?.trim() || "Story";
     try {
-      await makeMp3(item.story, speed, emotion, lang, item.id);
-      onStoryPlayed(item.id, item.title?.trim() || "Story");
+      if (item.audioUrl) {
+        await playSavedAudio(item.audioUrl);
+        rememberLastAudio(item.audioUrl, label);
+        onStoryPlayed(item.id, label);
+        trackEvent("library_play", { storyId: item.id, source: "saved" });
+        return;
+      }
+      const lang = item.language?.trim() || language;
+      const result = await makeMp3(item.story, speed, emotion, lang, item.id);
+      if (result.savedAudioUrl) {
+        rememberLastAudio(result.savedAudioUrl, label);
+        void refreshLibrary();
+      } else {
+        setBanner({
+          source: "tts",
+          message: "Narration is ready, but it could not be saved on this story. Tap Try again.",
+        });
+      }
+      onStoryPlayed(item.id, label);
       trackEvent("library_play", { storyId: item.id });
     } catch (e: unknown) {
       setBanner({
@@ -347,13 +405,27 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
     }
   }
 
-  // Capacitor/iOS: poster calls POST /api/poster on the loaded origin. If `capacitor.config`
-  // has no `server.url`, the shell serves bundled `www/` and poster requests miss your Next dev
-  // server — you’ll get genre fallback + “could not reach your app server”. Use CAP_SERVER_URL + cap:sync (see docs/CAPACITOR_IOS_DEV.md).
   async function onCreatePoster() {
     setIsMakingPoster(true);
     setBanner(null);
     try {
+      let sid: string | null = null;
+      try {
+        sid = await persistStory(story, linkedStoryId);
+      } catch (e: unknown) {
+        setBanner({
+          source: "save",
+          message: getErrorMessage(e, "Save the story before creating a poster."),
+        });
+        return;
+      }
+      if (!sid) {
+        setBanner({
+          source: "save",
+          message: "Save the story before creating a poster.",
+        });
+        return;
+      }
       const { outcome, blob, fallbackReason } = await createStoryPoster({ title, story, genre });
       trackEvent("poster_created", { layout: outcome, textFallback: outcome === "text_fallback" });
       if (posterPreviewUrlRef.current) {
@@ -369,20 +441,15 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
         blob,
         fallbackHint: outcome === "text_fallback" ? fallbackReason : undefined,
       });
-      if (linkedStoryId) {
-        try {
-          await savePosterForStory(linkedStoryId, blob);
-          trackEvent("poster_saved", { storyId: linkedStoryId });
-        } catch (e: unknown) {
-          console.warn("[poster] file save failed", e);
-          setBanner({
-            source: "poster",
-            message: getErrorMessage(
-              e,
-              "Poster was created but could not be saved to your library. Save the story first, then create the poster again."
-            ),
-          });
-        }
+      try {
+        await savePosterForStory(sid, blob);
+        trackEvent("poster_saved", { storyId: sid });
+      } catch (e: unknown) {
+        console.warn("[poster] file save failed", e);
+        setBanner({
+          source: "poster",
+          message: getErrorMessage(e, "Poster was created but could not be saved to your library. Tap Try again."),
+        });
       }
     } catch (e: unknown) {
       setBanner({
@@ -502,7 +569,7 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
               completed: true,
               skippedCreateKid,
               selectedIntent: intent,
-              consentedToVoice: true,
+              consentedToVoice: false,
             });
             setShowOnboarding(false);
             applyOnboardingIntent(intent);
@@ -513,8 +580,9 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
         <div className="overlay overlay--withTabs">
           <div className="container">
             <AppChromeBar />
-            {/* Hidden audio for TTS autoplay after Make MP3 (no visible playback bar) */}
-            <audio ref={audioRef} src={audioUrl || undefined} preload="none" className="visuallyHidden" aria-hidden />
+            <div className={audioUrl || isMakingMp3 ? undefined : "visuallyHidden"}>
+              <PlaybackPanel audioRef={audioRef} audioUrl={audioUrl} isPreparing={isMakingMp3} />
+            </div>
             <header>
               {activeTab === "create" && createPhase === "hub" ? (
                 <>
@@ -667,7 +735,7 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
                     isSaving={isSaving}
                     isMakingMp3={isMakingMp3}
                     hasStory={Boolean(story.trim())}
-                    onGenerate={onGenerate}
+                    onGenerate={() => void onGenerate("new")}
                     onSave={onSave}
                     onMakeMp3={onMakeMp3}
                     onCreatePoster={onCreatePoster}
@@ -690,10 +758,12 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
                     isSaving={isSaving}
                     isMakingMp3={isMakingMp3}
                     isMakingPoster={isMakingPoster}
+                    isGenerating={isGenerating}
+                    isSaved={Boolean(linkedStoryId)}
                     onPlay={() => void onMakeMp3()}
                     onSave={() => void onSave()}
                     onPoster={() => void onCreatePoster()}
-                    onRegenerate={() => void onGenerate()}
+                    onRegenerate={() => void onGenerate("replace")}
                     onEditPrompt={() => setShowAdvancedSetup(true)}
                   />
                 </div>

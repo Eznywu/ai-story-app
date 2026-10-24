@@ -18,6 +18,8 @@ model Story {
   mainCharacterName String?
   childGender String?
   posterFilename String?
+  /** ElevenLabs (or mock) MP3 saved for this story, served from `/api/audio/[filename]`. */
+  audioFilename  String?
   /** True when created by the daily cron (`lib/stories/dailyAutomatedStories.ts`). Shown in Home "New Release". */
   dailyAutomated Boolean  @default(false)
   createdAt DateTime @default(now())

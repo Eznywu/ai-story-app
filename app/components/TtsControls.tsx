@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { clampTtsSpeed, TTS_SPEED_MAX, TTS_SPEED_MIN, TTS_SPEED_STEP } from "@/lib/tts/ttsLimits";
 
 type Props = {
   speed: number;
@@ -9,8 +10,8 @@ type Props = {
   onEmotionChange: (value: number) => void;
 };
 
-function clamp(n: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, n));
+function clampEmotion(n: number) {
+  return Math.max(0, Math.min(100, n));
 }
 
 export function TtsControls({ speed, emotion, onSpeedChange, onEmotionChange }: Props) {
@@ -20,25 +21,35 @@ export function TtsControls({ speed, emotion, onSpeedChange, onEmotionChange }: 
         <div className="controlBlock">
           <div className="label">Speed</div>
           <div className="stepper">
-            <button type="button" className="button" onClick={() => onSpeedChange(Number(clamp(speed - 0.05, 0.6, 1.3).toFixed(2)))}>
+            <button
+              type="button"
+              className="button"
+              onClick={() => onSpeedChange(clampTtsSpeed(speed - TTS_SPEED_STEP))}
+            >
               -
             </button>
             <span className="stepperValue">{speed.toFixed(2)}x</span>
-            <button type="button" className="button" onClick={() => onSpeedChange(Number(clamp(speed + 0.05, 0.6, 1.3).toFixed(2)))}>
+            <button
+              type="button"
+              className="button"
+              onClick={() => onSpeedChange(clampTtsSpeed(speed + TTS_SPEED_STEP))}
+            >
               +
             </button>
           </div>
-          <p className="hint">Tip: 0.85-1.00 feels like a calm bedtime pace.</p>
+          <p className="hint">
+            Narration uses {TTS_SPEED_MIN.toFixed(2)}–{TTS_SPEED_MAX.toFixed(2)}. 0.85–1.00 is a calm bedtime pace.
+          </p>
         </div>
 
         <div className="controlBlock">
           <div className="label">Emotion</div>
           <div className="stepper">
-            <button type="button" className="button" onClick={() => onEmotionChange(clamp(emotion - 5, 0, 100))}>
+            <button type="button" className="button" onClick={() => onEmotionChange(clampEmotion(emotion - 5))}>
               -
             </button>
             <span className="stepperValue">Warm {emotion}%</span>
-            <button type="button" className="button" onClick={() => onEmotionChange(clamp(emotion + 5, 0, 100))}>
+            <button type="button" className="button" onClick={() => onEmotionChange(clampEmotion(emotion + 5))}>
               +
             </button>
           </div>

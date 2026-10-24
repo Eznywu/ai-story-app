@@ -62,7 +62,7 @@ export function LibraryPanel({
     if (filter === "all") return library;
     if (filter === "stories") return library.filter((s) => Boolean(s.story.trim()));
     if (filter === "posters") return library.filter((s) => Boolean(s.posterUrl));
-    return [];
+    return library.filter((s) => Boolean(s.audioUrl));
   }, [filter, library]);
 
   return (
@@ -115,8 +115,10 @@ export function LibraryPanel({
           title={filter === "audio" ? "No audio yet" : "No stories in this section"}
           body={
             filter === "audio"
-              ? "Generate audio from any story and it will appear in your listening flow."
-              : "Save a story to start building your cozy shelf."
+              ? "Play a story to save narration. Stories with audio show up here."
+              : filter === "posters"
+                ? "Create a poster from a story and it will show up here."
+                : "Save a story to start building your cozy shelf."
           }
         />
       ) : null}
@@ -194,7 +196,7 @@ export function LibraryPanel({
                         disabled={playBusy || !story.story.trim()}
                         onClick={() => onPlayStory(story)}
                       >
-                        {playBusy ? "Preparing…" : "Listen now"}
+                        {playBusy ? "Preparing…" : story.audioUrl ? "Listen" : "Make audio"}
                       </button>
                       <button className="button" type="button" onClick={() => setDetailItem(story)}>
                         Story detail
@@ -208,6 +210,10 @@ export function LibraryPanel({
                         >
                           View poster
                         </a>
+                      ) : onCreatePoster ? (
+                        <button className="button" type="button" onClick={() => onCreatePoster(story)}>
+                          Create poster
+                        </button>
                       ) : null}
                     </div>
                   </div>

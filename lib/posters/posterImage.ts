@@ -3,6 +3,11 @@ import { generatePosterPngFromGemini } from "@/lib/posters/geminiPoster";
 import { generatePosterPngFromOpenAI } from "@/lib/posters/openaiPoster";
 import { posterErrorLooksLikeContentBlocked, posterErrorLooksLikeMissingConfig } from "@/lib/posters/posterDiagnostics";
 import { isRecoverablePosterProviderConnectivityFailure } from "@/lib/posters/posterProviderErrors";
+import {
+  mockPosterFallbackEnabled,
+  mockPosterPngBuffer,
+  mockProvidersEnabled,
+} from "@/lib/providers/mockProviders";
 
 function hasOpenAiKey(): boolean {
   return Boolean(process.env.OPENAI_API_KEY?.trim());
@@ -27,6 +32,14 @@ export async function generatePosterPngBuffer(input: {
   story: string;
   genre?: string;
 }): Promise<Buffer> {
+  if (mockPosterFallbackEnabled()) {
+    throw createError("OpenAI timed out or was blocked on the network.", 503);
+  }
+  if (mockProvidersEnabled()) {
+    console.info("[poster] mock png");
+    return mockPosterPngBuffer();
+  }
+
   const rawProvider = process.env.POSTER_IMAGE_PROVIDER?.trim();
   const mode = rawProvider?.toLowerCase();
   const hasOpen = hasOpenAiKey();
