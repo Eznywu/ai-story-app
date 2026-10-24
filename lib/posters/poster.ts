@@ -1,3 +1,4 @@
+import { redirectIfUnsigned } from "@/lib/auth/redirectIfUnsigned";
 import { posterFallbackCanvasFooterLine, posterFallbackHintForClient } from "@/lib/posters/posterDiagnostics";
 import { paintGenreIllustration } from "@/lib/posters/posterGenreArt";
 import { posterProviderTransportFailureMessage } from "@/lib/posters/posterProviderErrors";
@@ -119,6 +120,9 @@ export async function createStoryPoster(params: {
   if (!res.ok) {
     const errJson = (await res.json().catch(() => null)) as { error?: string } | null;
     const message = errJson?.error ?? `Poster request failed (${res.status})`;
+    if (redirectIfUnsigned(res.status)) {
+      throw new Error(message);
+    }
     if (posterErrorLooksLikeNetworkBlock(res.status, message)) {
       console.warn("[poster client] AI path failed — genre fallback", {
         reason: "recoverable_api_or_network",

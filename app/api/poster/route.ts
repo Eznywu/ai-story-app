@@ -3,8 +3,10 @@ import { getErrorMessage } from "@/lib/errors";
 import { captureException } from "@/lib/monitoring";
 import { posterRoutePublicError } from "@/lib/posters/posterDiagnostics";
 import { generatePosterPngBuffer } from "@/lib/posters/posterImage";
+import { requireUser } from "@/lib/auth/requireUser";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 type Body = {
   title?: string;
@@ -27,6 +29,8 @@ function bufferLooksLikePng(buf: Buffer): boolean {
 }
 
 export async function POST(req: Request) {
+  const auth = await requireUser();
+  if (auth.response) return auth.response;
   try {
     const body = (await req.json().catch(() => ({}))) as Body;
     const title = typeof body.title === "string" ? body.title : "";

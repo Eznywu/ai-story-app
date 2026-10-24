@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { StoryDTO } from "@/lib/types";
 import { getErrorMessage } from "@/lib/errors";
+import { redirectIfUnsigned } from "@/lib/auth/redirectIfUnsigned";
 
 export type StoryLibraryItem = StoryDTO & {
   story: string;
@@ -57,6 +58,9 @@ export function useStoryLibrary() {
     try {
       const res = await fetch("/api/stories", { method: "GET" });
       const data = await res.json().catch(() => ({}));
+      if (redirectIfUnsigned(res.status)) {
+        throw new Error(data?.error || "Sign in to continue.");
+      }
       if (!res.ok) {
         throw new Error(data?.error || `Could not load library (${res.status})`);
       }

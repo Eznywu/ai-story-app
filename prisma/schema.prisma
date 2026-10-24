@@ -7,8 +7,51 @@ datasource db {
   provider = "postgresql"
 }
 
+/// A parent account. One email is one family library.
+model User {
+  id            String           @id @default(cuid())
+  email         String           @unique
+  createdAt     DateTime         @default(now())
+  sessions      Session[]
+  stories       Story[]
+  voices        Voice[]
+  kids          KidProfile[]
+  characters    StoryCharacter[]
+  readingStats  ReadingStats?
+}
+
+/// Opaque session token is stored only as a hash. The cookie lasts about 400 days.
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+/// Email one-time code. `codeHash` is scrypt; the plaintext code is never stored.
+model LoginCode {
+  id         String    @id @default(cuid())
+  email      String
+  codeHash   String
+  expiresAt  DateTime
+  attempts   Int       @default(0)
+  consumedAt DateTime?
+  ip         String?
+  createdAt  DateTime  @default(now())
+
+  @@index([email, createdAt])
+  @@index([ip, createdAt])
+}
+
 model Story {
   id        String   @id @default(cuid())
+  /// Null means the row has no family (legacy library or the daily cron). Those rows stay in the database and are hidden from every account.
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   title     String
   genre     String
   length    String
@@ -20,15 +63,72 @@ model Story {
   posterFilename String?
   /** ElevenLabs (or mock) MP3 saved for this story, served from `/api/audio/[filename]`. */
   audioFilename  String?
-  /** True when created by the daily cron (`lib/stories/dailyAutomatedStories.ts`). Shown in Home "New Release". */
+  /** True when created by the daily cron (`lib/stories/dailyAutomatedStories.ts`). */
   dailyAutomated Boolean  @default(false)
   createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
 
 model Voice {
   id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   displayName String
   provider    String   @default("elevenlabs")
   voiceId     String
+  language    String   @default("en")
   createdAt   DateTime @default(now())
+
+  @@unique([userId, voiceId])
+  @@index([userId])
+}
+
+model KidProfile {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name           String
+  age            String
+  gender         String
+  interests      String[] @default([])
+  personality    String?
+  readingLevel   String?
+  favoriteThemes String?
+  bedtimeLength  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model StoryCharacter {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  ageRange      String   @default("")
+  gender        String   @default("")
+  characterType String   @default("")
+  personality   String   @default("")
+  skills        String   @default("")
+  themes        String[] @default([])
+  visualStyle   String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model ReadingStats {
+  userId           String   @id
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  todayKey         String
+  storiesReadToday Int      @default(0)
+  streakDays       Int      @default(0)
+  lastReadDayKey   String?
+  lastStoryId      String?
+  lastStoryTitle   String?
+  draftSummary     String?
+  updatedAt        DateTime @updatedAt
 }

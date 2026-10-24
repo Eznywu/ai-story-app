@@ -2,10 +2,13 @@ import Link from "next/link";
 import "@/app/page.css";
 import { AppChromeBar } from "@/app/components/AppChromeBar";
 import { BackButton } from "@/app/components/BackButton";
+import { RequireAuth } from "@/app/components/RequireAuth";
+import { SettingsAccount } from "@/app/components/SettingsAccount";
 
 export default function SettingsPage() {
   return (
-    <main className="pageRoot">
+    <RequireAuth>
+      <main className="pageRoot">
       <div className="overlay">
         <div className="container">
           <AppChromeBar />
@@ -13,6 +16,7 @@ export default function SettingsPage() {
             <h1 className="title">Settings</h1>
             <p className="subtitle">App preferences and legal.</p>
           </header>
+          <SettingsAccount />
           <div className="panel" style={{ marginTop: 14 }}>
             <p className="label" style={{ marginTop: 0 }}>
               Legal
@@ -29,6 +33,7 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
-    </main>
+      </main>
+    </RequireAuth>
   );
 }

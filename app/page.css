@@ -2886,3 +2886,38 @@ textarea::placeholder {
 .pageRoot--uiDesktop .button {
   flex: 1 1 calc(50% - 10px);
 }
+
+.signInBrand {
+  margin: 0;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.signInPanel {
+  display: grid;
+  gap: 12px;
+}
+
+.signInEmail {
+  margin: 0;
+  font-weight: 700;
+  word-break: break-all;
+}
+
+.signInCode {
+  letter-spacing: 0.42em;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 750;
+}
+
+.signInActions {
+  display: grid;
+  gap: 10px;
+}
+
+.signInActions .button {
+  width: 100%;
+}

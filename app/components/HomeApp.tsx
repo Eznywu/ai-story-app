@@ -40,6 +40,7 @@ import {
   saveOnboardingState,
   type OnboardingIntent,
 } from "@/lib/profiles/localProfilesStorage";
+import { useAuthUser } from "@/app/components/RequireAuth";
 
 export type HomeUiMode = "responsive" | "mobile" | "desktop";
 
@@ -93,6 +94,7 @@ type Props = {
 };
 
 export function HomeApp({ uiMode = "responsive" }: Props) {
+  const { user } = useAuthUser();
   const [age, setAge] = useState("6 months");
   const [language, setLanguage] = useState("zh-Hant");
   const [mainCharacterName, setMainCharacterName] = useState("嚕嚕");
@@ -164,11 +166,11 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
   useEffect(() => {
     void refreshLibrary();
     void fetchVoices();
-    const onboarding = loadOnboardingState();
+    const onboarding = loadOnboardingState(user.id);
     setShowOnboarding(!onboarding.completed);
     applyOnboardingIntent(onboarding.selectedIntent ?? null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user.id]);
 
   useEffect(() => {
     clearAudio();
@@ -565,12 +567,15 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
             setActiveTab("create");
           }}
           onFinish={({ skippedCreateKid, intent }) => {
-            saveOnboardingState({
-              completed: true,
-              skippedCreateKid,
-              selectedIntent: intent,
-              consentedToVoice: false,
-            });
+            saveOnboardingState(
+              {
+                completed: true,
+                skippedCreateKid,
+                selectedIntent: intent,
+                consentedToVoice: false,
+              },
+              user.id
+            );
             setShowOnboarding(false);
             applyOnboardingIntent(intent);
           }}
@@ -792,6 +797,7 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
 
             {activeTab === "profile" ? (
               <ProfilePanel
+                email={user.email}
                 stats={stats}
                 kids={kids}
                 characters={characters}

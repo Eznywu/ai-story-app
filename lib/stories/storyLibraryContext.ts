@@ -13,7 +13,10 @@ function langBucket(lang: string | null | undefined): string {
  * Compact excerpts from recently saved stories for anti-repetition in prompts.
  * Prefer same language bucket as the request; if too few, use recent stories of any language.
  */
-export async function loadAntiRepeatLibraryContext(requestLanguage: string): Promise<string> {
+export async function loadAntiRepeatLibraryContext(
+  requestLanguage: string,
+  userId: string | null = null
+): Promise<string> {
   if (process.env.STORY_LIBRARY_ANTIREPEAT === "0") {
     return "";
   }
@@ -22,6 +25,7 @@ export async function loadAntiRepeatLibraryContext(requestLanguage: string): Pro
     const { prisma } = await import("@/lib/prisma");
     const bucket = langBucket(requestLanguage);
     const recent = await prisma.story.findMany({
+      where: userId ? { userId } : { userId: null, dailyAutomated: true },
       orderBy: { createdAt: "desc" },
       take: FETCH_CAP,
       select: {

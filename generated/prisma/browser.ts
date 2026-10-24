@@ -18,6 +18,21 @@ export { Prisma }
 export * as $Enums from './enums'
 export * from './enums';
 /**
+ * Model User
+ * A parent account. One email is one family library.
+ */
+export type User = Prisma.UserModel
+/**
+ * Model Session
+ * Opaque session token is stored only as a hash. The cookie lasts about 400 days.
+ */
+export type Session = Prisma.SessionModel
+/**
+ * Model LoginCode
+ * Email one-time code. `codeHash` is scrypt; the plaintext code is never stored.
+ */
+export type LoginCode = Prisma.LoginCodeModel
+/**
  * Model Story
  * 
  */
@@ -27,3 +42,18 @@ export type Story = Prisma.StoryModel
  * 
  */
 export type Voice = Prisma.VoiceModel
+/**
+ * Model KidProfile
+ * 
+ */
+export type KidProfile = Prisma.KidProfileModel
+/**
+ * Model StoryCharacter
+ * 
+ */
+export type StoryCharacter = Prisma.StoryCharacterModel
+/**
+ * Model ReadingStats
+ * 
+ */
+export type ReadingStats = Prisma.ReadingStatsModel

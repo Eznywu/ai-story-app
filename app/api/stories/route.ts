@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import type { StoryCreateInput } from "@/lib/types";
 import { getErrorMessage } from "@/lib/errors";
@@ -6,8 +5,11 @@ import { captureException } from "@/lib/monitoring";
 import { parseChildGenderFromClient } from "@/lib/profiles/childGender";
 import { isSafeStoryId } from "@/lib/stories/storyIds";
 import { removeStoryAudioFile, removeStoryMediaFiles } from "@/lib/audio/storyMediaFiles";
+import { findOwnedStory } from "@/lib/auth/ownedStory";
+import { jsonNoStore, requireUser } from "@/lib/auth/requireUser";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function withMedia<T extends { posterFilename: string | null; audioFilename: string | null }>(row: T) {
   const { posterFilename, audioFilename, ...rest } = row;
@@ -27,22 +29,27 @@ function displayTitle(titleInput: string, mainCharacterName: string | null) {
 }
 
 export async function GET() {
+  const auth = await requireUser();
+  if (auth.response) return auth.response;
   try {
     const stories = await prisma.story.findMany({
+      where: { userId: auth.user.id },
       orderBy: { createdAt: "desc" },
     });
-    return NextResponse.json({ stories: stories.map(withMedia) });
+    return jsonNoStore({ stories: stories.map(withMedia) });
   } catch (error: unknown) {
     captureException(error, { route: "GET /api/stories" });
     console.error("[GET /api/stories] failed", getErrorMessage(error, "unknown error"));
-    return NextResponse.json(
+    return jsonNoStore(
       { error: "We couldn't load your stories right now. Please try again." },
-      { status: 500 }
+      500
     );
   }
 }
 
 export async function POST(req: Request) {
+  const auth = await requireUser();
+  if (auth.response) return auth.response;
   try {
     const body = (await req.json().catch(() => ({}))) as StoryCreateInput;
 
@@ -58,9 +65,9 @@ export async function POST(req: Request) {
     const childGender = parseChildGenderFromClient(body.childGender);
 
     if (!genre || !length || !text) {
-      return NextResponse.json(
+      return jsonNoStore(
         { error: "Missing fields: genre, length, and text/story are required" },
-        { status: 400 }
+        400
       );
     }
 
@@ -69,13 +76,13 @@ export async function POST(req: Request) {
 
     if (requestedId) {
       if (!isSafeStoryId(requestedId)) {
-        return NextResponse.json({ error: "That story id is not valid." }, { status: 400 });
+        return jsonNoStore({ error: "That story id is not valid." }, 400);
       }
-      const existing = await prisma.story.findUnique({ where: { id: requestedId } });
+      const existing = await findOwnedStory(auth.user.id, requestedId);
       if (!existing) {
-        return NextResponse.json(
+        return jsonNoStore(
           { error: "That story is no longer in your library. Generate it again to save a new copy." },
-          { status: 404 }
+          404
         );
       }
       const textChanged = existing.text !== text;
@@ -96,11 +103,12 @@ export async function POST(req: Request) {
           ...(textChanged ? { audioFilename: null } : {}),
         },
       });
-      return NextResponse.json({ story: withMedia(story) });
+      return jsonNoStore({ story: withMedia(story) });
     }
 
     const story = await prisma.story.create({
       data: {
+        userId: auth.user.id,
         title,
         genre,
         length,
@@ -112,33 +120,29 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json({ story: withMedia(story) });
+    return jsonNoStore({ story: withMedia(story) });
   } catch (error: unknown) {
-    return NextResponse.json(
-      { error: getErrorMessage(error, "Failed to save story") },
-      { status: 500 }
-    );
+    return jsonNoStore({ error: getErrorMessage(error, "Failed to save story") }, 500);
   }
 }
 
 export async function DELETE(req: Request) {
+  const auth = await requireUser();
+  if (auth.response) return auth.response;
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id")?.trim() || "";
     if (!id || !isSafeStoryId(id)) {
-      return NextResponse.json({ error: "Missing story id" }, { status: 400 });
+      return jsonNoStore({ error: "Missing story id" }, 400);
     }
-    const existing = await prisma.story.findUnique({ where: { id } });
+    const existing = await findOwnedStory(auth.user.id, id);
     if (!existing) {
-      return NextResponse.json({ error: "Story not found." }, { status: 404 });
+      return jsonNoStore({ error: "Story not found." }, 404);
     }
     await removeStoryMediaFiles(existing);
     await prisma.story.delete({ where: { id } });
-    return NextResponse.json({ ok: true });
+    return jsonNoStore({ ok: true });
   } catch (error: unknown) {
-    return NextResponse.json(
-      { error: getErrorMessage(error, "Failed to delete story") },
-      { status: 500 }
-    );
+    return jsonNoStore({ error: getErrorMessage(error, "Failed to delete story") }, 500);
   }
 }
