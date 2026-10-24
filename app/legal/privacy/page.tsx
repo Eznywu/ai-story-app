@@ -13,23 +13,15 @@ const LAST_UPDATED = "April 2, 2026";
 
 export default function PrivacyPage() {
   return (
-    <main
-      style={{
-        maxWidth: 640,
-        margin: "0 auto",
-        padding: "2rem 1.25rem 4rem",
-        lineHeight: 1.65,
-        color: "#0f172a",
-      }}
-    >
+    <main className="pageRoot legalPage">
+      <div className="overlay">
+        <div className="container legalDoc">
       <AppChromeBar />
-      <div style={{ marginBottom: "0.5rem" }}>
+      <div className="legalDoc__back">
         <BackButton className="button">← Back</BackButton>
       </div>
-      <h1 style={{ fontSize: "1.5rem", marginTop: "1.5rem", marginBottom: "0.25rem" }}>
-        Privacy Policy
-      </h1>
-      <p style={{ marginTop: 0, color: "#64748b", fontSize: "0.95rem" }}>
+      <h1>Privacy Policy</h1>
+      <p className="legalDoc__meta">
         Last updated: {LAST_UPDATED}
       </p>
 
@@ -44,14 +36,14 @@ export default function PrivacyPage() {
         <strong>Apple App Store</strong> and to help you make informed privacy choices.
       </p>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>Who we are</h2>
+      <h2>Who we are</h2>
       <p>
         The Services are operated by the developer identified as the seller on the App Store for Bedtime Story
         (“we,” “us,” or “our”). For privacy questions or requests, use the support URL or contact email shown on
         our App Store product page.
       </p>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>Scope and audience</h2>
+      <h2>Scope and audience</h2>
       <p>
         The App is intended for use by <strong>adults</strong> (for example, parents and caregivers) who create
         stories and related content for children in their care. It is not intended for use by children under 13 on
@@ -61,8 +53,8 @@ export default function PrivacyPage() {
         steps.
       </p>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>Information we collect</h2>
-      <h3 style={{ fontSize: "1rem", marginTop: "1rem", fontWeight: 600 }}>Accounts, membership, and sign-in</h3>
+      <h2>Information we collect</h2>
+      <h3>Accounts, membership, and sign-in</h3>
       <p>
         Where sign-in is enabled, we process the <strong>email address and password</strong> you use to log in, and
         we issue an <strong>HTTP-only session cookie</strong> so the Services can recognize your browser and whether
@@ -72,7 +64,7 @@ export default function PrivacyPage() {
         on the server; do not store passwords in client-visible storage.
       </p>
 
-      <h3 style={{ fontSize: "1rem", marginTop: "1rem", fontWeight: 600 }}>Information you provide</h3>
+      <h3>Information you provide</h3>
       <ul style={{ paddingLeft: "1.25rem" }}>
         <li>
           <strong>Story settings and prompts</strong>, such as genre, story length, child age band, language,
@@ -98,7 +90,7 @@ export default function PrivacyPage() {
         </li>
       </ul>
 
-      <h3 style={{ fontSize: "1rem", marginTop: "1rem", fontWeight: 600 }}>Information stored on your device</h3>
+      <h3>Information stored on your device</h3>
       <p>
         Some features store data only in your browser or app storage (for example, <strong>local storage</strong>) on
         your device, including:
@@ -123,7 +115,7 @@ export default function PrivacyPage() {
         data or uninstalling the App may erase it.
       </p>
 
-      <h3 style={{ fontSize: "1rem", marginTop: "1rem", fontWeight: 600 }}>Information collected automatically</h3>
+      <h3>Information collected automatically</h3>
       <ul style={{ paddingLeft: "1.25rem" }}>
         <li>
           <strong>Technical and usage data</strong> processed when you use the Services, such as device or browser
@@ -136,7 +128,7 @@ export default function PrivacyPage() {
         </li>
       </ul>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>How we use information</h2>
+      <h2>How we use information</h2>
       <p>We use information to:</p>
       <ul style={{ paddingLeft: "1.25rem" }}>
         <li>Provide, maintain, secure, and improve the App and the Services;</li>
@@ -160,7 +152,7 @@ export default function PrivacyPage() {
         </li>
       </ul>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>AI processing, accuracy, and human review</h2>
+      <h2>AI processing, accuracy, and human review</h2>
       <p>
         Outputs from AI systems can be wrong, inconsistent, or inappropriate for a particular audience. We use
         third-party models that we do not fully control. <strong>You should review AI-generated stories, audio, and
@@ -169,7 +161,7 @@ export default function PrivacyPage() {
         as further described below.
       </p>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>AI and third-party service providers</h2>
+      <h2>AI and third-party service providers</h2>
       <p>
         We rely on vendors that process data on our behalf or as independent controllers according to their own terms.
         Depending on which features you use and how the App is configured, content and parameters may be transmitted
@@ -203,7 +195,7 @@ export default function PrivacyPage() {
         practices</strong>.
       </p>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>Storage and retention</h2>
+      <h2>Storage and retention</h2>
       <p>
         Content you save may be stored on systems we control, including a <strong>database</strong> for story
         records and metadata, and <strong>disk storage</strong> for poster image files and any optional diagnostic
@@ -218,7 +210,7 @@ export default function PrivacyPage() {
         their internal retention clocks.
       </p>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>Security</h2>
+      <h2>Security</h2>
       <p>
         We use reasonable administrative, technical, and organizational measures designed to protect information,
         including keeping API credentials on the server side where they belong. No method of transmission or storage
@@ -227,21 +219,21 @@ export default function PrivacyPage() {
         will follow required notification procedures.
       </p>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>Apple and App Store</h2>
+      <h2>Apple and App Store</h2>
       <p>
         If you download the App from the App Store, Apple may collect information as described in Apple’s privacy
         policy. Our use of information we receive through the App is covered by this Privacy Policy, not Apple’s.
         Apple is not responsible for our privacy practices.
       </p>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>Tracking and advertising</h2>
+      <h2>Tracking and advertising</h2>
       <p>
         We do not use your data to track you across third-party apps and websites for advertising purposes. If that
         changes, we will update this policy and, where required, seek permission (for example, through Apple’s App
         Tracking Transparency framework on iOS).
       </p>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>Your rights and choices</h2>
+      <h2>Your rights and choices</h2>
       <p>
         Depending on where you live, you may have rights to access, correct, delete, or port your personal
         information, or to object to or restrict certain processing. To exercise these rights, contact us using the
@@ -250,7 +242,7 @@ export default function PrivacyPage() {
         not “sell” or “share” personal information as those terms are defined in California law.
       </p>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>International transfers</h2>
+      <h2>International transfers</h2>
       <p>
         We and our vendors may process information in countries other than where you live (including the United
         States). Those countries may have different data protection laws. Where required, we use appropriate
@@ -258,18 +250,20 @@ export default function PrivacyPage() {
         demands</strong> may apply differently abroad.
       </p>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>Changes</h2>
+      <h2>Changes</h2>
       <p>
         We may update this Privacy Policy from time to time. We will post the updated version in the App or at this
         URL and revise the “Last updated” date. If changes are material, we will provide notice as required by law or
         by platform rules (including the App Store).
       </p>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>Contact</h2>
+      <h2>Contact</h2>
       <p>
         For privacy-related requests or questions, use the support URL or developer contact email on our App Store
         product page for Bedtime Story.
       </p>
+        </div>
+      </div>
     </main>
   );
 }

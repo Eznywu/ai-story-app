@@ -44,7 +44,7 @@ export function PlayPageClient() {
             </div>
           ) : (
             <div className="panel">
-              <p style={{ margin: 0, fontWeight: 650 }}>
+              <p className="playPageEmpty">
                 No audio yet. Open the app, create or open a story, then use <strong>Make MP3</strong> (or play from
                 Library). Your audio will appear here.
               </p>
