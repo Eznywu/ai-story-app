@@ -16,13 +16,13 @@ Do not add extra top-level sections (no README-style setup unless the user asks)
 
 ## Sources (read before writing)
 
-Use the repo as ground truth, in this order:
+Use two kinds of evidence. Do not let an older file outrank either one.
 
-1. **`audiobook-project-rules/project-rules.txt`** — product vision, Phase 1 MVP scope, explicit out-of-scope items, principles.
-2. **`audiobook-project-rules/project-checklist.md`** — **authoritative** Done / Partial / Not started; action backlog; known gaps (e.g. multi-tenant library).
-3. Only if something is unclear: skim **`README.md`**, **`package.json`**, or a few key files under `app/` — do not dump file trees.
+1. **Approved scope and decisions live in Notion.** Read [Audio Book OS](https://app.notion.com/p/401f569f891e8044b3b9e9b038fa82b8), the assigned Work item, confirmed decisions, and the [proposed operating plan v1, 2026-10-24](https://app.notion.com/p/403f569f891e81968813def2f47c3e2f). Numerical targets and dates on that plan stay proposed until Eason adopts them. Do not copy the plan into the brief.
+2. **Implementation evidence is the code, tests, and runtime.** Prefer what the current tree and a real run show over any written status list.
+3. **`audiobook-project-rules/` is history.** `project-rules.txt`, `project-checklist.md`, and `execution-priority-plan.md` stay in the repo so older intent can be cited. When one of them conflicts with Notion or with the code, label it historical and do not treat its Done / Partial / Not started marks, phase gates, or product name as current.
 
-If the checklist’s “Last updated” line exists, **mention the date** in the progress section (or note “checklist date: …”) so the external AI knows freshness.
+If the checklist’s “Last updated” line exists, mention that date as the checklist’s date, not as the date the app was last verified.
 
 ## Optional freshness signal
 
@@ -31,31 +31,31 @@ If the user wants “what we did lately” or the checklist looks stale, run **`
 ## Writing rules
 
 - **Tone:** Neutral, factual; no marketing fluff.
-- **Goal section:** Summarize *who* the product is for, *what* problem it solves, the **Phase 1 MVP** checklist in brief bullets, and **1–3 explicit non-goals** from the rules (to prevent scope creep in the other tool).
-- **Progress section:** Mirror the checklist’s structure (product experience, backend/data, launch/ops) but **compressed**. For every **Partial** or **Not started** item that blocks launch or privacy, call it out plainly (e.g. library row isolation).
+- **Goal section:** Summarize *who* the product is for, *what* problem it solves, the current Phase 1 scope from Notion, and **1–3 explicit non-goals** from confirmed decisions or the operating plan. If Notion is unreachable, say so and do not promote the old checklist into that role.
+- **Progress section:** Report what the code, tests, and runtime show, compressed. Name launch or privacy gaps that the current code actually has. A checklist tick is not runtime proof.
 - **Length target:** ~400–900 words total unless the user asks for longer.
-- **Honesty:** If the codebase and checklist disagree, **prefer the checklist** and add a one-line note: “Verify in code: …”
+- **Honesty:** If an older checklist and the code disagree, report the code and say the checklist is historical. Do not prefer the checklist. Leave product-name, account, and phase-order disagreements unresolved unless a confirmed Notion decision settles them.
 
 ## Output format (mandatory)
 
 Return **one fenced markdown block** the user can copy in one gesture. Use this skeleton:
 
 ```markdown
-# AI Family Storytelling App — brief for external assistants
+# Audio Book — brief for external assistants
 
-*(Stack: one line, e.g. Next.js + Prisma + SQLite — only if known from repo files.)*
+*(Stack: one line taken from the current repo, such as the framework and database provider in `package.json` and `prisma/schema.prisma`. Do not copy an older stack from the checklist.)*
 
 ## 1. Goal of the App
 
-[Product vision, audience, core loop, Phase 1 MVP bullets, explicit out-of-scope]
+[Product vision, audience, core loop, current scope from Notion, explicit out-of-scope]
 
 ## 2. Current progress of the App
 
-[Done vs partial vs not started — prioritized by user-visible impact and launch risk]
+[What code, tests, and runtime show — prioritized by user-visible impact and launch risk. Checklist status only when labeled as historical.]
 
 ### Known gaps / next priorities
 
-[Short numbered or bulleted list from checklist backlog + launch items]
+[Short numbered or bulleted list from the current code and the assigned Notion work, not from an outdated checklist tick]
 
 ### Recent commits (optional)
 
