@@ -35,6 +35,7 @@ export type StoryMinAggregateOutputType = {
   mainCharacterName: string | null
   childGender: string | null
   posterFilename: string | null
+  audioFilename: string | null
   dailyAutomated: boolean | null
   createdAt: Date | null
 }
@@ -50,6 +51,7 @@ export type StoryMaxAggregateOutputType = {
   mainCharacterName: string | null
   childGender: string | null
   posterFilename: string | null
+  audioFilename: string | null
   dailyAutomated: boolean | null
   createdAt: Date | null
 }
@@ -65,6 +67,7 @@ export type StoryCountAggregateOutputType = {
   mainCharacterName: number
   childGender: number
   posterFilename: number
+  audioFilename: number
   dailyAutomated: number
   createdAt: number
   _all: number
@@ -82,6 +85,7 @@ export type StoryMinAggregateInputType = {
   mainCharacterName?: true
   childGender?: true
   posterFilename?: true
+  audioFilename?: true
   dailyAutomated?: true
   createdAt?: true
 }
@@ -97,6 +101,7 @@ export type StoryMaxAggregateInputType = {
   mainCharacterName?: true
   childGender?: true
   posterFilename?: true
+  audioFilename?: true
   dailyAutomated?: true
   createdAt?: true
 }
@@ -112,6 +117,7 @@ export type StoryCountAggregateInputType = {
   mainCharacterName?: true
   childGender?: true
   posterFilename?: true
+  audioFilename?: true
   dailyAutomated?: true
   createdAt?: true
   _all?: true
@@ -200,6 +206,7 @@ export type StoryGroupByOutputType = {
   mainCharacterName: string | null
   childGender: string | null
   posterFilename: string | null
+  audioFilename: string | null
   dailyAutomated: boolean
   createdAt: Date
   _count: StoryCountAggregateOutputType | null
@@ -236,6 +243,7 @@ export type StoryWhereInput = {
   mainCharacterName?: Prisma.StringNullableFilter<"Story"> | string | null
   childGender?: Prisma.StringNullableFilter<"Story"> | string | null
   posterFilename?: Prisma.StringNullableFilter<"Story"> | string | null
+  audioFilename?: Prisma.StringNullableFilter<"Story"> | string | null
   dailyAutomated?: Prisma.BoolFilter<"Story"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Story"> | Date | string
 }
@@ -251,6 +259,7 @@ export type StoryOrderByWithRelationInput = {
   mainCharacterName?: Prisma.SortOrderInput | Prisma.SortOrder
   childGender?: Prisma.SortOrderInput | Prisma.SortOrder
   posterFilename?: Prisma.SortOrderInput | Prisma.SortOrder
+  audioFilename?: Prisma.SortOrderInput | Prisma.SortOrder
   dailyAutomated?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
@@ -269,6 +278,7 @@ export type StoryWhereUniqueInput = Prisma.AtLeast<{
   mainCharacterName?: Prisma.StringNullableFilter<"Story"> | string | null
   childGender?: Prisma.StringNullableFilter<"Story"> | string | null
   posterFilename?: Prisma.StringNullableFilter<"Story"> | string | null
+  audioFilename?: Prisma.StringNullableFilter<"Story"> | string | null
   dailyAutomated?: Prisma.BoolFilter<"Story"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Story"> | Date | string
 }, "id">
@@ -284,6 +294,7 @@ export type StoryOrderByWithAggregationInput = {
   mainCharacterName?: Prisma.SortOrderInput | Prisma.SortOrder
   childGender?: Prisma.SortOrderInput | Prisma.SortOrder
   posterFilename?: Prisma.SortOrderInput | Prisma.SortOrder
+  audioFilename?: Prisma.SortOrderInput | Prisma.SortOrder
   dailyAutomated?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.StoryCountOrderByAggregateInput
@@ -305,6 +316,7 @@ export type StoryScalarWhereWithAggregatesInput = {
   mainCharacterName?: Prisma.StringNullableWithAggregatesFilter<"Story"> | string | null
   childGender?: Prisma.StringNullableWithAggregatesFilter<"Story"> | string | null
   posterFilename?: Prisma.StringNullableWithAggregatesFilter<"Story"> | string | null
+  audioFilename?: Prisma.StringNullableWithAggregatesFilter<"Story"> | string | null
   dailyAutomated?: Prisma.BoolWithAggregatesFilter<"Story"> | boolean
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Story"> | Date | string
 }
@@ -320,6 +332,7 @@ export type StoryCreateInput = {
   mainCharacterName?: string | null
   childGender?: string | null
   posterFilename?: string | null
+  audioFilename?: string | null
   dailyAutomated?: boolean
   createdAt?: Date | string
 }
@@ -335,6 +348,7 @@ export type StoryUncheckedCreateInput = {
   mainCharacterName?: string | null
   childGender?: string | null
   posterFilename?: string | null
+  audioFilename?: string | null
   dailyAutomated?: boolean
   createdAt?: Date | string
 }
@@ -350,6 +364,7 @@ export type StoryUpdateInput = {
   mainCharacterName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   childGender?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   posterFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  audioFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dailyAutomated?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -365,6 +380,7 @@ export type StoryUncheckedUpdateInput = {
   mainCharacterName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   childGender?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   posterFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  audioFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dailyAutomated?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -380,6 +396,7 @@ export type StoryCreateManyInput = {
   mainCharacterName?: string | null
   childGender?: string | null
   posterFilename?: string | null
+  audioFilename?: string | null
   dailyAutomated?: boolean
   createdAt?: Date | string
 }
@@ -395,6 +412,7 @@ export type StoryUpdateManyMutationInput = {
   mainCharacterName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   childGender?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   posterFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  audioFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dailyAutomated?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -410,6 +428,7 @@ export type StoryUncheckedUpdateManyInput = {
   mainCharacterName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   childGender?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   posterFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  audioFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dailyAutomated?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -425,6 +444,7 @@ export type StoryCountOrderByAggregateInput = {
   mainCharacterName?: Prisma.SortOrder
   childGender?: Prisma.SortOrder
   posterFilename?: Prisma.SortOrder
+  audioFilename?: Prisma.SortOrder
   dailyAutomated?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
@@ -440,6 +460,7 @@ export type StoryMaxOrderByAggregateInput = {
   mainCharacterName?: Prisma.SortOrder
   childGender?: Prisma.SortOrder
   posterFilename?: Prisma.SortOrder
+  audioFilename?: Prisma.SortOrder
   dailyAutomated?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
@@ -455,6 +476,7 @@ export type StoryMinOrderByAggregateInput = {
   mainCharacterName?: Prisma.SortOrder
   childGender?: Prisma.SortOrder
   posterFilename?: Prisma.SortOrder
+  audioFilename?: Prisma.SortOrder
   dailyAutomated?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
@@ -488,6 +510,7 @@ export type StorySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   mainCharacterName?: boolean
   childGender?: boolean
   posterFilename?: boolean
+  audioFilename?: boolean
   dailyAutomated?: boolean
   createdAt?: boolean
 }, ExtArgs["result"]["story"]>
@@ -503,6 +526,7 @@ export type StorySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   mainCharacterName?: boolean
   childGender?: boolean
   posterFilename?: boolean
+  audioFilename?: boolean
   dailyAutomated?: boolean
   createdAt?: boolean
 }, ExtArgs["result"]["story"]>
@@ -518,6 +542,7 @@ export type StorySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   mainCharacterName?: boolean
   childGender?: boolean
   posterFilename?: boolean
+  audioFilename?: boolean
   dailyAutomated?: boolean
   createdAt?: boolean
 }, ExtArgs["result"]["story"]>
@@ -533,11 +558,12 @@ export type StorySelectScalar = {
   mainCharacterName?: boolean
   childGender?: boolean
   posterFilename?: boolean
+  audioFilename?: boolean
   dailyAutomated?: boolean
   createdAt?: boolean
 }
 
-export type StoryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "genre" | "length" | "text" | "age" | "language" | "mainCharacterName" | "childGender" | "posterFilename" | "dailyAutomated" | "createdAt", ExtArgs["result"]["story"]>
+export type StoryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "genre" | "length" | "text" | "age" | "language" | "mainCharacterName" | "childGender" | "posterFilename" | "audioFilename" | "dailyAutomated" | "createdAt", ExtArgs["result"]["story"]>
 
 export type $StoryPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Story"
@@ -553,6 +579,10 @@ export type $StoryPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     mainCharacterName: string | null
     childGender: string | null
     posterFilename: string | null
+    /**
+     * * ElevenLabs (or mock) MP3 saved for this story, served from `/api/audio/[filename]`.
+     */
+    audioFilename: string | null
     /**
      * * True when created by the daily cron (`lib/stories/dailyAutomatedStories.ts`). Shown in Home "New Release".
      */
@@ -991,6 +1021,7 @@ export interface StoryFieldRefs {
   readonly mainCharacterName: Prisma.FieldRef<"Story", 'String'>
   readonly childGender: Prisma.FieldRef<"Story", 'String'>
   readonly posterFilename: Prisma.FieldRef<"Story", 'String'>
+  readonly audioFilename: Prisma.FieldRef<"Story", 'String'>
   readonly dailyAutomated: Prisma.FieldRef<"Story", 'Boolean'>
   readonly createdAt: Prisma.FieldRef<"Story", 'DateTime'>
 }

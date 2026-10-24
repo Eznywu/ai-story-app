@@ -4,6 +4,7 @@ import path from "path";
 import { prisma } from "@/lib/prisma";
 import { getErrorMessage, getErrorStatus } from "@/lib/errors";
 import { captureException } from "@/lib/monitoring";
+import { isSafeStoryId } from "@/lib/stories/storyIds";
 
 export const runtime = "nodejs";
 
@@ -28,10 +29,6 @@ function bufferLooksLikePng(buf: Buffer): boolean {
   );
 }
 
-function safeStoryId(id: string): boolean {
-  return /^[a-z0-9]+$/i.test(id) && id.length >= 16 && id.length <= 64;
-}
-
 export async function POST(req: Request) {
   try {
     const body = (await req.json().catch(() => ({}))) as {
@@ -42,7 +39,7 @@ export async function POST(req: Request) {
     const storyId = typeof body.storyId === "string" ? body.storyId.trim() : "";
     const b64Raw = typeof body.imageBase64 === "string" ? body.imageBase64 : "";
 
-    if (!storyId || !safeStoryId(storyId)) {
+    if (!storyId || !isSafeStoryId(storyId)) {
       return NextResponse.json({ error: "Valid storyId is required." }, { status: 400 });
     }
 

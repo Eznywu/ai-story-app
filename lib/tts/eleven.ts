@@ -3,6 +3,8 @@ import type { TextToSpeechRequest } from "@elevenlabs/elevenlabs-js/api/resource
 import { resolveVoiceById } from "@/lib/voices/voices";
 import { createError } from "@/lib/errors";
 import { captureMessage } from "@/lib/monitoring";
+import { mockNarrationMp3Buffer, mockProvidersEnabled } from "@/lib/providers/mockProviders";
+import { clampTtsSpeed } from "@/lib/tts/ttsLimits";
 
 export type ElevenTtsInput = {
   text: string;
@@ -38,7 +40,7 @@ export function buildElevenTtsRequest(
   modelId: string
 ): TextToSpeechRequest {
   const isZh = String(language).toLowerCase().startsWith("zh");
-  const normalizedSpeed = Math.max(0.78, Math.min(1.08, Number(speed)));
+  const normalizedSpeed = clampTtsSpeed(speed);
   const emotionNum = Number.isFinite(Number(emotion)) ? Number(emotion) : 40;
   const emotion01 = Math.max(0, Math.min(1, emotionNum > 1 ? emotionNum / 100 : emotionNum));
 
@@ -80,23 +82,46 @@ async function readableStreamToBuffer(stream: ReadableStream<Uint8Array>): Promi
   return Buffer.concat(chunks);
 }
 
-export async function speakWithEleven(input: ElevenTtsInput) {
-  const apiKey = process.env.ELEVENLABS_API_KEY;
-  const fallbackVoiceId = process.env.ELEVENLABS_VOICE_ID;
-  if (!apiKey) {
-    throw createError("Missing ELEVENLABS_API_KEY", 500);
+function friendlyElevenMessage(body: string, fallback: string) {
+  const raw = body.trim();
+  if (!raw) return fallback;
+  try {
+    const parsed = JSON.parse(raw) as { detail?: { message?: string; status?: string } | string };
+    const detail = parsed.detail;
+    if (typeof detail === "string" && detail.trim()) return detail.trim();
+    if (detail && typeof detail === "object" && typeof detail.message === "string" && detail.message.trim()) {
+      return detail.message.trim();
+    }
+  } catch {
+    /* not JSON */
   }
+  return raw.length > 280 ? `${raw.slice(0, 280)}…` : raw;
+}
 
+export async function speakWithEleven(input: ElevenTtsInput) {
   const language = String(input.language ?? "zh-Hant");
   const text = String(input.text ?? "").trim();
   if (!text) {
-    throw createError("Missing text", 400);
+    throw createError("Add story text before making narration.", 400);
+  }
+
+  const apiKey = process.env.ELEVENLABS_API_KEY?.trim();
+  const fallbackVoiceId = process.env.ELEVENLABS_VOICE_ID?.trim();
+  const usingMock = mockProvidersEnabled();
+  if (!apiKey && !usingMock) {
+    throw createError(
+      "Narration needs an ElevenLabs API key. Set ELEVENLABS_API_KEY and try again.",
+      500
+    );
   }
 
   const resolved = resolveVoiceById(input.voiceId, language);
   const resolvedElevenVoiceId = resolved?.elevenId ?? fallbackVoiceId;
   if (!resolvedElevenVoiceId) {
-    throw createError("Missing ELEVENLABS_VOICE_ID", 500);
+    throw createError(
+      "No narration voice is selected. Pick a voice, or set ELEVENLABS_VOICE_ID.",
+      500
+    );
   }
 
   const modelId =
@@ -114,7 +139,17 @@ export async function speakWithEleven(input: ElevenTtsInput) {
     outputFormat: "mp3_44100_128",
   };
 
-  const client = new ElevenLabsClient({ apiKey });
+  if (usingMock) {
+    console.info("[eleven-tts] mock", {
+      modelId,
+      voiceId: resolvedElevenVoiceId,
+      speed: ttsRequest.voiceSettings?.speed,
+      chars: cleanedText.length,
+    });
+    return mockNarrationMp3Buffer();
+  }
+
+  const client = new ElevenLabsClient({ apiKey: apiKey! });
 
   try {
     const { data: stream, rawResponse } = await client.textToSpeech
@@ -141,7 +176,10 @@ export async function speakWithEleven(input: ElevenTtsInput) {
           : err.body != null
             ? JSON.stringify(err.body)
             : "";
-      throw createError(body || err.message || "ElevenLabs request failed", err.statusCode ?? 502);
+      throw createError(
+        friendlyElevenMessage(body, err.message || "ElevenLabs request failed"),
+        err.statusCode ?? 502
+      );
     }
     throw err;
   }

@@ -47,7 +47,13 @@ export async function POST(req: Request) {
   try {
     const apiKey = process.env.ELEVENLABS_API_KEY;
     if (!apiKey) {
-      return NextResponse.json({ error: "Missing ELEVENLABS_API_KEY" }, { status: 500 });
+      return NextResponse.json(
+        {
+          error:
+            "Voice cloning needs an ElevenLabs API key with instant voice cloning enabled. Set ELEVENLABS_API_KEY and try again.",
+        },
+        { status: 500 }
+      );
     }
 
     const formData = await req.formData();

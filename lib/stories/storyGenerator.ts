@@ -7,6 +7,7 @@ import { getOpenAiBaseUrl, getPosterHttpDispatcher } from "@/lib/providerHttp";
 import { posterProviderTransportFailureMessage } from "@/lib/posters/posterProviderErrors";
 import { loadAntiRepeatLibraryContext } from "@/lib/stories/storyLibraryContext";
 import { normalizeChildGenderForStoryInput } from "@/lib/profiles/childGender";
+import { mockProvidersEnabled, mockStoryText } from "@/lib/providers/mockProviders";
 
 export function lengthHint(length: string) {
   if (length === "short") return "about 250-400 words";
@@ -237,15 +238,22 @@ export async function generateStoryWithRetry(
   body: StoryGenerationInput,
   opts?: { retries?: number }
 ) {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    throw new Error("Missing OPENAI_API_KEY");
-  }
-
   const normalized = normalizeStoryInput(body);
   const validationError = validateStoryInput(normalized);
   if (validationError) {
     throw createError(validationError, 400);
+  }
+
+  if (mockProvidersEnabled()) {
+    return mockStoryText(normalized);
+  }
+
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  if (!apiKey) {
+    throw createError(
+      "Story generation needs an OpenAI API key. Set OPENAI_API_KEY and try again.",
+      500
+    );
   }
 
   const timeoutMs = Math.min(
