@@ -1,5 +1,10 @@
 import { HomeApp } from "@/app/components/HomeApp";
+import { RequireAuth } from "@/app/components/RequireAuth";
 
 export default function DesktopUiPage() {
-  return <HomeApp uiMode="desktop" />;
+  return (
+    <RequireAuth>
+      <HomeApp uiMode="desktop" />
+    </RequireAuth>
+  );
 }

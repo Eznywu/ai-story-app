@@ -26,6 +26,7 @@ export type AggregateStory = {
 
 export type StoryMinAggregateOutputType = {
   id: string | null
+  userId: string | null
   title: string | null
   genre: string | null
   length: string | null
@@ -42,6 +43,7 @@ export type StoryMinAggregateOutputType = {
 
 export type StoryMaxAggregateOutputType = {
   id: string | null
+  userId: string | null
   title: string | null
   genre: string | null
   length: string | null
@@ -58,6 +60,7 @@ export type StoryMaxAggregateOutputType = {
 
 export type StoryCountAggregateOutputType = {
   id: number
+  userId: number
   title: number
   genre: number
   length: number
@@ -76,6 +79,7 @@ export type StoryCountAggregateOutputType = {
 
 export type StoryMinAggregateInputType = {
   id?: true
+  userId?: true
   title?: true
   genre?: true
   length?: true
@@ -92,6 +96,7 @@ export type StoryMinAggregateInputType = {
 
 export type StoryMaxAggregateInputType = {
   id?: true
+  userId?: true
   title?: true
   genre?: true
   length?: true
@@ -108,6 +113,7 @@ export type StoryMaxAggregateInputType = {
 
 export type StoryCountAggregateInputType = {
   id?: true
+  userId?: true
   title?: true
   genre?: true
   length?: true
@@ -197,6 +203,7 @@ export type StoryGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
 
 export type StoryGroupByOutputType = {
   id: string
+  userId: string | null
   title: string
   genre: string
   length: string
@@ -234,6 +241,7 @@ export type StoryWhereInput = {
   OR?: Prisma.StoryWhereInput[]
   NOT?: Prisma.StoryWhereInput | Prisma.StoryWhereInput[]
   id?: Prisma.StringFilter<"Story"> | string
+  userId?: Prisma.StringNullableFilter<"Story"> | string | null
   title?: Prisma.StringFilter<"Story"> | string
   genre?: Prisma.StringFilter<"Story"> | string
   length?: Prisma.StringFilter<"Story"> | string
@@ -246,10 +254,12 @@ export type StoryWhereInput = {
   audioFilename?: Prisma.StringNullableFilter<"Story"> | string | null
   dailyAutomated?: Prisma.BoolFilter<"Story"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Story"> | Date | string
+  user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
 }
 
 export type StoryOrderByWithRelationInput = {
   id?: Prisma.SortOrder
+  userId?: Prisma.SortOrderInput | Prisma.SortOrder
   title?: Prisma.SortOrder
   genre?: Prisma.SortOrder
   length?: Prisma.SortOrder
@@ -262,6 +272,7 @@ export type StoryOrderByWithRelationInput = {
   audioFilename?: Prisma.SortOrderInput | Prisma.SortOrder
   dailyAutomated?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  user?: Prisma.UserOrderByWithRelationInput
 }
 
 export type StoryWhereUniqueInput = Prisma.AtLeast<{
@@ -269,6 +280,7 @@ export type StoryWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.StoryWhereInput | Prisma.StoryWhereInput[]
   OR?: Prisma.StoryWhereInput[]
   NOT?: Prisma.StoryWhereInput | Prisma.StoryWhereInput[]
+  userId?: Prisma.StringNullableFilter<"Story"> | string | null
   title?: Prisma.StringFilter<"Story"> | string
   genre?: Prisma.StringFilter<"Story"> | string
   length?: Prisma.StringFilter<"Story"> | string
@@ -281,10 +293,12 @@ export type StoryWhereUniqueInput = Prisma.AtLeast<{
   audioFilename?: Prisma.StringNullableFilter<"Story"> | string | null
   dailyAutomated?: Prisma.BoolFilter<"Story"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Story"> | Date | string
+  user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
 }, "id">
 
 export type StoryOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
+  userId?: Prisma.SortOrderInput | Prisma.SortOrder
   title?: Prisma.SortOrder
   genre?: Prisma.SortOrder
   length?: Prisma.SortOrder
@@ -307,6 +321,7 @@ export type StoryScalarWhereWithAggregatesInput = {
   OR?: Prisma.StoryScalarWhereWithAggregatesInput[]
   NOT?: Prisma.StoryScalarWhereWithAggregatesInput | Prisma.StoryScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Story"> | string
+  userId?: Prisma.StringNullableWithAggregatesFilter<"Story"> | string | null
   title?: Prisma.StringWithAggregatesFilter<"Story"> | string
   genre?: Prisma.StringWithAggregatesFilter<"Story"> | string
   length?: Prisma.StringWithAggregatesFilter<"Story"> | string
@@ -335,10 +350,12 @@ export type StoryCreateInput = {
   audioFilename?: string | null
   dailyAutomated?: boolean
   createdAt?: Date | string
+  user?: Prisma.UserCreateNestedOneWithoutStoriesInput
 }
 
 export type StoryUncheckedCreateInput = {
   id?: string
+  userId?: string | null
   title: string
   genre: string
   length: string
@@ -367,10 +384,12 @@ export type StoryUpdateInput = {
   audioFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dailyAutomated?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneWithoutStoriesNestedInput
 }
 
 export type StoryUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   genre?: Prisma.StringFieldUpdateOperationsInput | string
   length?: Prisma.StringFieldUpdateOperationsInput | string
@@ -387,6 +406,7 @@ export type StoryUncheckedUpdateInput = {
 
 export type StoryCreateManyInput = {
   id?: string
+  userId?: string | null
   title: string
   genre: string
   length: string
@@ -419,6 +439,7 @@ export type StoryUpdateManyMutationInput = {
 
 export type StoryUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   genre?: Prisma.StringFieldUpdateOperationsInput | string
   length?: Prisma.StringFieldUpdateOperationsInput | string
@@ -433,8 +454,19 @@ export type StoryUncheckedUpdateManyInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
+export type StoryListRelationFilter = {
+  every?: Prisma.StoryWhereInput
+  some?: Prisma.StoryWhereInput
+  none?: Prisma.StoryWhereInput
+}
+
+export type StoryOrderByRelationAggregateInput = {
+  _count?: Prisma.SortOrder
+}
+
 export type StoryCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  userId?: Prisma.SortOrder
   title?: Prisma.SortOrder
   genre?: Prisma.SortOrder
   length?: Prisma.SortOrder
@@ -451,6 +483,7 @@ export type StoryCountOrderByAggregateInput = {
 
 export type StoryMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  userId?: Prisma.SortOrder
   title?: Prisma.SortOrder
   genre?: Prisma.SortOrder
   length?: Prisma.SortOrder
@@ -467,6 +500,7 @@ export type StoryMaxOrderByAggregateInput = {
 
 export type StoryMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  userId?: Prisma.SortOrder
   title?: Prisma.SortOrder
   genre?: Prisma.SortOrder
   length?: Prisma.SortOrder
@@ -481,26 +515,199 @@ export type StoryMinOrderByAggregateInput = {
   createdAt?: Prisma.SortOrder
 }
 
-export type StringFieldUpdateOperationsInput = {
-  set?: string
+export type StoryCreateNestedManyWithoutUserInput = {
+  create?: Prisma.XOR<Prisma.StoryCreateWithoutUserInput, Prisma.StoryUncheckedCreateWithoutUserInput> | Prisma.StoryCreateWithoutUserInput[] | Prisma.StoryUncheckedCreateWithoutUserInput[]
+  connectOrCreate?: Prisma.StoryCreateOrConnectWithoutUserInput | Prisma.StoryCreateOrConnectWithoutUserInput[]
+  createMany?: Prisma.StoryCreateManyUserInputEnvelope
+  connect?: Prisma.StoryWhereUniqueInput | Prisma.StoryWhereUniqueInput[]
 }
 
-export type NullableStringFieldUpdateOperationsInput = {
-  set?: string | null
+export type StoryUncheckedCreateNestedManyWithoutUserInput = {
+  create?: Prisma.XOR<Prisma.StoryCreateWithoutUserInput, Prisma.StoryUncheckedCreateWithoutUserInput> | Prisma.StoryCreateWithoutUserInput[] | Prisma.StoryUncheckedCreateWithoutUserInput[]
+  connectOrCreate?: Prisma.StoryCreateOrConnectWithoutUserInput | Prisma.StoryCreateOrConnectWithoutUserInput[]
+  createMany?: Prisma.StoryCreateManyUserInputEnvelope
+  connect?: Prisma.StoryWhereUniqueInput | Prisma.StoryWhereUniqueInput[]
+}
+
+export type StoryUpdateManyWithoutUserNestedInput = {
+  create?: Prisma.XOR<Prisma.StoryCreateWithoutUserInput, Prisma.StoryUncheckedCreateWithoutUserInput> | Prisma.StoryCreateWithoutUserInput[] | Prisma.StoryUncheckedCreateWithoutUserInput[]
+  connectOrCreate?: Prisma.StoryCreateOrConnectWithoutUserInput | Prisma.StoryCreateOrConnectWithoutUserInput[]
+  upsert?: Prisma.StoryUpsertWithWhereUniqueWithoutUserInput | Prisma.StoryUpsertWithWhereUniqueWithoutUserInput[]
+  createMany?: Prisma.StoryCreateManyUserInputEnvelope
+  set?: Prisma.StoryWhereUniqueInput | Prisma.StoryWhereUniqueInput[]
+  disconnect?: Prisma.StoryWhereUniqueInput | Prisma.StoryWhereUniqueInput[]
+  delete?: Prisma.StoryWhereUniqueInput | Prisma.StoryWhereUniqueInput[]
+  connect?: Prisma.StoryWhereUniqueInput | Prisma.StoryWhereUniqueInput[]
+  update?: Prisma.StoryUpdateWithWhereUniqueWithoutUserInput | Prisma.StoryUpdateWithWhereUniqueWithoutUserInput[]
+  updateMany?: Prisma.StoryUpdateManyWithWhereWithoutUserInput | Prisma.StoryUpdateManyWithWhereWithoutUserInput[]
+  deleteMany?: Prisma.StoryScalarWhereInput | Prisma.StoryScalarWhereInput[]
+}
+
+export type StoryUncheckedUpdateManyWithoutUserNestedInput = {
+  create?: Prisma.XOR<Prisma.StoryCreateWithoutUserInput, Prisma.StoryUncheckedCreateWithoutUserInput> | Prisma.StoryCreateWithoutUserInput[] | Prisma.StoryUncheckedCreateWithoutUserInput[]
+  connectOrCreate?: Prisma.StoryCreateOrConnectWithoutUserInput | Prisma.StoryCreateOrConnectWithoutUserInput[]
+  upsert?: Prisma.StoryUpsertWithWhereUniqueWithoutUserInput | Prisma.StoryUpsertWithWhereUniqueWithoutUserInput[]
+  createMany?: Prisma.StoryCreateManyUserInputEnvelope
+  set?: Prisma.StoryWhereUniqueInput | Prisma.StoryWhereUniqueInput[]
+  disconnect?: Prisma.StoryWhereUniqueInput | Prisma.StoryWhereUniqueInput[]
+  delete?: Prisma.StoryWhereUniqueInput | Prisma.StoryWhereUniqueInput[]
+  connect?: Prisma.StoryWhereUniqueInput | Prisma.StoryWhereUniqueInput[]
+  update?: Prisma.StoryUpdateWithWhereUniqueWithoutUserInput | Prisma.StoryUpdateWithWhereUniqueWithoutUserInput[]
+  updateMany?: Prisma.StoryUpdateManyWithWhereWithoutUserInput | Prisma.StoryUpdateManyWithWhereWithoutUserInput[]
+  deleteMany?: Prisma.StoryScalarWhereInput | Prisma.StoryScalarWhereInput[]
 }
 
 export type BoolFieldUpdateOperationsInput = {
   set?: boolean
 }
 
-export type DateTimeFieldUpdateOperationsInput = {
-  set?: Date | string
+export type StoryCreateWithoutUserInput = {
+  id?: string
+  title: string
+  genre: string
+  length: string
+  text: string
+  age?: string | null
+  language?: string | null
+  mainCharacterName?: string | null
+  childGender?: string | null
+  posterFilename?: string | null
+  audioFilename?: string | null
+  dailyAutomated?: boolean
+  createdAt?: Date | string
+}
+
+export type StoryUncheckedCreateWithoutUserInput = {
+  id?: string
+  title: string
+  genre: string
+  length: string
+  text: string
+  age?: string | null
+  language?: string | null
+  mainCharacterName?: string | null
+  childGender?: string | null
+  posterFilename?: string | null
+  audioFilename?: string | null
+  dailyAutomated?: boolean
+  createdAt?: Date | string
+}
+
+export type StoryCreateOrConnectWithoutUserInput = {
+  where: Prisma.StoryWhereUniqueInput
+  create: Prisma.XOR<Prisma.StoryCreateWithoutUserInput, Prisma.StoryUncheckedCreateWithoutUserInput>
+}
+
+export type StoryCreateManyUserInputEnvelope = {
+  data: Prisma.StoryCreateManyUserInput | Prisma.StoryCreateManyUserInput[]
+  skipDuplicates?: boolean
+}
+
+export type StoryUpsertWithWhereUniqueWithoutUserInput = {
+  where: Prisma.StoryWhereUniqueInput
+  update: Prisma.XOR<Prisma.StoryUpdateWithoutUserInput, Prisma.StoryUncheckedUpdateWithoutUserInput>
+  create: Prisma.XOR<Prisma.StoryCreateWithoutUserInput, Prisma.StoryUncheckedCreateWithoutUserInput>
+}
+
+export type StoryUpdateWithWhereUniqueWithoutUserInput = {
+  where: Prisma.StoryWhereUniqueInput
+  data: Prisma.XOR<Prisma.StoryUpdateWithoutUserInput, Prisma.StoryUncheckedUpdateWithoutUserInput>
+}
+
+export type StoryUpdateManyWithWhereWithoutUserInput = {
+  where: Prisma.StoryScalarWhereInput
+  data: Prisma.XOR<Prisma.StoryUpdateManyMutationInput, Prisma.StoryUncheckedUpdateManyWithoutUserInput>
+}
+
+export type StoryScalarWhereInput = {
+  AND?: Prisma.StoryScalarWhereInput | Prisma.StoryScalarWhereInput[]
+  OR?: Prisma.StoryScalarWhereInput[]
+  NOT?: Prisma.StoryScalarWhereInput | Prisma.StoryScalarWhereInput[]
+  id?: Prisma.StringFilter<"Story"> | string
+  userId?: Prisma.StringNullableFilter<"Story"> | string | null
+  title?: Prisma.StringFilter<"Story"> | string
+  genre?: Prisma.StringFilter<"Story"> | string
+  length?: Prisma.StringFilter<"Story"> | string
+  text?: Prisma.StringFilter<"Story"> | string
+  age?: Prisma.StringNullableFilter<"Story"> | string | null
+  language?: Prisma.StringNullableFilter<"Story"> | string | null
+  mainCharacterName?: Prisma.StringNullableFilter<"Story"> | string | null
+  childGender?: Prisma.StringNullableFilter<"Story"> | string | null
+  posterFilename?: Prisma.StringNullableFilter<"Story"> | string | null
+  audioFilename?: Prisma.StringNullableFilter<"Story"> | string | null
+  dailyAutomated?: Prisma.BoolFilter<"Story"> | boolean
+  createdAt?: Prisma.DateTimeFilter<"Story"> | Date | string
+}
+
+export type StoryCreateManyUserInput = {
+  id?: string
+  title: string
+  genre: string
+  length: string
+  text: string
+  age?: string | null
+  language?: string | null
+  mainCharacterName?: string | null
+  childGender?: string | null
+  posterFilename?: string | null
+  audioFilename?: string | null
+  dailyAutomated?: boolean
+  createdAt?: Date | string
+}
+
+export type StoryUpdateWithoutUserInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  genre?: Prisma.StringFieldUpdateOperationsInput | string
+  length?: Prisma.StringFieldUpdateOperationsInput | string
+  text?: Prisma.StringFieldUpdateOperationsInput | string
+  age?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mainCharacterName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  childGender?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  posterFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  audioFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dailyAutomated?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type StoryUncheckedUpdateWithoutUserInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  genre?: Prisma.StringFieldUpdateOperationsInput | string
+  length?: Prisma.StringFieldUpdateOperationsInput | string
+  text?: Prisma.StringFieldUpdateOperationsInput | string
+  age?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mainCharacterName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  childGender?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  posterFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  audioFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dailyAutomated?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type StoryUncheckedUpdateManyWithoutUserInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  genre?: Prisma.StringFieldUpdateOperationsInput | string
+  length?: Prisma.StringFieldUpdateOperationsInput | string
+  text?: Prisma.StringFieldUpdateOperationsInput | string
+  age?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mainCharacterName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  childGender?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  posterFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  audioFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dailyAutomated?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 
 
 export type StorySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  userId?: boolean
   title?: boolean
   genre?: boolean
   length?: boolean
@@ -513,10 +720,12 @@ export type StorySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   audioFilename?: boolean
   dailyAutomated?: boolean
   createdAt?: boolean
+  user?: boolean | Prisma.Story$userArgs<ExtArgs>
 }, ExtArgs["result"]["story"]>
 
 export type StorySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  userId?: boolean
   title?: boolean
   genre?: boolean
   length?: boolean
@@ -529,10 +738,12 @@ export type StorySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   audioFilename?: boolean
   dailyAutomated?: boolean
   createdAt?: boolean
+  user?: boolean | Prisma.Story$userArgs<ExtArgs>
 }, ExtArgs["result"]["story"]>
 
 export type StorySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  userId?: boolean
   title?: boolean
   genre?: boolean
   length?: boolean
@@ -545,10 +756,12 @@ export type StorySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   audioFilename?: boolean
   dailyAutomated?: boolean
   createdAt?: boolean
+  user?: boolean | Prisma.Story$userArgs<ExtArgs>
 }, ExtArgs["result"]["story"]>
 
 export type StorySelectScalar = {
   id?: boolean
+  userId?: boolean
   title?: boolean
   genre?: boolean
   length?: boolean
@@ -563,13 +776,28 @@ export type StorySelectScalar = {
   createdAt?: boolean
 }
 
-export type StoryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "genre" | "length" | "text" | "age" | "language" | "mainCharacterName" | "childGender" | "posterFilename" | "audioFilename" | "dailyAutomated" | "createdAt", ExtArgs["result"]["story"]>
+export type StoryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "title" | "genre" | "length" | "text" | "age" | "language" | "mainCharacterName" | "childGender" | "posterFilename" | "audioFilename" | "dailyAutomated" | "createdAt", ExtArgs["result"]["story"]>
+export type StoryInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  user?: boolean | Prisma.Story$userArgs<ExtArgs>
+}
+export type StoryIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  user?: boolean | Prisma.Story$userArgs<ExtArgs>
+}
+export type StoryIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  user?: boolean | Prisma.Story$userArgs<ExtArgs>
+}
 
 export type $StoryPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Story"
-  objects: {}
+  objects: {
+    user: Prisma.$UserPayload<ExtArgs> | null
+  }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
+    /**
+     * Null means the row has no family (legacy library or the daily cron). Those rows stay in the database and are hidden from every account.
+     */
+    userId: string | null
     title: string
     genre: string
     length: string
@@ -584,7 +812,7 @@ export type $StoryPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
      */
     audioFilename: string | null
     /**
-     * * True when created by the daily cron (`lib/stories/dailyAutomatedStories.ts`). Shown in Home "New Release".
+     * * True when created by the daily cron (`lib/stories/dailyAutomatedStories.ts`).
      */
     dailyAutomated: boolean
     createdAt: Date
@@ -982,6 +1210,7 @@ readonly fields: StoryFieldRefs;
  */
 export interface Prisma__StoryClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  user<T extends Prisma.Story$userArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Story$userArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1012,6 +1241,7 @@ export interface Prisma__StoryClient<T, Null = never, ExtArgs extends runtime.Ty
  */
 export interface StoryFieldRefs {
   readonly id: Prisma.FieldRef<"Story", 'String'>
+  readonly userId: Prisma.FieldRef<"Story", 'String'>
   readonly title: Prisma.FieldRef<"Story", 'String'>
   readonly genre: Prisma.FieldRef<"Story", 'String'>
   readonly length: Prisma.FieldRef<"Story", 'String'>
@@ -1041,6 +1271,10 @@ export type StoryFindUniqueArgs<ExtArgs extends runtime.Types.Extensions.Interna
    */
   omit?: Prisma.StoryOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.StoryInclude<ExtArgs> | null
+  /**
    * Filter, which Story to fetch.
    */
   where: Prisma.StoryWhereUniqueInput
@@ -1059,6 +1293,10 @@ export type StoryFindUniqueOrThrowArgs<ExtArgs extends runtime.Types.Extensions.
    */
   omit?: Prisma.StoryOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.StoryInclude<ExtArgs> | null
+  /**
    * Filter, which Story to fetch.
    */
   where: Prisma.StoryWhereUniqueInput
@@ -1076,6 +1314,10 @@ export type StoryFindFirstArgs<ExtArgs extends runtime.Types.Extensions.Internal
    * Omit specific fields from the Story
    */
   omit?: Prisma.StoryOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.StoryInclude<ExtArgs> | null
   /**
    * Filter, which Story to fetch.
    */
@@ -1125,6 +1367,10 @@ export type StoryFindFirstOrThrowArgs<ExtArgs extends runtime.Types.Extensions.I
    */
   omit?: Prisma.StoryOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.StoryInclude<ExtArgs> | null
+  /**
    * Filter, which Story to fetch.
    */
   where?: Prisma.StoryWhereInput
@@ -1173,6 +1419,10 @@ export type StoryFindManyArgs<ExtArgs extends runtime.Types.Extensions.InternalA
    */
   omit?: Prisma.StoryOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.StoryInclude<ExtArgs> | null
+  /**
    * Filter, which Stories to fetch.
    */
   where?: Prisma.StoryWhereInput
@@ -1216,6 +1466,10 @@ export type StoryCreateArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
    */
   omit?: Prisma.StoryOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.StoryInclude<ExtArgs> | null
+  /**
    * The data needed to create a Story.
    */
   data: Prisma.XOR<Prisma.StoryCreateInput, Prisma.StoryUncheckedCreateInput>
@@ -1249,6 +1503,10 @@ export type StoryCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extension
    */
   data: Prisma.StoryCreateManyInput | Prisma.StoryCreateManyInput[]
   skipDuplicates?: boolean
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.StoryIncludeCreateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1263,6 +1521,10 @@ export type StoryUpdateArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
    * Omit specific fields from the Story
    */
   omit?: Prisma.StoryOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.StoryInclude<ExtArgs> | null
   /**
    * The data needed to update a Story.
    */
@@ -1315,6 +1577,10 @@ export type StoryUpdateManyAndReturnArgs<ExtArgs extends runtime.Types.Extension
    * Limit how many Stories to update.
    */
   limit?: number
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.StoryIncludeUpdateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1329,6 +1595,10 @@ export type StoryUpsertArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
    * Omit specific fields from the Story
    */
   omit?: Prisma.StoryOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.StoryInclude<ExtArgs> | null
   /**
    * The filter to search for the Story to update in case it exists.
    */
@@ -1356,6 +1626,10 @@ export type StoryDeleteArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
    */
   omit?: Prisma.StoryOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.StoryInclude<ExtArgs> | null
+  /**
    * Filter which Story to delete.
    */
   where: Prisma.StoryWhereUniqueInput
@@ -1376,6 +1650,25 @@ export type StoryDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Interna
 }
 
 /**
+ * Story.user
+ */
+export type Story$userArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the User
+   */
+  select?: Prisma.UserSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the User
+   */
+  omit?: Prisma.UserOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
+  where?: Prisma.UserWhereInput
+}
+
+/**
  * Story without action
  */
 export type StoryDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1387,4 +1680,8 @@ export type StoryDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
    * Omit specific fields from the Story
    */
   omit?: Prisma.StoryOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.StoryInclude<ExtArgs> | null
 }

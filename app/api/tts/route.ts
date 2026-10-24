@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { speakWithOpenAI } from "@/lib/tts/openai";
 import { getErrorMessage, getErrorStatus } from "@/lib/errors";
+import { requireUser } from "@/lib/auth/requireUser";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
+  const auth = await requireUser();
+  if (auth.response) return auth.response;
   try {
     const body = await req.json();
     const { text, voice } = body ?? {};

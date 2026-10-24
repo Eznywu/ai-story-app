@@ -5,19 +5,21 @@ import type { KidProfile, StoryCharacterProfile } from "@/lib/profiles/profilesT
 import type { ReadingStatsState } from "@/lib/profiles/profilesTypes";
 
 type Props = {
+  email?: string;
   stats: ReadingStatsState | null;
   kids: KidProfile[];
   characters: StoryCharacterProfile[];
   onGoToCreateHub: () => void;
 };
 
-export function ProfilePanel({ stats, kids, characters, onGoToCreateHub }: Props) {
+export function ProfilePanel({ email, stats, kids, characters, onGoToCreateHub }: Props) {
   return (
     <section className="profilePanel fadeEnter" aria-labelledby="profile-heading">
       <h1 id="profile-heading" className="profilePanel__title">
         Family Profile
       </h1>
       <p className="profilePanel__lede">Your reading companion settings and saved story profiles.</p>
+      {email ? <p className="profilePanel__muted">Signed in as {email}</p> : null}
 
       <div className="profilePanel__card">
         <h2 className="profilePanel__h2">Reading snapshot</h2>

@@ -8,6 +8,12 @@
  *
  * 🟢 You can import this file directly.
  */
+export type * from './models/User'
+export type * from './models/Session'
+export type * from './models/LoginCode'
 export type * from './models/Story'
 export type * from './models/Voice'
+export type * from './models/KidProfile'
+export type * from './models/StoryCharacter'
+export type * from './models/ReadingStats'
 export type * from './commonInputTypes'

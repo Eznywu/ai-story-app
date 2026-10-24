@@ -3,10 +3,14 @@ import fs from "fs/promises";
 import path from "path";
 import { speakWithOpenAI } from "@/lib/tts/openai";
 import { getErrorMessage, getErrorStatus } from "@/lib/errors";
+import { requireUser } from "@/lib/auth/requireUser";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
+  const auth = await requireUser();
+  if (auth.response) return auth.response;
   try {
     const { text, voice } = await req.json();
 

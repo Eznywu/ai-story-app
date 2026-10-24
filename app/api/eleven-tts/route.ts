@@ -5,12 +5,45 @@ import { saveStoryAudioFile } from "@/lib/audio/storyMediaFiles";
 import { isSafeStoryId } from "@/lib/stories/storyIds";
 import { prisma } from "@/lib/prisma";
 import { getErrorMessage, getErrorStatus } from "@/lib/errors";
+import { findOwnedStory } from "@/lib/auth/ownedStory";
+import { requireUser } from "@/lib/auth/requireUser";
+import { isCloneVoiceId, VOICE_CLONE_PREFIX } from "@/lib/voices/voices";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
+  const auth = await requireUser();
+  if (auth.response) return auth.response;
   try {
     const body = await req.json().catch(() => ({}));
+    const requestedVoiceId = typeof body?.voiceId === "string" ? body.voiceId.trim() : "";
+    if (requestedVoiceId && isCloneVoiceId(requestedVoiceId)) {
+      const elevenId = requestedVoiceId.slice(VOICE_CLONE_PREFIX.length).trim();
+      const ownedVoice = elevenId
+        ? await prisma.voice.findFirst({
+            where: { userId: auth.user.id, voiceId: elevenId },
+            select: { id: true },
+          })
+        : null;
+      if (!ownedVoice) {
+        return NextResponse.json(
+          { error: "That voice is not on this account." },
+          { status: 403 }
+        );
+      }
+    }
+
+    const storyId = typeof body?.storyId === "string" ? body.storyId.trim() : "";
+    if (storyId) {
+      if (!isSafeStoryId(storyId)) {
+        return NextResponse.json({ error: "That story id is not valid." }, { status: 400 });
+      }
+      const owned = await findOwnedStory(auth.user.id, storyId);
+      if (!owned) {
+        return NextResponse.json({ error: "Story not found." }, { status: 404 });
+      }
+    }
     const audioBuffer = await speakWithEleven({
       text: body?.text,
       speed: body?.speed,
@@ -28,26 +61,13 @@ export async function POST(req: Request) {
       "Cache-Control": "no-store",
     });
 
-    const storyId = typeof body?.storyId === "string" ? body.storyId.trim() : "";
     if (storyId) {
-      if (!isSafeStoryId(storyId)) {
-        headers.set("X-Audio-Save-Error", "Story id was not valid, so narration was not saved.");
-      } else {
-        try {
-          const exists = await prisma.story.findUnique({
-            where: { id: storyId },
-            select: { id: true },
-          });
-          if (!exists) {
-            headers.set("X-Audio-Save-Error", "Story was not found, so narration was not saved.");
-          } else {
-            const savedUrl = await saveStoryAudioFile(storyId, audioBuffer);
-            headers.set("X-Audio-Url", savedUrl);
-          }
-        } catch (err: unknown) {
-          console.error("[/api/eleven-tts] save failed", getErrorMessage(err, "save failed"));
-          headers.set("X-Audio-Save-Error", "Narration could not be saved on the story.");
-        }
+      try {
+        const savedUrl = await saveStoryAudioFile(storyId, audioBuffer);
+        headers.set("X-Audio-Url", savedUrl);
+      } catch (err: unknown) {
+        console.error("[/api/eleven-tts] save failed", getErrorMessage(err, "save failed"));
+        headers.set("X-Audio-Save-Error", "Narration could not be saved on the story.");
       }
     }
 

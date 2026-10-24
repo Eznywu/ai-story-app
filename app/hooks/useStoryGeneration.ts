@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { getErrorMessage } from "@/lib/errors";
+import { redirectIfUnsigned } from "@/lib/auth/redirectIfUnsigned";
 
 export type StoryGenerationForm = {
   age: string;
@@ -36,6 +37,9 @@ export function useStoryGeneration() {
         }),
       });
       const data = await res.json().catch(() => ({}));
+      if (redirectIfUnsigned(res.status)) {
+        throw new Error(data?.error || "Sign in to continue.");
+      }
       if (!res.ok) {
         throw new Error(data?.error || `Story API failed (${res.status})`);
       }

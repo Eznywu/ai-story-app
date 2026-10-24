@@ -51,8 +51,14 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
+  User: 'User',
+  Session: 'Session',
+  LoginCode: 'LoginCode',
   Story: 'Story',
-  Voice: 'Voice'
+  Voice: 'Voice',
+  KidProfile: 'KidProfile',
+  StoryCharacter: 'StoryCharacter',
+  ReadingStats: 'ReadingStats'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -71,8 +77,43 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
 
+export const UserScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  createdAt: 'createdAt'
+} as const
+
+export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const SessionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  tokenHash: 'tokenHash',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt'
+} as const
+
+export type SessionScalarFieldEnum = (typeof SessionScalarFieldEnum)[keyof typeof SessionScalarFieldEnum]
+
+
+export const LoginCodeScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  codeHash: 'codeHash',
+  expiresAt: 'expiresAt',
+  attempts: 'attempts',
+  consumedAt: 'consumedAt',
+  ip: 'ip',
+  createdAt: 'createdAt'
+} as const
+
+export type LoginCodeScalarFieldEnum = (typeof LoginCodeScalarFieldEnum)[keyof typeof LoginCodeScalarFieldEnum]
+
+
 export const StoryScalarFieldEnum = {
   id: 'id',
+  userId: 'userId',
   title: 'title',
   genre: 'genre',
   length: 'length',
@@ -92,13 +133,66 @@ export type StoryScalarFieldEnum = (typeof StoryScalarFieldEnum)[keyof typeof St
 
 export const VoiceScalarFieldEnum = {
   id: 'id',
+  userId: 'userId',
   displayName: 'displayName',
   provider: 'provider',
   voiceId: 'voiceId',
+  language: 'language',
   createdAt: 'createdAt'
 } as const
 
 export type VoiceScalarFieldEnum = (typeof VoiceScalarFieldEnum)[keyof typeof VoiceScalarFieldEnum]
+
+
+export const KidProfileScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  name: 'name',
+  age: 'age',
+  gender: 'gender',
+  interests: 'interests',
+  personality: 'personality',
+  readingLevel: 'readingLevel',
+  favoriteThemes: 'favoriteThemes',
+  bedtimeLength: 'bedtimeLength',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type KidProfileScalarFieldEnum = (typeof KidProfileScalarFieldEnum)[keyof typeof KidProfileScalarFieldEnum]
+
+
+export const StoryCharacterScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  name: 'name',
+  ageRange: 'ageRange',
+  gender: 'gender',
+  characterType: 'characterType',
+  personality: 'personality',
+  skills: 'skills',
+  themes: 'themes',
+  visualStyle: 'visualStyle',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type StoryCharacterScalarFieldEnum = (typeof StoryCharacterScalarFieldEnum)[keyof typeof StoryCharacterScalarFieldEnum]
+
+
+export const ReadingStatsScalarFieldEnum = {
+  userId: 'userId',
+  todayKey: 'todayKey',
+  storiesReadToday: 'storiesReadToday',
+  streakDays: 'streakDays',
+  lastReadDayKey: 'lastReadDayKey',
+  lastStoryId: 'lastStoryId',
+  lastStoryTitle: 'lastStoryTitle',
+  draftSummary: 'draftSummary',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ReadingStatsScalarFieldEnum = (typeof ReadingStatsScalarFieldEnum)[keyof typeof ReadingStatsScalarFieldEnum]
 
 
 export const SortOrder = {

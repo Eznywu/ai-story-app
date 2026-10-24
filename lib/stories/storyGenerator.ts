@@ -236,7 +236,7 @@ function fallbackStory(input: ReturnType<typeof normalizeStoryInput>) {
 
 export async function generateStoryWithRetry(
   body: StoryGenerationInput,
-  opts?: { retries?: number }
+  opts?: { retries?: number; userId?: string | null }
 ) {
   const normalized = normalizeStoryInput(body);
   const validationError = validateStoryInput(normalized);
@@ -278,7 +278,10 @@ export async function generateStoryWithRetry(
     ? Math.min(2, Math.max(0, parsedTemp))
     : 0.92;
 
-  const libraryContext = await loadAntiRepeatLibraryContext(normalized.language);
+  const libraryContext = await loadAntiRepeatLibraryContext(
+    normalized.language,
+    opts?.userId ?? null
+  );
 
   let attempt = 0;
   let lastError: unknown = null;

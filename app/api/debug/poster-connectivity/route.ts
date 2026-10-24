@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
+import { requireUser } from "@/lib/auth/requireUser";
 import { fetch } from "undici";
 import { getErrorMessage } from "@/lib/errors";
 import {
@@ -11,6 +12,7 @@ import {
 } from "@/lib/providerHttp";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 const TEST_TIMEOUT_MS = Math.min(
   Math.max(Number(process.env.POSTER_CONNECTIVITY_TIMEOUT_MS) || 20_000, 5_000),
@@ -83,6 +85,8 @@ async function testGemini() {
 }
 
 export async function GET() {
+  const auth = await requireUser();
+  if (auth.response) return auth.response;
   const [openai, gemini] = await Promise.all([testOpenAi(), testGemini()]);
   return NextResponse.json({
     ok: openai.ok || gemini.ok,

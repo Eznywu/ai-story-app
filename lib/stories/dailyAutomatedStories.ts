@@ -75,8 +75,8 @@ export type DailyStoryJobResult = {
 };
 
 /**
- * Generates and persists two stories with `dailyAutomated: true`.
- * Home "New Release" lists only these rows (newest first).
+ * Generates and persists two stories with `dailyAutomated: true` and no owner.
+ * Family libraries do not list these rows. They stay unowned until a later catalog decision.
  */
 export async function runDailyAutomatedStories(now = new Date()): Promise<DailyStoryJobResult> {
   const presets = dailyStoryPresetsForDate(now);

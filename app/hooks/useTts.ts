@@ -2,12 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getErrorMessage } from "@/lib/errors";
-import {
-  appendStoredClonedVoice,
-  clearStoredClonedVoices,
-  mergeClonedVoiceIntoList,
-  readStoredClonedVoices,
-} from "@/lib/voices/clonedVoiceStorage";
+import { clientJson } from "@/lib/auth/clientApi";
+import { redirectIfUnsigned } from "@/lib/auth/redirectIfUnsigned";
+import { clearStoredClonedVoices, readStoredClonedVoices } from "@/lib/voices/clonedVoiceStorage";
 import { isCloneVoiceId, makeCloneVoiceId } from "@/lib/voices/voices";
 
 export type VoiceItem = {
@@ -59,27 +56,54 @@ export function useTts(language: string) {
     setIsLoadingVoices(true);
     setVoicesError("");
     try {
-      const res = await fetch("/api/voices", { method: "GET" });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data?.error || `Could not load voices (${res.status})`);
-      }
+      const data = await clientJson<{ voices?: unknown[] } | unknown[]>("/api/voices");
 
       const list: unknown[] = Array.isArray(data)
         ? data
         : Array.isArray(data?.voices)
           ? data.voices
           : [];
-      const normalized: VoiceItem[] = list
-        .filter(isVoiceApiItem)
-        .map((v) => ({
+      const toVoiceItems = (rows: unknown[]): VoiceItem[] =>
+        rows.filter(isVoiceApiItem).map((v) => ({
           id: String(v.id ?? v.voiceId),
           name: typeof v.name === "string" ? v.name : undefined,
           language: typeof v.language === "string" ? v.language : undefined,
           isDefault: Boolean(v.isDefault),
         }));
 
-      const merged = mergeClonedVoiceIntoList(normalized, readStoredClonedVoices()) as VoiceItem[];
+      let normalized = toVoiceItems(list);
+      const localClones = readStoredClonedVoices();
+      const knownIds = new Set(normalized.map((voice) => voice.id));
+      const pending = localClones.filter(
+        (entry) => !knownIds.has(makeCloneVoiceId(entry.elevenVoiceId))
+      );
+      if (pending.length) {
+        let claimFailed = false;
+        for (const entry of pending) {
+          try {
+            await clientJson("/api/voices", {
+              method: "POST",
+              body: JSON.stringify({
+                elevenVoiceId: entry.elevenVoiceId,
+                label: entry.label,
+                language: entry.language,
+              }),
+            });
+          } catch (error: unknown) {
+            const message = getErrorMessage(error, "");
+            if (!message.includes("another account")) claimFailed = true;
+          }
+        }
+        if (!claimFailed) {
+          clearStoredClonedVoices();
+          const refreshed = await clientJson<{ voices?: unknown[] }>("/api/voices");
+          normalized = toVoiceItems(Array.isArray(refreshed.voices) ? refreshed.voices : []);
+        }
+      } else if (localClones.length) {
+        clearStoredClonedVoices();
+      }
+
+      const merged = normalized;
       setVoices(merged);
       setSelectedVoiceId((prev) => {
         if (prev && merged.some((v) => v.id === prev)) return prev;
@@ -150,6 +174,9 @@ export function useTts(language: string) {
         }),
       });
 
+      if (redirectIfUnsigned(res.status)) {
+        throw new Error("Sign in to continue.");
+      }
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data?.error || `TTS failed (${res.status})`);
@@ -189,20 +216,16 @@ export function useTts(language: string) {
   }
 
   const registerClonedVoice = useCallback(
-    async (elevenVoiceId: string, label = "My voice") => {
-      appendStoredClonedVoice({
-        elevenVoiceId,
-        label: label.trim() || "My voice",
-        language: languageGroup(language),
-      });
+    async (elevenVoiceId: string, _label = "My voice") => {
       await fetchVoices();
       setSelectedVoiceId(makeCloneVoiceId(elevenVoiceId));
     },
-    [fetchVoices, language]
+    [fetchVoices]
   );
 
   const clearClonedVoice = useCallback(async () => {
     clearStoredClonedVoices();
+    await clientJson("/api/voices", { method: "DELETE" });
     await fetchVoices();
   }, [fetchVoices]);
 

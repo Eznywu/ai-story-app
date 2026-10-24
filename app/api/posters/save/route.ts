@@ -5,8 +5,11 @@ import { prisma } from "@/lib/prisma";
 import { getErrorMessage, getErrorStatus } from "@/lib/errors";
 import { captureException } from "@/lib/monitoring";
 import { isSafeStoryId } from "@/lib/stories/storyIds";
+import { findOwnedStory } from "@/lib/auth/ownedStory";
+import { requireUser } from "@/lib/auth/requireUser";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 const MAX_POSTER_BYTES = 12 * 1024 * 1024;
 
@@ -30,6 +33,8 @@ function bufferLooksLikePng(buf: Buffer): boolean {
 }
 
 export async function POST(req: Request) {
+  const auth = await requireUser();
+  if (auth.response) return auth.response;
   try {
     const body = (await req.json().catch(() => ({}))) as {
       storyId?: string;
@@ -66,7 +71,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Uploaded file is not a PNG." }, { status: 400 });
     }
 
-    const exists = await prisma.story.findUnique({ where: { id: storyId }, select: { id: true } });
+    const exists = await findOwnedStory(auth.user.id, storyId);
     if (!exists) {
       return NextResponse.json({ error: "Story not found." }, { status: 404 });
     }
