@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import type { StoryCreateInput } from "@/lib/types";
 import { getErrorMessage } from "@/lib/errors";
+import { captureException } from "@/lib/monitoring";
 import { parseChildGenderFromClient } from "@/lib/profiles/childGender";
 
 export const runtime = "nodejs";
@@ -24,8 +25,10 @@ export async function GET() {
     });
     return NextResponse.json({ stories: stories.map(withPosterUrl) });
   } catch (error: unknown) {
+    captureException(error, { route: "GET /api/stories" });
+    console.error("[GET /api/stories] failed", getErrorMessage(error, "unknown error"));
     return NextResponse.json(
-      { error: getErrorMessage(error, "Failed to load stories") },
+      { error: "We couldn't load your stories right now. Please try again." },
       { status: 500 }
     );
   }

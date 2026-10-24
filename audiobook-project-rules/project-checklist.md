@@ -2,7 +2,7 @@
 
 **Companion:** `project-rules.txt`, **`execution-priority-plan.md`** (phases 1–6 — UX lock before large UI/build). **Legend:** **Done** | **Partial** | **Not started**
 
-**Last updated:** 2026-04-21 — synced with repo: `HomeApp` + Figma-style `HomeScreenPanel`, `LibraryPanel` filters, minimal `app/settings`, **PostgreSQL** + `vercel.json` / `build:vercel`, open APIs; reflects **known launch gaps** (brand, settings depth, library sections, subscriptions, legal).
+**Last updated:** 2026-10-24 — added priority fixes **#14–#19** to the Action backlog. *Current progress* below was last synced 2026-04-21 and is partly out of date; the 2026-10-23 Notion implementation baseline lists the corrections. Earlier sync (2026-04-21): `HomeApp` + Figma-style `HomeScreenPanel`, `LibraryPanel` filters, minimal `app/settings`, **PostgreSQL** + `vercel.json` / `build:vercel`, open APIs; reflects **known launch gaps** (brand, settings depth, library sections, subscriptions, legal).
 
 **2026-10-24 note:** Proposed operating plan v1 (https://app.notion.com/p/403f569f891e81968813def2f47c3e2f) is not adopted by this checklist. Where this 2026-04-21 map disagrees with the code or with that plan (home rails, brand, auth, subscriptions, phase order), the disagreement stays recorded. Do not treat a checklist tick as runtime proof or as CEO approval of the plan's targets.
 
@@ -64,11 +64,26 @@ Use **`- [ ]` / `- [x]`** in *Action backlog* as you ship remaining work.
 
 ## Action backlog
 
+### Priority fixes (added 2026-10-24)
+
+**Before #17 and #18 can be tested:** local `DATABASE_URL` must point to PostgreSQL. `.env` still points to the old SQLite file, so `GET /api/stories` returns 500 and Home / Library load empty.
+
+- [ ] **14. Mobile UI pass: text size, fonts, colours, page width** — review every screen at ~390px first; readable body text, one font pairing, one colour palette, no horizontal scroll, tap targets usable with one thumb (`app/globals.css`, `app/page.css`, fonts in `app/layout.tsx`). Final colours and logo depend on the name decision in **#7**.
+- [ ] **15. Replace the settings icon** — the hand-drawn SVG `IconSettings` in `app/components/AppChromeBar.tsx` does not read as a gear; swap in a standard gear icon and check it at chrome size.
+- [ ] **16. DeepSeek for story generation (China launch)** — add a provider switch in `lib/stories/storyGenerator.ts` (OpenAI only today: `OPENAI_STORY_MODELS`, default `gpt-4o-mini`). DeepSeek's API follows the OpenAI format, so this is mostly config plus story-quality testing in Chinese and English. A China launch also needs China-reachable TTS and poster providers, mainland hosting with ICP filing, and a China login method (see #19). **Scope conflict:** `project-rules.txt` lists China-specific deployment as out of Phase 1; needs Eason's decision before build.
+- [ ] **17. Test voice / TTS** — `POST /api/eleven-tts` with each voice (Eason_EN, Eason_CN, Neva_CN) in English and Chinese, short / medium / long stories; speed and emotion controls; playback starts; MP3 save (`/api/tts-save`); clear error when the ElevenLabs key is missing or fails. Record wait time and cost per story.
+- [ ] **18. Test posters** — generate a poster after a story with OpenAI and with Gemini; check the text-only fallback when the provider fails; save; reload and confirm it shows in Library. Use `/api/debug/poster-connectivity` to check provider reachability first.
+- [ ] **19. Login** *(replaces #4)* — sign-in, `userId` on `Story`, each user sees only their own library, and story / TTS / poster-save routes require sign-in with a usage limit. Membership login code exists on `origin/main` (deleted in the current branch) and can be a starting point. Choose sign-in methods first: China users need phone or WeChat; iOS requires Sign in with Apple if other social logins are offered. Keep it minimal — `project-rules.txt` excludes a deep account system from Phase 1.
+
+**Suggested order:** fix local database → **#17** + **#18** (part of the Notion AB-4 first-story test) → **#15** → **#14** → **#19** → **#16** once the China scope is decided.
+
+### Earlier backlog
+
 - [x] **1. Story guidance field** — shipped (`StorySetupExtras` + `buildGuidance`)
 - [ ] **2. Story series (data model)** — `seriesId`, episode ordering, continuity from prior saves
 - [ ] **3. Poster: more illustration-forward** — prompts + layout (`lib/posters/*`)
-- [ ] **4. Per-user library + auth-gated mutations** — `userId` on `Story`, filter stories APIs, middleware on **`/api/story`**, **`/api/eleven-tts`**, **`/api/posters/save`** (Postgres already; no SQLite migration needed)
-- [ ] **5. Mobile-first UI polish** — thumb zones, `EntryScreen`, tab/chrome; **settings icon / chrome** tweaks
+- [ ] **4. Per-user library + auth-gated mutations** — merged into **#19**
+- [ ] **5. Mobile-first UI polish** — merged into **#14** and **#15**
 - [ ] **6. Library: recordings + posters** — unify saved audio (`tts-save` / URLs) with shelf cards
 - [ ] **7. Brand & naming** — **DreamWEAVER** (+ remove legacy “Emrys” / story branding strings); **new logo asset** when Figma is ready
 - [ ] **8. Entry splash behavior** — product expectation: splash on **every** cold open (incl. refresh); audit `showEntry`, routes `/mobile`, bfcache, Capacitor
@@ -78,7 +93,7 @@ Use **`- [ ]` / `- [x]`** in *Action backlog* as you ship remaining work.
 - [ ] **12. Subscription MVP** — **free tier hook**, paid tier, metering, enforce limits server-side **before** scale marketing
 - [ ] **13. Legal & compliance copy** — replace placeholders with counsel-reviewed Privacy + Terms (AI, voice, children, deletion)
 
-**Suggested order:** **#4** + **#12** before wide public launch → **#10**–**#13** UX trust → **#7**–**#11** product polish → **#2** / **#6** / **#3** / **#5** in parallel.
+**Suggested order (earlier items):** **#19** + **#12** before wide public launch → **#10**–**#13** UX trust → **#7**–**#11** product polish → **#2** / **#6** / **#3** in parallel.
 
 ---
 
@@ -121,7 +136,7 @@ Use **`- [ ]` / `- [x]`** in *Action backlog* as you ship remaining work.
 
 ## Intentionally deferred (scope guardrails)
 
-Ship-ready **voice cloning** · **advanced** poster editor · **China-specific** deploy · **full localization** · **deep** social
+Ship-ready **voice cloning** · **advanced** poster editor · **China-specific** deploy *(under review — see #16)* · **full localization** · **deep** social
 
 ---
 

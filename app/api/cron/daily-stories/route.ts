@@ -34,15 +34,15 @@ async function handle() {
     }
   }
 
-  const status = result.created.length === 0 ? 500 : 200;
+  const savedAny = result.created.length > 0;
 
   return NextResponse.json(
     {
-      ok: result.created.length === 2,
+      ok: savedAny,
       created: result.created,
       errors: result.errors,
     },
-    { status }
+    { status: savedAny ? 200 : 500 }
   );
 }
 

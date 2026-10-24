@@ -5,21 +5,18 @@ import { usePathname } from "next/navigation";
 
 function IconSettings({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M12 15.75a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M10.603 4.317a1.125 1.125 0 012.794 0l.188.707a1.125 1.125 0 001.657.693l.618-.354a1.125 1.125 0 011.97 1.138l-.188.706a1.125 1.125 0 00.518 1.271l.575.332a1.125 1.125 0 010 1.948l-.575.332a1.125 1.125 0 00-.518 1.271l.188.706a1.125 1.125 0 01-1.97 1.138l-.618-.354a1.125 1.125 0 00-1.657.693l-.188.707a1.125 1.125 0 01-2.794 0l-.188-.707a1.125 1.125 0 00-1.657-.693l-.618.354a1.125 1.125 0 01-1.97-1.138l.188-.706a1.125 1.125 0 00-.518-1.271l-.575-.332a1.125 1.125 0 010-1.948l.575-.332a1.125 1.125 0 00.518-1.271l-.188-.706a1.125 1.125 0 011.97-1.138l.618.354a1.125 1.125 0 001.657-.693l.188-.707z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+      <circle cx="12" cy="12" r="3" />
     </svg>
   );
 }

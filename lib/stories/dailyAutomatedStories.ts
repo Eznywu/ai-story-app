@@ -1,7 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { generateStoryWithRetry } from "@/lib/stories/storyGenerator";
+import type { StoryAgeLabel } from "@/lib/stories/storyAgeOptions";
 import { STORY_GENRES } from "@/lib/stories/storyGenres";
 import type { StoryGenerationInput } from "@/lib/types";
+
+/** Supported listener ages for the two daily slots. Must be `StoryAgeLabel` values. */
+const DAILY_SLOT_AGES = {
+  older: "2 years",
+  younger: "1 year",
+} as const satisfies Record<string, StoryAgeLabel>;
 
 const CHARACTER_NAMES = [
   "Lulu",
@@ -34,7 +41,7 @@ export function dailyStoryPresetsForDate(d: Date): [SlotPreset, SlotPreset] {
   const base0: StoryGenerationInput = {
     genre: g0,
     length: "short",
-    age: "3 years",
+    age: DAILY_SLOT_AGES.older,
     language: "en",
     mainCharacterName: name0,
     childGender: "any",
@@ -43,7 +50,7 @@ export function dailyStoryPresetsForDate(d: Date): [SlotPreset, SlotPreset] {
   const base1: StoryGenerationInput = {
     genre: g1,
     length: "short",
-    age: "18 months",
+    age: DAILY_SLOT_AGES.younger,
     language: "en",
     mainCharacterName: name1,
     childGender: "any",
