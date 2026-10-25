@@ -8,11 +8,11 @@ import { getErrorMessage, getErrorStatus } from "@/lib/errors";
 import { findOwnedStory } from "@/lib/auth/ownedStory";
 import { requireUser } from "@/lib/auth/requireUser";
 import { isCloneVoiceId, VOICE_CLONE_PREFIX } from "@/lib/voices/voices";
-import { VERCEL_FUNCTION_MAX_SECONDS } from "@/lib/vercelDuration";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = VERCEL_FUNCTION_MAX_SECONDS;
+// Literal required: Next.js segment config must be statically analyzable.
+export const maxDuration = 300;
 
 export async function POST(req: Request) {
   const auth = await requireUser();

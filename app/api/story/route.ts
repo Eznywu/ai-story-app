@@ -4,11 +4,11 @@ import { captureException } from "@/lib/monitoring";
 import { generateStoryWithRetry } from "@/lib/stories/storyGenerator";
 import type { StoryGenerationInput } from "@/lib/types";
 import { requireUser } from "@/lib/auth/requireUser";
-import { VERCEL_FUNCTION_MAX_SECONDS } from "@/lib/vercelDuration";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = VERCEL_FUNCTION_MAX_SECONDS;
+// Literal required: Next.js segment config must be statically analyzable.
+export const maxDuration = 300;
 
 export async function POST(req: Request) {
   const auth = await requireUser();

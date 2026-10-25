@@ -128,12 +128,14 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
     void refreshLibrary();
     void fetchVoices();
     const tab = new URLSearchParams(window.location.search).get("tab");
-    if (tab === "home" || tab === "create" || tab === "library" || tab === "profile") {
-      setActiveTab(tab);
-    }
+    const explicitTab =
+      tab === "home" || tab === "create" || tab === "library" || tab === "profile" ? tab : null;
+    if (explicitTab) setActiveTab(explicitTab);
     const onboarding = loadOnboardingState(user.id);
     setShowOnboarding(!onboarding.completed);
-    applyOnboardingIntent(onboarding.selectedIntent ?? null);
+    // A saved onboarding intent (for example "create a story") must not override
+    // an explicit ?tab= link such as the story page's back-to-library control.
+    if (!explicitTab) applyOnboardingIntent(onboarding.selectedIntent ?? null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user.id]);
 

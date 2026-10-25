@@ -7,11 +7,11 @@ import { generatePosterPngBuffer } from "@/lib/posters/posterImage";
 import { findOwnedStory } from "@/lib/auth/ownedStory";
 import { requireUser } from "@/lib/auth/requireUser";
 import { isSafeStoryId } from "@/lib/stories/storyIds";
-import { VERCEL_FUNCTION_MAX_SECONDS } from "@/lib/vercelDuration";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = VERCEL_FUNCTION_MAX_SECONDS;
+// Literal required: Next.js segment config must be statically analyzable.
+export const maxDuration = 300;
 
 type Body = {
   title?: string;
