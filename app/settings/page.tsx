@@ -21,10 +21,10 @@ export default function SettingsPage() {
             <p className="label" style={{ marginTop: 0 }}>
               Legal
             </p>
-            <p style={{ margin: "8px 0 0", fontWeight: 700 }}>
+            <p className="settingsLegalLink">
               <Link href="/legal/privacy">Privacy policy</Link>
             </p>
-            <p style={{ margin: "8px 0 0", fontWeight: 700 }}>
+            <p className="settingsLegalLink">
               <Link href="/legal/terms">Terms of use</Link>
             </p>
           </div>

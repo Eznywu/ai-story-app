@@ -4,11 +4,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import "@/app/page.css";
-import { AppChromeBar } from "@/app/components/AppChromeBar";
+import { QuietSheet } from "@/app/components/QuietSheet";
 import { TtsControls } from "@/app/components/TtsControls";
+import { friendlyVoiceName, languageLabel } from "@/app/components/voiceLabel";
 import { useTts } from "@/app/hooks/useTts";
 import { useStoryLibrary } from "@/app/hooks/useStoryLibrary";
-import { createStoryPoster } from "@/lib/posters/poster";
+import { createStoryPoster, downloadPosterPng } from "@/lib/posters/poster";
 import type { PosterCreateOutcome } from "@/lib/posters/poster";
 import { getErrorMessage } from "@/lib/errors";
 import { redirectIfUnsigned } from "@/lib/auth/redirectIfUnsigned";
@@ -40,11 +41,77 @@ function formatRate(rate: number) {
   return rate === 1 ? "1x" : `${rate}x`;
 }
 
+function playbackErrorMessage(error: unknown) {
+  const message = getErrorMessage(error, "Voice failed, try again.");
+  if (/interrupted by a new load request|no supported sources|not supported/i.test(message)) {
+    return "Voice failed, try again.";
+  }
+  return message;
+}
+
+function formatClock(seconds: number) {
+  if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
+  const whole = Math.floor(seconds);
+  const minutes = Math.floor(whole / 60);
+  const remain = whole % 60;
+  return `${minutes}:${remain.toString().padStart(2, "0")}`;
+}
+
+function IconChevronLeft() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden className="listenBar__chevron">
+      <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconChevron({ down }: { down?: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden className={down ? "listenScript__chevron listenScript__chevron--down" : "listenScript__chevron"}>
+      <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconWave() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden className="listenTool__icon">
+      <path
+        d="M4 12h1.2M7.2 8v8M10.2 5.5v13M13.2 8.5v7M16.2 6v12M19.2 9.5v5"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function IconBook() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden className="listenTool__icon">
+      <path
+        d="M5 5.5h6.2A2.3 2.3 0 0113.5 7.8V19a2 2 0 00-2-1.6H5V5.5zM19 5.5h-6.2A2.3 2.3 0 0010.5 7.8V19a2 2 0 012-1.6H19V5.5z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function IconCheck() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden className="listenSaved__check">
+      <path d="M6 12.5l3.2 3.2L18 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 /**
  * Story page `/story/[id]`.
- * Top to bottom: poster, playback bar, narration controls, full script.
- * Play generates audio only when this story has none yet (avoids a surprise charge).
- * Playback speed is the audio element's rate and does not call ElevenLabs again.
+ * Cover, title, timeline, and Play. Speed is one control. Read story expands in place.
+ * Cover, keepsake, and narration changes live in labelled sheets.
+ * Play creates narration only when this story has none yet. Playback speed does not call the voice provider again.
  */
 export function StoryReader({ storyId }: { storyId: string }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -62,6 +129,10 @@ export function StoryReader({ storyId }: { storyId: string }) {
   const [emotion, setEmotion] = useState(40);
   const [audioError, setAudioError] = useState("");
   const [savedAudioUrl, setSavedAudioUrl] = useState<string | null>(null);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [narrationOpen, setNarrationOpen] = useState(false);
+  const [scriptOpen, setScriptOpen] = useState(false);
+  const [speedOpen, setSpeedOpen] = useState(false);
 
   const language = story?.language?.trim() || "zh-Hant";
   const {
@@ -121,6 +192,13 @@ export function StoryReader({ storyId }: { storyId: string }) {
     if (!audio) return;
     audio.playbackRate = playbackRate;
   }, [playbackRate, savedAudioUrl]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !savedAudioUrl) return;
+    const absolute = new URL(savedAudioUrl, window.location.origin).href;
+    if (audio.src !== absolute) audio.src = savedAudioUrl;
+  }, [savedAudioUrl]);
 
   const generatePoster = useCallback(async () => {
     if (!story?.text.trim()) return;
@@ -182,11 +260,18 @@ export function StoryReader({ storyId }: { storyId: string }) {
       const next = audioRef.current;
       if (!next) return;
       next.playbackRate = playbackRate;
-      await next.play();
-      setPlaying(true);
+      const started = next.play();
+      if (started) {
+        started.catch((error: unknown) => {
+          const message = error instanceof Error ? error.message : String(error);
+          if (next.paused && /interrupted by a call to pause/i.test(message)) return;
+          setAudioError(playbackErrorMessage(error));
+          setPlaying(false);
+        });
+      }
       if (story) onStoryPlayed(story.id, story.title?.trim() || "Story");
     } catch (error: unknown) {
-      setAudioError(getErrorMessage(error, "Voice failed, try again."));
+      setAudioError(playbackErrorMessage(error));
       setPlaying(false);
     }
   }
@@ -205,7 +290,7 @@ export function StoryReader({ storyId }: { storyId: string }) {
       setStory((current) => (current ? { ...current, audioUrl: result.savedAudioUrl } : current));
       setPlaying(true);
     } catch (error: unknown) {
-      setAudioError(getErrorMessage(error, "Voice failed, try again."));
+      setAudioError(playbackErrorMessage(error));
     }
   }
 
@@ -226,19 +311,75 @@ export function StoryReader({ storyId }: { storyId: string }) {
     setProgress(value);
   }
 
-  const title = story?.title?.trim() || "Bedtime story";
+  function skip(seconds: number) {
+    const audio = audioRef.current;
+    if (!audio || !savedAudioUrl) return;
+    const limit = Number.isFinite(audio.duration) ? audio.duration : duration;
+    const next = Math.min(Math.max(0, audio.currentTime + seconds), limit || 0);
+    audio.currentTime = next;
+    setProgress(next);
+  }
+
+  async function onDownloadKeepsake() {
+    if (poster.status !== "ready") {
+      await generatePoster();
+      return;
+    }
+    const response = await fetch(poster.url);
+    if (!response.ok) throw new Error("Could not download this poster.");
+    const blob = await response.blob();
+    downloadPosterPng(blob, title);
+  }
+
+  const title = story?.title?.trim() || (loading ? "Opening story…" : "Bedtime story");
+  const childName = story?.mainCharacterName?.trim() || "";
+  const narratorVoice = voices.find((voice) => voice.id === selectedVoiceId);
+  const narratorName = friendlyVoiceName(narratorVoice);
+  const spokenLanguage = languageLabel(language);
+  const creditLine = [
+    childName ? `For ${childName}` : "",
+    narratorName && spokenLanguage ? `${narratorName} in ${spokenLanguage}` : narratorName || spokenLanguage,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  const knownDuration = Number.isFinite(duration) && duration > 0;
+  const seekMax = knownDuration ? duration : 0;
+  const seekValue = Math.min(progress, seekMax || progress);
+  const progressPct = seekMax > 0 ? Math.min(100, (seekValue / seekMax) * 100) : 0;
+  const coverFailed = poster.status === "error" || (poster.status === "ready" && poster.outcome === "text_fallback");
+  const showArtwork = poster.status === "ready";
+
+  let playLabel = "Play";
+  if (isMakingMp3) playLabel = "Preparing narration";
+  else if (playing) playLabel = "Pause";
+  else if (!savedAudioUrl) playLabel = "Play";
+
+  let statusText = "";
+  if (isMakingMp3) statusText = "Preparing narration";
+  else if (playing) statusText = "Playing";
+  else if (story && !loadError) statusText = "Ready to play";
 
   return (
-    <main className="pageRoot pageRoot--tabs storyPage">
-      <div className="overlay overlay--withTabs">
-        <div className="container storyReader">
-          <AppChromeBar />
-          <div className="storyReader__top">
-            <Link href="/?tab=library" className="button storyReader__back">
-              ← Library
+    <main className="pageRoot storyPage pageRoot--calm">
+      <div className="overlay">
+        <div className="container listen">
+          <header className="listenBar">
+            <Link href="/?tab=library" className="listenBar__back">
+              <IconChevronLeft />
+              My Stories
             </Link>
-            <h1 className="storyReader__title">{loading ? "Opening story…" : title}</h1>
-          </div>
+            <button
+              type="button"
+              className="listenBar__more"
+              aria-label="More actions"
+              aria-haspopup="dialog"
+              onClick={() => setMoreOpen(true)}
+              disabled={!story || Boolean(loadError)}
+            >
+              ···
+            </button>
+          </header>
 
           {loadError ? (
             <div className="errorBox" role="alert">
@@ -251,169 +392,278 @@ export function StoryReader({ storyId }: { storyId: string }) {
             </div>
           ) : null}
 
-          <section className="storyReader__poster" aria-label="Poster">
-            {poster.status === "ready" ? (
+          <div className={`listenCover${coverFailed ? " listenCover--fallback" : ""}`}>
+            {showArtwork ? (
               <Image
-                src={poster.url}
-                alt={`Poster for ${title}`}
+                src={poster.status === "ready" ? poster.url : ""}
+                alt={`${title} cover`}
                 width={800}
-                height={1000}
+                height={800}
                 unoptimized
-                className="storyReader__posterImg"
+                className="listenCover__img"
               />
             ) : (
-              <div className="storyReader__posterPlaceholder" role="status">
-                {poster.status === "generating" || (loading && !loadError) ? (
-                  <>
-                    <span className="spinner" aria-hidden />
-                    <p>Painting the poster…</p>
-                  </>
-                ) : poster.status === "error" ? (
-                  <>
-                    <p>{poster.message}</p>
-                    <button className="button buttonPrimary" type="button" onClick={() => void generatePoster()}>
-                      Retry poster
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <p>Poster not ready yet.</p>
-                    <button
-                      className="button buttonPrimary"
-                      type="button"
-                      onClick={() => void generatePoster()}
-                      disabled={!story}
-                    >
-                      Make poster
-                    </button>
-                  </>
-                )}
+              <div className="listenCover__art" role="img" aria-label={story?.genre ? `${story.genre} cover` : "Story cover"}>
+                <span className="listenCover__moon" aria-hidden />
+                <span className="listenCover__caption">
+                  {poster.status === "generating" || (loading && !loadError) ? "Painting the cover…" : story?.genre || "Bedtime"}
+                </span>
               </div>
             )}
-            {poster.status === "ready" && poster.outcome === "text_fallback" ? (
-              <p className="storyReader__hint">{poster.hint || "Simple cover — the illustrated poster was unavailable."}</p>
-            ) : null}
-            {poster.status === "ready" ? (
-              <button className="button storyReader__posterRetry" type="button" onClick={() => void generatePoster()}>
-                New poster
+          </div>
+          {poster.status === "error" ? (
+            <p className="listenHint" role="status">
+              {poster.message}
+              <button type="button" className="listenRetry" onClick={() => void generatePoster()}>
+                Try cover again
               </button>
-            ) : null}
-          </section>
+            </p>
+          ) : null}
+          {poster.status === "ready" && poster.outcome === "text_fallback" ? (
+            <p className="listenHint">
+              Simple cover — illustrated artwork was unavailable.
+              <button type="button" className="listenRetry" onClick={() => void generatePoster()}>
+                Try cover again
+              </button>
+            </p>
+          ) : null}
 
-          <section className="panel storyReader__player" aria-label="Audio player">
-            <div className="storyReader__transport">
-              <button
-                type="button"
-                className="button buttonPrimary storyReader__play"
-                onClick={() => void onTogglePlay()}
-                disabled={!story || isMakingMp3 || Boolean(loadError)}
-                aria-label={playing ? "Pause" : savedAudioUrl ? "Play" : "Play and create audio"}
-              >
-                {isMakingMp3 ? "Preparing…" : playing ? "Pause" : "Play"}
-              </button>
-              <label className="storyReader__seek">
-                <span className="visuallyHidden">Seek</span>
-                <input
-                  type="range"
-                  min={0}
-                  max={duration || 0}
-                  step={0.1}
-                  value={Math.min(progress, duration || 0)}
-                  onChange={(event) => onSeek(Number(event.target.value))}
-                  disabled={!savedAudioUrl || isMakingMp3}
-                  aria-valuetext={savedAudioUrl ? `${Math.round(progress)} seconds` : "No audio yet"}
-                />
-              </label>
-            </div>
-            <div className="storyReader__rates" role="group" aria-label="Playback speed">
-              {PLAYBACK_RATES.map((rate) => (
-                <button
-                  key={rate}
-                  type="button"
-                  className={`createPicker__chip${playbackRate === rate ? " createPicker__chip--active" : ""}`}
-                  aria-pressed={playbackRate === rate}
-                  onClick={() => setPlaybackRate(rate)}
-                >
-                  {formatRate(rate)}
-                </button>
-              ))}
-            </div>
-            {!savedAudioUrl && !isMakingMp3 ? (
-              <p className="storyReader__hint">Tap Play to create the narration. Speed here only changes playback.</p>
-            ) : null}
+          <h1 className="listenTitle">{title}</h1>
+          {creditLine ? <p className="listenMeta">{creditLine}</p> : null}
+          {story && !loadError ? (
+            <p className="listenSaved">
+              <IconCheck />
+              Saved to My Stories
+            </p>
+          ) : null}
+
+          <p className={`listenStatus${audioError ? " listenStatus--error" : ""}`} role="status">
             {audioError ? (
-              <div className="fieldErrorRow" role="alert">
-                <span className="fieldErrorText">{audioError}</span>
-                <button className="button buttonInline" type="button" onClick={() => void onTogglePlay()}>
+              <>
+                {audioError}
+                <button type="button" className="listenRetry" onClick={() => void onTogglePlay()}>
                   Try again
                 </button>
-              </div>
-            ) : null}
-            <audio
-              ref={audioRef}
-              src={savedAudioUrl || undefined}
-              preload="metadata"
-              className="storyReader__audio"
-              onPlay={() => setPlaying(true)}
-              onPause={() => setPlaying(false)}
-              onEnded={() => setPlaying(false)}
-              onTimeUpdate={(event) => setProgress(event.currentTarget.currentTime)}
-              onLoadedMetadata={(event) => setDuration(event.currentTarget.duration || 0)}
-              onDurationChange={(event) => setDuration(event.currentTarget.duration || 0)}
-            />
-          </section>
+              </>
+            ) : (
+              statusText
+            )}
+          </p>
 
-          <section className="storyReader__tts" aria-label="Narration settings">
-            <h2 className="panelTitle">Narration</h2>
-            <label className="field">
-              <span className="label">Voice</span>
-              <select
-                value={selectedVoiceId}
-                onChange={(event) => setSelectedVoiceId(event.target.value)}
-                disabled={isLoadingVoices || isMakingMp3}
-              >
-                {isLoadingVoices ? <option value="">Loading voices…</option> : null}
-                {voicesError ? <option value="">Voices unavailable</option> : null}
-                {!isLoadingVoices && !voicesError
-                  ? voices.map((voice) => (
-                      <option key={voice.id} value={voice.id}>
-                        {voice.name ?? voice.id}
-                      </option>
-                    ))
-                  : null}
-              </select>
-              {voicesError ? (
-                <div className="fieldErrorRow" role="alert">
-                  <span className="fieldErrorText">{voicesError}</span>
-                  <button className="button buttonInline" type="button" onClick={() => void fetchVoices()}>
-                    Retry voices
-                  </button>
-                </div>
-              ) : null}
-            </label>
-            <TtsControls
-              speed={narrationSpeed}
-              emotion={emotion}
-              onSpeedChange={setNarrationSpeed}
-              onEmotionChange={setEmotion}
+          <div className="listenTimeline">
+            <input
+              className="listenSeek"
+              type="range"
+              min={0}
+              max={seekMax || 0}
+              step={0.1}
+              value={seekMax ? seekValue : 0}
+              style={{ ["--pct" as string]: `${progressPct}%` }}
+              onChange={(event) => onSeek(Number(event.target.value))}
+              disabled={!savedAudioUrl || isMakingMp3}
+              aria-label="Timeline"
+              aria-valuemin={0}
+              aria-valuemax={Math.round(seekMax || 0)}
+              aria-valuenow={Math.round(seekValue || 0)}
+              aria-valuetext={
+                savedAudioUrl
+                  ? `${formatClock(seekValue)} of ${knownDuration ? formatClock(duration) : "unknown length"}`
+                  : "No audio yet"
+              }
             />
+            <div className="listenTimes">
+              <span>{formatClock(savedAudioUrl ? seekValue : 0)}</span>
+              <span>{knownDuration ? formatClock(duration) : "–:––"}</span>
+            </div>
+          </div>
+
+          <div className="listenTransport">
             <button
               type="button"
-              className="button buttonPrimary storyReader__regen"
-              onClick={() => void onRegenerate()}
-              disabled={!story || isMakingMp3}
+              className="listenSkip"
+              aria-label="Back 15 seconds"
+              onClick={() => skip(-15)}
+              disabled={!savedAudioUrl || isMakingMp3}
             >
-              {isMakingMp3 ? "Regenerating…" : "Regenerate audio"}
+              <span aria-hidden>−15</span>
             </button>
+            <button
+              type="button"
+              className="listenPlay"
+              onClick={() => void onTogglePlay()}
+              disabled={!story || isMakingMp3 || Boolean(loadError)}
+              aria-label={playLabel}
+              aria-busy={isMakingMp3}
+            >
+              {isMakingMp3 ? (
+                <span className="listenSpinner" />
+              ) : playing ? (
+                <span className="listenPause" aria-hidden />
+              ) : (
+                <span className="listenTriangle" aria-hidden />
+              )}
+            </button>
+            <button
+              type="button"
+              className="listenSkip"
+              aria-label="Forward 15 seconds"
+              onClick={() => skip(15)}
+              disabled={!savedAudioUrl || isMakingMp3}
+            >
+              <span aria-hidden>+15</span>
+            </button>
+          </div>
+
+          <div className="listenTools">
+            <div className="listenSpeed">
+              <button
+                type="button"
+                className="listenSpeed__button"
+                aria-haspopup="listbox"
+                aria-expanded={speedOpen}
+                aria-label={`Playback speed ${formatRate(playbackRate)}`}
+                onClick={() => setSpeedOpen((open) => !open)}
+              >
+                {formatRate(playbackRate)}
+                <span className="listenSpeed__caret" aria-hidden>
+                  ▾
+                </span>
+              </button>
+              {speedOpen ? (
+                <ul className="listenSpeed__menu" role="listbox" aria-label="Playback speed">
+                  {PLAYBACK_RATES.map((rate) => (
+                    <li key={rate}>
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected={playbackRate === rate}
+                        onClick={() => {
+                          setPlaybackRate(rate);
+                          setSpeedOpen(false);
+                        }}
+                      >
+                        {formatRate(rate)}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+            <button type="button" className="listenNarration" onClick={() => setNarrationOpen(true)}>
+              <IconWave />
+              Narration
+            </button>
+          </div>
+
+          <section className="listenScriptCard" aria-label="Read story">
+            <button
+              type="button"
+              className="listenScript"
+              aria-expanded={scriptOpen}
+              onClick={() => setScriptOpen((open) => !open)}
+            >
+              <IconBook />
+              <span>Read story</span>
+              <IconChevron down={!scriptOpen} />
+            </button>
+            {scriptOpen ? (
+              <div className="listenScript__body">
+                {loading ? <p className="listenHint">Loading the script…</p> : null}
+                {story?.text ? <p className="listenScript__text">{story.text}</p> : null}
+                {!loading && !story?.text ? <p className="listenHint">This story has no script yet.</p> : null}
+              </div>
+            ) : null}
           </section>
 
-          <section className="panel storyReader__script" aria-label="Story script">
-            <h2 className="panelTitle">Story</h2>
-            {loading ? <p className="storyReader__hint">Loading the script…</p> : null}
-            {story ? <p className="storyReader__text">{story.text}</p> : null}
-          </section>
+          <audio
+            ref={audioRef}
+            preload="metadata"
+            playsInline
+            className="listenAudio"
+            onPlay={() => setPlaying(true)}
+            onPause={() => setPlaying(false)}
+            onEnded={() => setPlaying(false)}
+            onTimeUpdate={(event) => setProgress(event.currentTarget.currentTime)}
+            onLoadedMetadata={(event) => setDuration(event.currentTarget.duration || 0)}
+            onDurationChange={(event) => setDuration(event.currentTarget.duration || 0)}
+          />
         </div>
       </div>
+
+      {moreOpen ? (
+        <QuietSheet title="Story actions" onClose={() => setMoreOpen(false)}>
+          <button
+            type="button"
+            className="sheetAction"
+            onClick={() => void generatePoster()}
+            disabled={!story || poster.status === "generating"}
+          >
+            {poster.status === "generating" ? "Painting the cover…" : "New cover artwork"}
+          </button>
+          <button
+            type="button"
+            className="sheetAction"
+            onClick={() => void onDownloadKeepsake().catch(() => {})}
+            disabled={!story || poster.status === "generating"}
+          >
+            {poster.status === "ready" ? "Download keepsake poster" : "Create keepsake poster"}
+          </button>
+          {coverFailed ? (
+            <button
+              type="button"
+              className="sheetAction"
+              onClick={() => void generatePoster()}
+            >
+              Try cover again
+            </button>
+          ) : null}
+          <p className="listenHint">Artwork and the keepsake use this story. Narration stays available either way.</p>
+        </QuietSheet>
+      ) : null}
+
+      {narrationOpen ? (
+        <QuietSheet title="Narration" onClose={() => setNarrationOpen(false)}>
+          <label className="createSheet__field">
+            <span className="createScreen__label">Voice</span>
+            <select
+              value={selectedVoiceId}
+              onChange={(event) => setSelectedVoiceId(event.target.value)}
+              disabled={isLoadingVoices || isMakingMp3}
+            >
+              {isLoadingVoices ? <option value="">Loading voices…</option> : null}
+              {voicesError ? <option value="">Voices unavailable</option> : null}
+              {!isLoadingVoices && !voicesError
+                ? voices.map((voice) => (
+                    <option key={voice.id} value={voice.id}>
+                      {friendlyVoiceName(voice) || voice.id}
+                      {voice.language ? ` · ${languageLabel(voice.language)}` : ""}
+                    </option>
+                  ))
+                : null}
+            </select>
+            {voicesError ? (
+              <button className="listenRetry" type="button" onClick={() => void fetchVoices()}>
+                Retry voices
+              </button>
+            ) : null}
+          </label>
+          <TtsControls
+            speed={narrationSpeed}
+            emotion={emotion}
+            onSpeedChange={setNarrationSpeed}
+            onEmotionChange={setEmotion}
+          />
+          <button
+            type="button"
+            className="sheetAction sheetAction--last"
+            onClick={() => void onRegenerate()}
+            disabled={!story || isMakingMp3}
+          >
+            {isMakingMp3 ? "Regenerating narration…" : "Regenerate narration"}
+          </button>
+          <p className="listenHint">Regenerate replaces the saved narration for this story. Playback speed does not.</p>
+        </QuietSheet>
+      ) : null}
     </main>
   );
 }

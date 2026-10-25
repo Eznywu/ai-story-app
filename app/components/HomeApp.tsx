@@ -300,7 +300,7 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
   const rootClass = [
     "pageRoot",
     "pageRoot--tabs",
-    activeTab === "create" && "pageRoot--createFit",
+    activeTab === "create" && "pageRoot--calm",
     uiMode === "mobile" && "pageRoot--uiMobile",
     uiMode === "desktop" && "pageRoot--uiDesktop",
   ]
@@ -340,7 +340,7 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
       <main className={rootClass}>
         <div className="overlay overlay--withTabs">
           <div className="container">
-            <AppChromeBar />
+            <AppChromeBar variant={activeTab === "create" ? "create" : "default"} />
             {activeTab === "library" ? (
               <header>
                 <div className="title">My Stories</div>

@@ -35,13 +35,30 @@ function IconSpark({ className }: { className?: string }) {
   );
 }
 
+type Props = {
+  /** Create uses the app name on the left and a sparkle on the right. */
+  variant?: "default" | "create";
+};
+
 /**
- * Top-left chrome on main app and standalone pages: Settings + Play.
+ * Top chrome. Settings and Play stay reachable. No credit count is shown:
+ * the app does not have a verified balance to display.
  */
-export function AppChromeBar() {
+export function AppChromeBar({ variant = "default" }: Props) {
   const pathname = usePathname();
   const settingsActive = pathname === "/settings";
   const playActive = pathname === "/play";
+
+  if (variant === "create") {
+    return (
+      <div className="appChromeBar appChromeBar--create">
+        <div className="appChromeBar__brand appChromeBar__brand--start">Emrsy Story</div>
+        <Link href="/play" className="appChromeBar__spark" aria-label="Play">
+          <IconSpark className="appChromeBar__walletSpark" />
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="appChromeBar">
@@ -58,15 +75,11 @@ export function AppChromeBar() {
       </div>
       <Link
         href="/play"
-        className={`appChromeBar__wallet${playActive ? " appChromeBar__wallet--active" : ""}`}
+        className={`appChromeBar__spark${playActive ? " appChromeBar__spark--active" : ""}`}
         aria-label="Play"
         title="Play"
       >
-        <span className="appChromeBar__walletSparkWrap">
-          <IconSpark className="appChromeBar__walletSpark" />
-        </span>
-        <span className="appChromeBar__walletValue">13</span>
-        <span className="visuallyHidden">Open play and credits</span>
+        <IconSpark className="appChromeBar__walletSpark" />
       </Link>
     </div>
   );
