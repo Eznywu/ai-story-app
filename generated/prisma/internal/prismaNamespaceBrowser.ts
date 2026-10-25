@@ -123,7 +123,9 @@ export const StoryScalarFieldEnum = {
   mainCharacterName: 'mainCharacterName',
   childGender: 'childGender',
   posterFilename: 'posterFilename',
+  posterUrl: 'posterUrl',
   audioFilename: 'audioFilename',
+  audioUrl: 'audioUrl',
   dailyAutomated: 'dailyAutomated',
   createdAt: 'createdAt'
 } as const

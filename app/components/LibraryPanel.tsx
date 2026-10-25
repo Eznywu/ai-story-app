@@ -138,8 +138,8 @@ export function LibraryPanel({
                         alt=""
                         width={176}
                         height={216}
+                        unoptimized
                         className="libraryThumb__img"
-                        sizes="88px"
                       />
                     ) : (
                       <div className="libraryThumb__fallback" />
@@ -188,7 +188,7 @@ export function LibraryPanel({
                         type="button"
                         onClick={() => onLoadStory(story)}
                       >
-                        Load story
+                        Open
                       </button>
                       <button
                         className="button"
@@ -251,7 +251,7 @@ export function LibraryPanel({
             <div className="libraryExcerptOpen">{detailItem.story}</div>
             <div className="libraryItemActions">
               <button className="button buttonPrimary" type="button" onClick={() => onLoadStory(detailItem)}>
-                Read
+                Open
               </button>
               <button
                 className="button"

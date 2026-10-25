@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
-import fs from "fs/promises";
-import path from "path";
 import { speakWithOpenAI } from "@/lib/tts/openai";
+import { saveMediaBytes } from "@/lib/media/objectStore";
 import { getErrorMessage, getErrorStatus } from "@/lib/errors";
 import { requireUser } from "@/lib/auth/requireUser";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// Literal required: Next.js segment config must be statically analyzable.
+export const maxDuration = 300;
 
 export async function POST(req: Request) {
   const auth = await requireUser();
@@ -14,21 +15,21 @@ export async function POST(req: Request) {
   try {
     const { text, voice } = await req.json();
 
-    const chosenVoice = String(voice || "alloy");
+    const chosenVoice = String(voice || "alloy").replace(/[^a-z0-9]/gi, "").slice(0, 24) || "alloy";
     const buffer = await speakWithOpenAI(String(text ?? ""), chosenVoice);
 
-    const dir = path.join(process.cwd(), "uploads", "audio");
-    await fs.mkdir(dir, { recursive: true });
-
     const filename = `tts_${Date.now()}_${chosenVoice}.mp3`;
-    const filePath = path.join(dir, filename);
-
-    await fs.writeFile(filePath, buffer);
+    const saved = await saveMediaBytes({
+      folder: "audio",
+      filename,
+      body: buffer,
+      contentType: "audio/mpeg",
+    });
 
     return NextResponse.json({
       ok: true,
-      filename,
-      url: `/api/audio/${filename}`,
+      filename: saved.filename,
+      url: saved.url,
       size: buffer.length,
     });
   } catch (err: unknown) {

@@ -19,7 +19,7 @@ export function TtsControls({ speed, emotion, onSpeedChange, onEmotionChange }: 
     <section className="panel">
       <div className="controlsRow">
         <div className="controlBlock">
-          <div className="label">Speed</div>
+          <div className="label">Narration speed</div>
           <div className="stepper">
             <button
               type="button"
@@ -38,7 +38,7 @@ export function TtsControls({ speed, emotion, onSpeedChange, onEmotionChange }: 
             </button>
           </div>
           <p className="hint">
-            Narration uses {TTS_SPEED_MIN.toFixed(2)}–{TTS_SPEED_MAX.toFixed(2)}. 0.85–1.00 is a calm bedtime pace.
+            ElevenLabs recording pace, {TTS_SPEED_MIN.toFixed(2)}–{TTS_SPEED_MAX.toFixed(2)}. 0.85–1.00 is a calm bedtime pace. This does not change the player speed.
           </p>
         </div>
 
@@ -53,7 +53,9 @@ export function TtsControls({ speed, emotion, onSpeedChange, onEmotionChange }: 
               +
             </button>
           </div>
-          <p className="hint">Higher values are more expressive. 30-55 is usually bedtime-safe.</p>
+          <p className="hint">
+            Maps to ElevenLabs style and stability. Higher is more expressive. 30-55 is usually bedtime-safe.
+          </p>
         </div>
       </div>
     </section>

@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
 import type { StoryLibraryItem } from "@/app/hooks/useStoryLibrary";
 
 type Props = {
@@ -80,14 +79,7 @@ export function BookShelfPanel({
                       <button type="button" className="bookCard" onClick={() => onOpenInEditor(story)}>
                         <span className="bookCardCover">
                           {story.posterUrl ? (
-                            <Image
-                              src={story.posterUrl}
-                              alt=""
-                              width={200}
-                              height={280}
-                              className="bookCardImage"
-                              sizes="(max-width: 480px) 25vw, 120px"
-                            />
+                            <img src={story.posterUrl} alt="" className="bookCardImage" />
                           ) : (
                             <span className="bookCardFallback" style={{ background: shelfAccent(story.genre ?? "") }} />
                           )}

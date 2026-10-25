@@ -11,6 +11,8 @@ import { isCloneVoiceId, VOICE_CLONE_PREFIX } from "@/lib/voices/voices";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// Literal required: Next.js segment config must be statically analyzable.
+export const maxDuration = 300;
 
 export async function POST(req: Request) {
   const auth = await requireUser();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { getErrorMessage } from "@/lib/errors";
 import { clientJson } from "@/lib/auth/clientApi";
 import { redirectIfUnsigned } from "@/lib/auth/redirectIfUnsigned";
@@ -37,20 +37,28 @@ function pickDefaultVoice(voices: VoiceItem[], language: string) {
   );
 }
 
+function savedAudioUrlFromHeader(value: string): string | null {
+  if (!value) return null;
+  if (value.startsWith("/api/audio/")) return value;
+  if (value.startsWith("https://") && value.includes(".blob.vercel-storage.com")) return value;
+  return null;
+}
+
 function isVoiceApiItem(value: unknown): value is VoiceApiItem {
   if (!value || typeof value !== "object") return false;
   const item = value as VoiceApiItem;
   return Boolean(item.id || item.voiceId);
 }
 
-export function useTts(language: string) {
+export function useTts(language: string, externalAudioRef?: RefObject<HTMLAudioElement | null>) {
   const [voices, setVoices] = useState<VoiceItem[]>([]);
   const [selectedVoiceId, setSelectedVoiceId] = useState("");
   const [audioUrl, setAudioUrl] = useState("");
   const [isMakingMp3, setIsMakingMp3] = useState(false);
   const [isLoadingVoices, setIsLoadingVoices] = useState(false);
   const [voicesError, setVoicesError] = useState("");
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const internalAudioRef = useRef<HTMLAudioElement | null>(null);
+  const audioRef = externalAudioRef ?? internalAudioRef;
 
   const fetchVoices = useCallback(async () => {
     setIsLoadingVoices(true);
@@ -193,11 +201,10 @@ export function useTts(language: string) {
       }
 
       const objectUrl = URL.createObjectURL(blob);
-      replaceAudioUrl(objectUrl);
-      playCurrentAudio();
-
       const savedHeader = res.headers.get("X-Audio-Url")?.trim() || "";
-      const savedAudioUrl = savedHeader.startsWith("/api/audio/") ? savedHeader : null;
+      const savedAudioUrl = savedAudioUrlFromHeader(savedHeader);
+      replaceAudioUrl(savedAudioUrl || objectUrl);
+      playCurrentAudio();
       return { savedAudioUrl };
     } finally {
       setIsMakingMp3(false);

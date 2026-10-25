@@ -4,6 +4,7 @@ import type { StoryGenerationInput } from "@/lib/types";
 import { STORY_INPUT_MAX_CHARS } from "@/lib/types";
 import { createError, getErrorMessage } from "@/lib/errors";
 import { getOpenAiBaseUrl, getPosterHttpDispatcher } from "@/lib/providerHttp";
+import { providerTimeoutMs } from "@/lib/vercelDuration";
 import { posterProviderTransportFailureMessage } from "@/lib/posters/posterProviderErrors";
 import { loadAntiRepeatLibraryContext } from "@/lib/stories/storyLibraryContext";
 import { normalizeChildGenderForStoryInput } from "@/lib/profiles/childGender";
@@ -256,10 +257,7 @@ export async function generateStoryWithRetry(
     );
   }
 
-  const timeoutMs = Math.min(
-    Math.max(Number(process.env.OPENAI_STORY_TIMEOUT_MS) || 180_000, 30_000),
-    600_000
-  );
+  const timeoutMs = providerTimeoutMs(Number(process.env.OPENAI_STORY_TIMEOUT_MS), 180_000);
   const client = new OpenAI({
     apiKey,
     baseURL: getOpenAiBaseUrl(),

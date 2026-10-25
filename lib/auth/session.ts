@@ -3,9 +3,11 @@ import { prisma } from "@/lib/prisma";
 import {
   SESSION_COOKIE,
   SESSION_TTL_SECONDS,
+  authEnabled,
   hashSessionToken,
   newSessionToken,
 } from "@/lib/auth/config";
+import { getOrCreateGuestUser } from "@/lib/auth/guestUser";
 
 export type AuthUser = {
   id: string;
@@ -20,6 +22,10 @@ export async function readSessionToken(): Promise<string | null> {
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
+  if (!authEnabled()) {
+    return getOrCreateGuestUser();
+  }
+
   const token = await readSessionToken();
   if (!token) return null;
 

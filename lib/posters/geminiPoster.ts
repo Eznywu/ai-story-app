@@ -2,6 +2,7 @@ import { fetch } from "undici";
 import { createError, getErrorStatus } from "@/lib/errors";
 import { getGeminiBaseUrl, getPosterHttpDispatcher, posterProxyMode } from "@/lib/providerHttp";
 import { buildPosterImagePrompt } from "@/lib/posters/posterPromptConfig";
+import { providerTimeoutMs } from "@/lib/vercelDuration";
 
 /**
  * Imagen raster models use `:predict`. Natively multimodal image models (marketed as
@@ -20,10 +21,7 @@ function posterUsesImagenPredict(modelId: string): boolean {
  * on slow paths to Google. We call the REST API with an explicit Agent so connect,
  * headers, and body phases share one longer limit.
  */
-const HTTP_TIMEOUT_MS = Math.min(
-  Math.max(Number(process.env.GEMINI_HTTP_TIMEOUT_MS) || 300_000, 30_000),
-  600_000
-);
+const HTTP_TIMEOUT_MS = providerTimeoutMs(Number(process.env.GEMINI_HTTP_TIMEOUT_MS), 180_000);
 
 function geminiOrigin(): string {
   return (getGeminiBaseUrl() ?? "https://generativelanguage.googleapis.com").replace(
