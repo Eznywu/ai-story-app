@@ -7,10 +7,13 @@ import {
   SEND_IP_LIMIT,
   SEND_IP_WINDOW_MS,
   SEND_MIN_INTERVAL_MS,
+  authEnabled,
   hashLoginCode,
+  isGuestEmail,
   loginCodeMatches,
   sixDigitCode,
 } from "@/lib/auth/config";
+import { adoptGuestLibrary } from "@/lib/auth/guestUser";
 import { deliverLoginCode, emailDeliveryProblem } from "@/lib/auth/sendLoginEmail";
 import { createSession } from "@/lib/auth/session";
 import type { AuthUser } from "@/lib/auth/session";
@@ -24,6 +27,10 @@ export type VerifyCodeResult =
   | { ok: false; status: number; error: string };
 
 export async function sendLoginCode(email: string, ip: string): Promise<SendCodeResult> {
+  if (isGuestEmail(email)) {
+    return { ok: false, status: 400, error: "Enter the parent email address." };
+  }
+
   const deliveryError = emailDeliveryProblem();
   if (deliveryError) {
     return { ok: false, status: 503, error: deliveryError };
@@ -105,6 +112,10 @@ export async function sendLoginCode(email: string, ip: string): Promise<SendCode
 }
 
 export async function verifyLoginCode(email: string, code: string): Promise<VerifyCodeResult> {
+  if (isGuestEmail(email)) {
+    return { ok: false, status: 400, error: "Enter the parent email address." };
+  }
+
   const digits = code.replace(/\D/g, "");
   if (digits.length !== 6) {
     return { ok: false, status: 400, error: "Enter the 6-digit code from the email." };
@@ -167,6 +178,10 @@ export async function verifyLoginCode(email: string, code: string): Promise<Veri
         update: {},
         select: { id: true, email: true },
       });
+
+      if (authEnabled()) {
+        await adoptGuestLibrary(tx, user.id);
+      }
 
       return { ok: true as const, user };
     });

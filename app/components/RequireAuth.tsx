@@ -8,6 +8,8 @@ export type AuthUser = { id: string; email: string };
 
 type AuthContextValue = {
   user: AuthUser;
+  /** False while email sign-in is paused (`AUTH_ENABLED` off). */
+  authEnabled: boolean;
   signOut: () => Promise<void>;
 };
 
@@ -24,6 +26,7 @@ export function useAuthUser(): AuthContextValue {
 export function RequireAuth({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<"loading" | "in" | "out" | "error">("loading");
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [authEnabled, setAuthEnabled] = useState(true);
   const [error, setError] = useState("");
 
   const refresh = useCallback(async () => {
@@ -32,6 +35,7 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
       const res = await fetch("/api/auth/session", { cache: "no-store" });
       const data = (await res.json().catch(() => ({}))) as {
         user?: AuthUser | null;
+        authEnabled?: boolean;
         error?: string;
       };
       if (!res.ok) {
@@ -40,6 +44,7 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
         setStatus("error");
         return;
       }
+      setAuthEnabled(data.authEnabled !== false);
       if (data.user?.id && data.user.email) {
         setUser({ id: data.user.id, email: data.user.email });
         setError("");
@@ -98,5 +103,5 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
     return <SignInScreen onSignedIn={() => void refresh()} />;
   }
 
-  return <AuthContext.Provider value={{ user, signOut }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user, authEnabled, signOut }}>{children}</AuthContext.Provider>;
 }

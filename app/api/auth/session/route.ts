@@ -1,3 +1,4 @@
+import { authEnabled } from "@/lib/auth/config";
 import { jsonNoStore } from "@/lib/auth/requireUser";
 import { getCurrentUser } from "@/lib/auth/session";
 
@@ -6,5 +7,5 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   const user = await getCurrentUser();
-  return jsonNoStore({ user });
+  return jsonNoStore({ user, authEnabled: authEnabled() });
 }

@@ -14,6 +14,25 @@ export const SESSION_TTL_SECONDS = 60 * 60 * 24 * 400;
 const DEV_AUTH_SECRET = "dev-only-auth-secret";
 
 /**
+ * Reserved library used while email sign-in is paused.
+ * Not a deliverable address. The sign-in routes refuse it.
+ */
+export const GUEST_EMAIL = "guest@local.invalid";
+
+export function isGuestEmail(email: string): boolean {
+  return email.trim().toLowerCase() === GUEST_EMAIL;
+}
+
+/**
+ * Email sign-in is paused unless this is explicitly on.
+ * Unset, empty, false, off, and 0 stay off so a missing key cannot block the app.
+ */
+export function authEnabled(): boolean {
+  const raw = (process.env.AUTH_ENABLED ?? "").trim().toLowerCase();
+  return raw === "1" || raw === "true" || raw === "yes" || raw === "on" || raw === "email";
+}
+
+/**
  * Log the one-time code only for a local dev server.
  * Vercel (preview or production) and `next start` never log codes.
  */

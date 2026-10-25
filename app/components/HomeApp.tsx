@@ -75,7 +75,7 @@ type Props = {
 
 export function HomeApp({ uiMode = "responsive" }: Props) {
   const router = useRouter();
-  const { user } = useAuthUser();
+  const { user, authEnabled } = useAuthUser();
   const [age, setAge] = useState("6 months");
   const [language, setLanguage] = useState("zh-Hant");
   const [mainCharacterName, setMainCharacterName] = useState("嚕嚕");
@@ -458,7 +458,7 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
 
             {activeTab === "profile" ? (
               <ProfilePanel
-                email={user.email}
+                email={authEnabled ? user.email : undefined}
                 stats={stats}
                 kids={kids}
                 characters={characters}
