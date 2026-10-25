@@ -138,7 +138,8 @@ Global and component-level styles.
 
 ### Data and Persistence
 - `prisma/` + PostgreSQL (`DATABASE_URL`) via Prisma; see `.env.example`
-- `uploads/` for generated media/files
+- `uploads/` for generated media when `BLOB_READ_WRITE_TOKEN` is unset (local dev)
+- Vercel Blob when `BLOB_READ_WRITE_TOKEN` is set (required for posters and audio to survive on Vercel)
 
 ### Platform and Tooling
 - `next.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `postcss.config.mjs`

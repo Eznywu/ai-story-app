@@ -61,8 +61,12 @@ model Story {
   mainCharacterName String?
   childGender String?
   posterFilename String?
-  /** ElevenLabs (or mock) MP3 saved for this story, served from `/api/audio/[filename]`. */
+  /** Playback URL: a Vercel Blob URL, or `/api/posters/…` when Blob is not configured. */
+  posterUrl String?
+  /** ElevenLabs (or mock) MP3 filename. Local disk only; Blob rows still keep this key for lookup. */
   audioFilename  String?
+  /** Playback URL: a Vercel Blob URL, or `/api/audio/…` when Blob is not configured. */
+  audioUrl String?
   /** True when created by the daily cron (`lib/stories/dailyAutomatedStories.ts`). */
   dailyAutomated Boolean  @default(false)
   createdAt DateTime @default(now())

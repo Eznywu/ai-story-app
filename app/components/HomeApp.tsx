@@ -1,22 +1,16 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import "@/app/page.css";
-import { StoryForm } from "@/app/components/StoryForm";
 import { AppChromeBar } from "@/app/components/AppChromeBar";
-import { StoryOutput } from "@/app/components/StoryOutput";
-import { TtsControls } from "@/app/components/TtsControls";
-import { StoryResultActions } from "@/app/components/StoryResultActions";
+import { CreateStoryPicker } from "@/app/components/CreateStoryPicker";
 import { LibraryPanel } from "@/app/components/LibraryPanel";
 import { HomeScreenPanel } from "@/app/components/HomeScreenPanel";
-import { CreateHubPanel } from "@/app/components/CreateHubPanel";
 import { ProfilePanel } from "@/app/components/ProfilePanel";
-import { StorySetupExtras } from "@/app/components/StorySetupExtras";
 import { KidProfileFormModal } from "@/app/components/KidProfileFormModal";
 import { CharacterFormModal } from "@/app/components/CharacterFormModal";
 import { HomeTabBar, type HomeTabId } from "@/app/components/HomeTabBar";
-import { PosterFlashCard } from "@/app/components/PosterFlashCard";
-import { PlaybackPanel } from "@/app/components/PlaybackPanel";
 import { EntryScreen } from "@/app/components/EntryScreen";
 import { OnboardingFlow } from "@/app/components/OnboardingFlow";
 import { useStoryGeneration } from "@/app/hooks/useStoryGeneration";
@@ -25,14 +19,10 @@ import { useTts } from "@/app/hooks/useTts";
 import { useKidProfiles } from "@/app/hooks/useKidProfiles";
 import { useStoryCharacters } from "@/app/hooks/useStoryCharacters";
 import { useReadingStats } from "@/app/hooks/useReadingStats";
-import { createStoryPoster } from "@/lib/posters/poster";
-import type { PosterCreateOutcome } from "@/lib/posters/poster";
 import { getErrorMessage } from "@/lib/errors";
 import { trackEvent } from "@/lib/analytics";
-import { rememberLastAudio } from "@/lib/audio/lastAudio";
 import type { AppBannerError, AppBannerSource } from "@/lib/types";
 import { STORY_INPUT_MAX_CHARS } from "@/lib/types";
-import { normalizeChildGenderForStoryInput } from "@/lib/profiles/childGender";
 import type { StoryLibraryItem } from "@/app/hooks/useStoryLibrary";
 import type { KidProfile, StoryCharacterProfile } from "@/lib/profiles/profilesTypes";
 import {
@@ -43,16 +33,6 @@ import {
 import { useAuthUser } from "@/app/components/RequireAuth";
 
 export type HomeUiMode = "responsive" | "mobile" | "desktop";
-
-type PosterPreviewState = {
-  imageUrl: string;
-  title: string;
-  outcome: PosterCreateOutcome;
-  blob: Blob;
-  fallbackHint?: string;
-};
-
-type CreatePhase = "hub" | "story";
 
 function bannerSourceLabel(source: AppBannerSource): string {
   switch (source) {
@@ -94,6 +74,7 @@ type Props = {
 };
 
 export function HomeApp({ uiMode = "responsive" }: Props) {
+  const router = useRouter();
   const { user } = useAuthUser();
   const [age, setAge] = useState("6 months");
   const [language, setLanguage] = useState("zh-Hant");
@@ -101,30 +82,20 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
   const [childGender, setChildGender] = useState("any");
   const [genre, setGenre] = useState("Animals");
   const [length, setLength] = useState("short");
-  const [title, setTitle] = useState("");
   const [storyInput, setStoryInput] = useState("");
   const [theme, setTheme] = useState("");
   const [mood, setMood] = useState("");
   const [seriesMode, setSeriesMode] = useState<"one_shot" | "series">("one_shot");
   const [educationalGoal, setEducationalGoal] = useState("");
   const [moralLesson, setMoralLesson] = useState("");
-  const [speed, setSpeed] = useState(0.95);
-  const [emotion, setEmotion] = useState(40);
-  const [isMakingPoster, setIsMakingPoster] = useState(false);
-  const [linkedStoryId, setLinkedStoryId] = useState<string | null>(null);
   const [banner, setBanner] = useState<AppBannerError | null>(null);
   const [showEntry, setShowEntry] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [activeTab, setActiveTab] = useState<HomeTabId>("home");
-  const [createPhase, setCreatePhase] = useState<CreatePhase>("hub");
-  const [showAdvancedSetup, setShowAdvancedSetup] = useState(false);
-  const [selectedProfileSummary, setSelectedProfileSummary] = useState("No profile selected yet.");
   const [kidModalOpen, setKidModalOpen] = useState(false);
   const [charModalOpen, setCharModalOpen] = useState(false);
-  const [posterPreview, setPosterPreview] = useState<PosterPreviewState | null>(null);
-  const posterPreviewUrlRef = useRef<string | null>(null);
 
-  const { story, setStory, isGenerating, generateStory } = useStoryGeneration();
+  const { isGenerating, generateStory } = useStoryGeneration();
   const {
     library,
     loadingLibrary,
@@ -133,30 +104,20 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
     isSaving,
     refreshLibrary,
     saveStory,
-    savePosterForStory,
     deleteStory,
   } = useStoryLibrary();
   const {
     voices,
     selectedVoiceId,
     setSelectedVoiceId,
-    audioUrl,
-    audioRef,
-    isMakingMp3,
     isLoadingVoices,
     voicesError,
     fetchVoices,
-    makeMp3,
-    playSavedAudio,
-    clearAudio,
-    registerClonedVoice,
-    clearClonedVoice,
-    hasClonedVoice,
   } = useTts(language);
 
   const { profiles: kids, add: addKid } = useKidProfiles();
   const { characters, add: addCharacter } = useStoryCharacters();
-  const { stats, onStoryPlayed, setDraftSummary } = useReadingStats();
+  const { stats, setDraftSummary } = useReadingStats();
 
   const canContinueReading = useMemo(
     () => Boolean(stats?.lastStoryId && library.some((i) => i.id === stats.lastStoryId)),
@@ -166,6 +127,10 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
   useEffect(() => {
     void refreshLibrary();
     void fetchVoices();
+    const tab = new URLSearchParams(window.location.search).get("tab");
+    if (tab === "home" || tab === "create" || tab === "library" || tab === "profile") {
+      setActiveTab(tab);
+    }
     const onboarding = loadOnboardingState(user.id);
     setShowOnboarding(!onboarding.completed);
     applyOnboardingIntent(onboarding.selectedIntent ?? null);
@@ -173,32 +138,19 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
   }, [user.id]);
 
   useEffect(() => {
-    clearAudio();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [story, selectedVoiceId]);
-
-  useEffect(() => {
-    return () => {
-      if (posterPreviewUrlRef.current) {
-        URL.revokeObjectURL(posterPreviewUrlRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    const line =
-      story.trim() || title.trim()
-        ? `${title.trim() || "Untitled"} · ${genre}${story.trim() ? " · draft" : ""}`
-        : null;
+    const line = mainCharacterName.trim() ? `${mainCharacterName.trim()} · ${genre}` : null;
     setDraftSummary(line);
-  }, [title, genre, story, setDraftSummary]);
+  }, [mainCharacterName, genre, setDraftSummary]);
 
-  function dismissPosterPreview() {
-    if (posterPreviewUrlRef.current) {
-      URL.revokeObjectURL(posterPreviewUrlRef.current);
-      posterPreviewUrlRef.current = null;
-    }
-    setPosterPreview(null);
+  function openStory(id: string, play = false) {
+    router.push(play ? `/story/${id}?play=1` : `/story/${id}`);
+  }
+
+  function onLanguagePick(next: string) {
+    setLanguage(next);
+    const group = next.toLowerCase().startsWith("zh") ? "zh" : "en";
+    const match = voices.find((voice) => (voice.language ?? "en").toLowerCase().startsWith(group));
+    if (match) setSelectedVoiceId(match.id);
   }
 
   const applyKidProfile = useCallback((k: KidProfile) => {
@@ -207,8 +159,7 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
     setChildGender(k.gender === "boy" ? "boy" : k.gender === "girl" ? "girl" : "nonbinary");
     const base = k.interests.length ? `Interests: ${k.interests.join(", ")}` : "";
     setStoryInput(base.slice(0, STORY_INPUT_MAX_CHARS));
-    setCreatePhase("story");
-    setSelectedProfileSummary(`${k.name} · ${k.age}${k.interests.length ? ` · ${k.interests.slice(0, 2).join(", ")}` : ""}`);
+    setActiveTab("create");
   }, []);
 
   const applyCharacterProfile = useCallback((c: StoryCharacterProfile) => {
@@ -223,11 +174,10 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
     ].filter(Boolean) as string[];
     const packed = parts.join(". ");
     setStoryInput(packed.slice(0, STORY_INPUT_MAX_CHARS));
-    setCreatePhase("story");
-    setSelectedProfileSummary(`${c.name}${c.characterType ? ` · ${c.characterType}` : ""}`);
+    setActiveTab("create");
   }, []);
 
-  async function persistStory(text: string, existingId: string | null) {
+  async function persistStory(text: string) {
     const trimmed = text.trim();
     if (!trimmed) throw new Error("Generate a story first.");
     const saved = await saveStory({
@@ -237,19 +187,14 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
       childGender,
       genre,
       length,
-      title: title.trim() || `${mainCharacterName.trim() || "Bedtime"} story`,
+      title: `${mainCharacterName.trim() || "Bedtime"} story`,
       story: trimmed,
-      id: existingId,
     });
-    const sid = saved && typeof saved.id === "string" ? saved.id : null;
-    if (sid) setLinkedStoryId(sid);
-    return sid;
+    return saved && typeof saved.id === "string" ? saved.id : null;
   }
 
-  async function onGenerate(mode: "new" | "replace" = "new") {
+  async function onGenerate() {
     setBanner(null);
-    const updateId = mode === "replace" ? linkedStoryId : null;
-    if (mode === "new") setLinkedStoryId(null);
     const guidance = buildGuidance(storyInput, theme, mood, seriesMode, educationalGoal, moralLesson);
     try {
       const text = await generateStory({
@@ -259,7 +204,7 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
         childGender,
         genre,
         length,
-        title,
+        title: `${mainCharacterName.trim() || "Bedtime"} story`,
         storyInput: guidance,
       });
       if (!text.trim()) {
@@ -268,12 +213,15 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
       }
       trackEvent("story_generated", { genre, length, language });
       try {
-        const sid = await persistStory(text, updateId);
+        const sid = await persistStory(text);
         if (!sid) {
           setBanner({
             source: "save",
             message: "The story was written but could not be saved. Tap Try again.",
           });
+        } else {
+          const voiceQuery = selectedVoiceId ? `?voice=${encodeURIComponent(selectedVoiceId)}` : "";
+          router.push(`/story/${sid}${voiceQuery}`);
         }
       } catch (e: unknown) {
         setBanner({
@@ -289,81 +237,14 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
     }
   }
 
-  async function onSave() {
-    setBanner(null);
-    try {
-      const sid = await persistStory(story, linkedStoryId);
-      if (!sid) throw new Error("Could not save this story.");
-      trackEvent("story_saved");
-    } catch (e: unknown) {
-      setBanner({
-        source: "save",
-        message: getErrorMessage(e, "Failed to save."),
-      });
-    }
-  }
-
-  async function onMakeMp3() {
-    setBanner(null);
-    try {
-      const sid = await persistStory(story, linkedStoryId);
-      const result = await makeMp3(story, speed, emotion, language, sid ?? undefined);
-      if (result.savedAudioUrl) {
-        rememberLastAudio(result.savedAudioUrl, title.trim() || mainCharacterName.trim() || "Story");
-        void refreshLibrary();
-      } else if (sid) {
-        setBanner({
-          source: "tts",
-          message: "Narration is ready, but it could not be saved on this story. Tap Try again.",
-        });
-      }
-    } catch (e: unknown) {
-      setBanner({
-        source: "tts",
-        message: getErrorMessage(e, "Voice failed, try again."),
-      });
-    }
-  }
-
-  async function onPlayLibraryStory(item: StoryLibraryItem) {
-    setBanner(null);
-    const label = item.title?.trim() || "Story";
-    try {
-      if (item.audioUrl) {
-        await playSavedAudio(item.audioUrl);
-        rememberLastAudio(item.audioUrl, label);
-        onStoryPlayed(item.id, label);
-        trackEvent("library_play", { storyId: item.id, source: "saved" });
-        return;
-      }
-      const lang = item.language?.trim() || language;
-      const result = await makeMp3(item.story, speed, emotion, lang, item.id);
-      if (result.savedAudioUrl) {
-        rememberLastAudio(result.savedAudioUrl, label);
-        void refreshLibrary();
-      } else {
-        setBanner({
-          source: "tts",
-          message: "Narration is ready, but it could not be saved on this story. Tap Try again.",
-        });
-      }
-      onStoryPlayed(item.id, label);
-      trackEvent("library_play", { storyId: item.id });
-    } catch (e: unknown) {
-      setBanner({
-        source: "tts",
-        message: getErrorMessage(e, "Voice failed, try again."),
-      });
-    }
+  function openLibraryStory(item: StoryLibraryItem, play = false) {
+    openStory(item.id, play);
   }
 
   async function onDeleteLibraryStory(item: StoryLibraryItem) {
     setBanner(null);
     try {
       await deleteStory(item.id);
-      if (linkedStoryId === item.id) {
-        setLinkedStoryId(null);
-      }
     } catch (e: unknown) {
       setBanner({
         source: "save",
@@ -372,165 +253,32 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
     }
   }
 
-  async function onCreatePosterFromLibrary(item: StoryLibraryItem) {
-    setBanner(null);
-    setIsMakingPoster(true);
-    try {
-      const { outcome, blob, fallbackReason } = await createStoryPoster({
-        title: item.title ?? "",
-        story: item.story ?? "",
-        genre: item.genre ?? "",
-      });
-      if (posterPreviewUrlRef.current) {
-        URL.revokeObjectURL(posterPreviewUrlRef.current);
-        posterPreviewUrlRef.current = null;
-      }
-      const imageUrl = URL.createObjectURL(blob);
-      posterPreviewUrlRef.current = imageUrl;
-      setPosterPreview({
-        imageUrl,
-        title: item.title?.trim() || "Bedtime Story",
-        outcome,
-        blob,
-        fallbackHint: outcome === "text_fallback" ? fallbackReason : undefined,
-      });
-      if (item.id) {
-        await savePosterForStory(item.id, blob);
-      }
-    } catch (e: unknown) {
-      setBanner({
-        source: "poster",
-        message: getErrorMessage(e, "Poster could not be created."),
-      });
-    } finally {
-      setIsMakingPoster(false);
-    }
-  }
-
-  async function onCreatePoster() {
-    setIsMakingPoster(true);
-    setBanner(null);
-    try {
-      let sid: string | null = null;
-      try {
-        sid = await persistStory(story, linkedStoryId);
-      } catch (e: unknown) {
-        setBanner({
-          source: "save",
-          message: getErrorMessage(e, "Save the story before creating a poster."),
-        });
-        return;
-      }
-      if (!sid) {
-        setBanner({
-          source: "save",
-          message: "Save the story before creating a poster.",
-        });
-        return;
-      }
-      const { outcome, blob, fallbackReason } = await createStoryPoster({ title, story, genre });
-      trackEvent("poster_created", { layout: outcome, textFallback: outcome === "text_fallback" });
-      if (posterPreviewUrlRef.current) {
-        URL.revokeObjectURL(posterPreviewUrlRef.current);
-        posterPreviewUrlRef.current = null;
-      }
-      const imageUrl = URL.createObjectURL(blob);
-      posterPreviewUrlRef.current = imageUrl;
-      setPosterPreview({
-        imageUrl,
-        title: title.trim() || "Bedtime Story",
-        outcome,
-        blob,
-        fallbackHint: outcome === "text_fallback" ? fallbackReason : undefined,
-      });
-      try {
-        await savePosterForStory(sid, blob);
-        trackEvent("poster_saved", { storyId: sid });
-      } catch (e: unknown) {
-        console.warn("[poster] file save failed", e);
-        setBanner({
-          source: "poster",
-          message: getErrorMessage(e, "Poster was created but could not be saved to your library. Tap Try again."),
-        });
-      }
-    } catch (e: unknown) {
-      setBanner({
-        source: "poster",
-        message: getErrorMessage(e, "Poster could not be created."),
-      });
-    } finally {
-      setIsMakingPoster(false);
-    }
-  }
-
   function retryBanner() {
     if (!banner) return;
-    const source = banner.source;
     setBanner(null);
-    if (source === "story") void onGenerate();
-    else if (source === "save") void onSave();
-    else if (source === "tts") void onMakeMp3();
-    else if (source === "poster") void onCreatePoster();
+    if (banner.source === "story" || banner.source === "save") void onGenerate();
   }
 
-  const bannerRetryBusy =
-    banner?.source === "story"
-      ? isGenerating
-      : banner?.source === "save"
-        ? isSaving
-        : banner?.source === "tts"
-          ? isMakingMp3
-          : banner?.source === "poster"
-            ? isMakingPoster
-            : false;
-
-  function onLoadLibraryItem(item: StoryLibraryItem) {
-    setLinkedStoryId(item.id || null);
-    setStory(item.story ?? "");
-    setTitle(item.title ?? "");
-    setGenre(item.genre ?? "Animals");
-    setAge(item.age ?? "6 months");
-    setLanguage(item.language ?? "zh-Hant");
-    setMainCharacterName(item.mainCharacterName ?? "嚕嚕");
-    setChildGender(normalizeChildGenderForStoryInput(item.childGender));
-    setSelectedProfileSummary(item.mainCharacterName?.trim() ? `${item.mainCharacterName} · from library` : "Loaded from library");
-  }
-
-  function onOpenStoryInEditor(item: StoryLibraryItem) {
-    onLoadLibraryItem(item);
-    setActiveTab("create");
-    setCreatePhase("story");
-  }
+  const bannerRetryBusy = isGenerating || isSaving;
 
   function handleContinueReading() {
     const id = stats?.lastStoryId;
     if (!id) return;
-    const item = library.find((i) => i.id === id);
-    if (item) {
-      onLoadLibraryItem(item);
-      setActiveTab("create");
-      setCreatePhase("story");
-    }
+    openStory(id);
   }
 
   function applyOnboardingIntent(intent: OnboardingIntent | null) {
     if (intent === "create_story") {
       setActiveTab("create");
-      setCreatePhase("hub");
-      setShowAdvancedSetup(false);
       return;
     }
     if (intent === "build_kid_profile") {
       setActiveTab("create");
-      setCreatePhase("hub");
-      setShowAdvancedSetup(false);
       setKidModalOpen(true);
       return;
     }
     if (intent === "create_character") {
       setActiveTab("create");
-      setCreatePhase("hub");
-      setShowAdvancedSetup(false);
       setCharModalOpen(true);
       return;
     }
@@ -547,7 +295,13 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
     }
   }
 
-  const rootClass = ["pageRoot", "pageRoot--tabs", uiMode === "mobile" && "pageRoot--uiMobile", uiMode === "desktop" && "pageRoot--uiDesktop"]
+  const rootClass = [
+    "pageRoot",
+    "pageRoot--tabs",
+    activeTab === "create" && "pageRoot--createFit",
+    uiMode === "mobile" && "pageRoot--uiMobile",
+    uiMode === "desktop" && "pageRoot--uiDesktop",
+  ]
     .filter(Boolean)
     .join(" ");
 
@@ -585,44 +339,12 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
         <div className="overlay overlay--withTabs">
           <div className="container">
             <AppChromeBar />
-            <div className={audioUrl || isMakingMp3 ? undefined : "visuallyHidden"}>
-              <PlaybackPanel audioRef={audioRef} audioUrl={audioUrl} isPreparing={isMakingMp3} />
-            </div>
-            <header>
-              {activeTab === "create" && createPhase === "hub" ? (
-                <>
-                  <div className="title">Create</div>
-                  <div className="subtitle">
-                    Start with <strong>Create with My Kid</strong> or <strong>Create with a Story Character</strong>, then
-                    move on to story setup.
-                  </div>
-                </>
-              ) : null}
-              {activeTab === "create" && createPhase === "story" ? (
-                <>
-                  <div className="createStoryHeader">
-                    <button
-                      type="button"
-                      className="button createStoryHeader__back"
-                      onClick={() => {
-                        setCreatePhase("hub");
-                        setShowAdvancedSetup(false);
-                      }}
-                    >
-                      ← Back
-                    </button>
-                    <div className="title createStoryHeader__title">Story setup</div>
-                    <div className="subtitle">Choose genre and length, add optional tone and goals, then generate.</div>
-                  </div>
-                </>
-              ) : null}
-              {activeTab === "library" ? (
-                <>
-                  <div className="title">My Stories</div>
-                  <div className="subtitle">Browse, listen, and reopen your saved bedtime stories.</div>
-                </>
-              ) : null}
-            </header>
+            {activeTab === "library" ? (
+              <header>
+                <div className="title">My Stories</div>
+                <div className="subtitle">Browse, listen, and reopen your saved bedtime stories.</div>
+              </header>
+            ) : null}
 
             {banner ? (
               <div className="errorBox" role="alert">
@@ -655,16 +377,14 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
               <HomeScreenPanel
                 library={library}
                 loadingLibrary={loadingLibrary}
-                playBusy={isMakingMp3}
+                playBusy={false}
                 stats={stats}
-                onOpenStory={onOpenStoryInEditor}
-                onPlayStory={(item) => void onPlayLibraryStory(item)}
+                onOpenStory={(item) => openLibraryStory(item)}
+                onPlayStory={(item) => openLibraryStory(item, true)}
                 onContinueReading={handleContinueReading}
                 canContinueReading={canContinueReading}
                 onQuickCreate={() => {
                   setActiveTab("create");
-                  setCreatePhase("hub");
-                  setShowAdvancedSetup(false);
                 }}
                 onAddKid={() => {
                   setActiveTab("create");
@@ -677,102 +397,45 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
               />
             ) : null}
 
-            {activeTab === "create" && createPhase === "hub" ? (
-              <CreateHubPanel
+            {activeTab === "create" ? (
+              <CreateStoryPicker
                 kids={kids}
                 characters={characters}
+                age={age}
+                language={language}
+                mainCharacterName={mainCharacterName}
+                childGender={childGender}
+                genre={genre}
+                length={length}
+                storyInput={storyInput}
+                theme={theme}
+                mood={mood}
+                seriesMode={seriesMode}
+                educationalGoal={educationalGoal}
+                moralLesson={moralLesson}
+                voices={voices}
+                selectedVoiceId={selectedVoiceId}
+                isLoadingVoices={isLoadingVoices}
+                voicesError={voicesError}
+                isGenerating={isGenerating}
+                onAgeChange={setAge}
+                onLanguageChange={onLanguagePick}
+                onMainCharacterNameChange={setMainCharacterName}
+                onChildGenderChange={setChildGender}
+                onGenreChange={setGenre}
+                onLengthChange={setLength}
+                onStoryInputChange={setStoryInput}
+                onThemeChange={setTheme}
+                onMoodChange={setMood}
+                onSeriesModeChange={setSeriesMode}
+                onEducationalGoalChange={setEducationalGoal}
+                onMoralLessonChange={setMoralLesson}
+                onVoiceChange={setSelectedVoiceId}
+                onRetryVoices={() => void fetchVoices()}
                 onAddKid={() => setKidModalOpen(true)}
                 onAddCharacter={() => setCharModalOpen(true)}
-                onChooseKid={applyKidProfile}
-                onChooseCharacter={applyCharacterProfile}
+                onCreate={() => void onGenerate()}
               />
-            ) : null}
-
-            {activeTab === "create" && createPhase === "story" ? (
-              <div className="mainGrid mainGrid--storySetup">
-                <div className="leftColumnStory">
-                  <div className="storySetupSummary">
-                    <p className="storySetupSummary__title">Selected profile</p>
-                    <p className="storySetupSummary__body">{selectedProfileSummary}</p>
-                  </div>
-                  <button
-                    type="button"
-                    className="button storySetupAdvancedToggle"
-                    onClick={() => setShowAdvancedSetup((prev) => !prev)}
-                  >
-                    {showAdvancedSetup ? "Hide advanced setup" : "Show advanced setup"}
-                  </button>
-                  {showAdvancedSetup ? (
-                    <StorySetupExtras
-                      theme={theme}
-                      mood={mood}
-                      seriesMode={seriesMode}
-                      educationalGoal={educationalGoal}
-                      moralLesson={moralLesson}
-                      onThemeChange={setTheme}
-                      onMoodChange={setMood}
-                      onSeriesModeChange={setSeriesMode}
-                      onEducationalGoalChange={setEducationalGoal}
-                      onMoralLessonChange={setMoralLesson}
-                    />
-                  ) : null}
-                  <StoryForm
-                    age={age}
-                    language={language}
-                    mainCharacterName={mainCharacterName}
-                    childGender={childGender}
-                    genre={genre}
-                    length={length}
-                    title={title}
-                    storyInput={storyInput}
-                    onAgeChange={setAge}
-                    onLanguageChange={setLanguage}
-                    onMainCharacterNameChange={setMainCharacterName}
-                    onChildGenderChange={setChildGender}
-                    onGenreChange={setGenre}
-                    onLengthChange={setLength}
-                    onTitleChange={setTitle}
-                    onStoryInputChange={setStoryInput}
-                    voices={voices}
-                    selectedVoiceId={selectedVoiceId}
-                    onVoiceChange={setSelectedVoiceId}
-                    isGenerating={isGenerating}
-                    isSaving={isSaving}
-                    isMakingMp3={isMakingMp3}
-                    hasStory={Boolean(story.trim())}
-                    onGenerate={() => void onGenerate("new")}
-                    onSave={onSave}
-                    onMakeMp3={onMakeMp3}
-                    onCreatePoster={onCreatePoster}
-                    isMakingPoster={isMakingPoster}
-                    isLoadingVoices={isLoadingVoices}
-                    voicesError={voicesError}
-                    onRetryVoices={() => void fetchVoices()}
-                    hasClonedVoice={hasClonedVoice}
-                    onRegisterClonedVoice={(voiceId, label) => void registerClonedVoice(voiceId, label)}
-                    onClearClonedVoice={() => void clearClonedVoice()}
-                    showSecondaryActions={false}
-                  />
-                </div>
-
-                <div className="rightColumn">
-                  <TtsControls speed={speed} emotion={emotion} onSpeedChange={setSpeed} onEmotionChange={setEmotion} />
-                  <StoryOutput story={story} isGenerating={isGenerating} />
-                  <StoryResultActions
-                    hasStory={Boolean(story.trim())}
-                    isSaving={isSaving}
-                    isMakingMp3={isMakingMp3}
-                    isMakingPoster={isMakingPoster}
-                    isGenerating={isGenerating}
-                    isSaved={Boolean(linkedStoryId)}
-                    onPlay={() => void onMakeMp3()}
-                    onSave={() => void onSave()}
-                    onPoster={() => void onCreatePoster()}
-                    onRegenerate={() => void onGenerate("replace")}
-                    onEditPrompt={() => setShowAdvancedSetup(true)}
-                  />
-                </div>
-              </div>
             ) : null}
 
             {activeTab === "library" ? (
@@ -780,18 +443,14 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
                 library={library}
                 loadingLibrary={loadingLibrary}
                 libraryError={libraryError}
-                playBusy={isMakingMp3}
+                playBusy={false}
                 panelTitle="My Stories"
                 onRefresh={() => void refreshLibrary()}
                 onDismissLibraryError={() => setLibraryError("")}
-                onLoadStory={(item) => {
-                  onLoadLibraryItem(item);
-                  setActiveTab("create");
-                  setCreatePhase("story");
-                }}
-                onPlayStory={(item) => void onPlayLibraryStory(item)}
+                onLoadStory={(item) => openLibraryStory(item)}
+                onPlayStory={(item) => openLibraryStory(item, true)}
                 onDeleteStory={(item) => void onDeleteLibraryStory(item)}
-                onCreatePoster={(item) => void onCreatePosterFromLibrary(item)}
+                onCreatePoster={(item) => openLibraryStory(item)}
               />
             ) : null}
 
@@ -803,8 +462,6 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
                 characters={characters}
                 onGoToCreateHub={() => {
                   setActiveTab("create");
-                  setCreatePhase("hub");
-                  setShowAdvancedSetup(false);
                 }}
               />
             ) : null}
@@ -839,17 +496,6 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
             setCharModalOpen(false);
           }}
         />
-
-        {posterPreview ? (
-          <PosterFlashCard
-            imageUrl={posterPreview.imageUrl}
-            title={posterPreview.title}
-            outcome={posterPreview.outcome}
-            blob={posterPreview.blob}
-            fallbackHint={posterPreview.fallbackHint}
-            onDismiss={dismissPosterPreview}
-          />
-        ) : null}
       </main>
     </>
   );

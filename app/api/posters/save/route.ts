@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
-import fs from "fs/promises";
-import path from "path";
-import { prisma } from "@/lib/prisma";
 import { getErrorMessage, getErrorStatus } from "@/lib/errors";
 import { captureException } from "@/lib/monitoring";
+import { saveStoryPosterFile } from "@/lib/audio/storyMediaFiles";
 import { isSafeStoryId } from "@/lib/stories/storyIds";
 import { findOwnedStory } from "@/lib/auth/ownedStory";
 import { requireUser } from "@/lib/auth/requireUser";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 const MAX_POSTER_BYTES = 12 * 1024 * 1024;
 
@@ -76,22 +75,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Story not found." }, { status: 404 });
     }
 
-    const filename = `poster_${storyId}.png`;
+    const posterUrl = await saveStoryPosterFile(storyId, buffer);
+    const filename = decodeURIComponent(posterUrl.split("/").pop()?.split("?")[0] || "");
+    console.info("[/api/posters/save] wrote", { storyId, posterUrl, bytes: buffer.length });
 
-    const dir = path.join(process.cwd(), "uploads", "posters");
-    await fs.mkdir(dir, { recursive: true });
-    const filePath = path.join(dir, filename);
-    await fs.writeFile(filePath, buffer);
-
-    await prisma.story.update({
-      where: { id: storyId },
-      data: { posterFilename: filename },
+    return NextResponse.json({
+      ok: true,
+      filename,
+      posterUrl,
+      size: buffer.length,
     });
-
-    const posterUrl = `/api/posters/${encodeURIComponent(filename)}`;
-    console.info("[/api/posters/save] wrote", { storyId, filename, bytes: buffer.length });
-
-    return NextResponse.json({ ok: true, filename, posterUrl, size: buffer.length });
   } catch (err: unknown) {
     captureException(err, { route: "/api/posters/save" });
     const message = getErrorMessage(err, "Poster save failed.");

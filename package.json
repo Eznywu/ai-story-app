@@ -21,6 +21,7 @@
     "@elevenlabs/elevenlabs-js": "2.12.2",
     "@prisma/adapter-pg": "^7.4.0",
     "@prisma/client": "^7.4.0",
+    "@vercel/blob": "^2.8.2",
     "dotenv": "^17.3.1",
     "nanoid": "^5.1.6",
     "next": "16.1.6",

@@ -20,7 +20,7 @@ export function StorySetupExtras(props: Props) {
     <div className="storySetupExtras panel">
       <h2 className="panelTitle">Story setup</h2>
       <p className="storySetupExtras__lede">
-        Tune genre and length in the fields below, then add tone and goals here.
+        Optional tone and goals. They are added to the story note when you create.
       </p>
       <div className="fieldGrid">
         <label className="field">

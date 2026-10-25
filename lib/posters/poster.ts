@@ -95,6 +95,8 @@ export async function createStoryPoster(params: {
   title: string;
   story: string;
   genre?: string;
+  /** When set, the server stores the provider PNG before the browser composites the title. */
+  storyId?: string;
 }): Promise<PosterCreateResult> {
   let res: Response;
   try {
@@ -105,6 +107,7 @@ export async function createStoryPoster(params: {
         title: params.title,
         story: params.story,
         genre: params.genre,
+        storyId: params.storyId,
       }),
     });
   } catch (e: unknown) {
@@ -141,7 +144,15 @@ export async function createStoryPoster(params: {
   }
 
   const artBlob = await res.blob();
-  const bitmap = await createImageBitmap(artBlob);
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(artBlob);
+  } catch (e: unknown) {
+    console.warn("[poster client] could not decode provider image — saving it as-is", {
+      detail: e instanceof Error ? e.message : String(e),
+    });
+    return { outcome: "illustrated", blob: artBlob };
+  }
 
   const canvas = document.createElement("canvas");
   canvas.width = 1080;
@@ -149,7 +160,7 @@ export async function createStoryPoster(params: {
   const ctx = canvas.getContext("2d");
   if (!ctx) {
     bitmap.close();
-    throw new Error("Could not create poster canvas.");
+    return { outcome: "illustrated", blob: artBlob };
   }
 
   const illustrationBottom = 720;

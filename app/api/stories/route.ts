@@ -11,14 +11,25 @@ import { jsonNoStore, requireUser } from "@/lib/auth/requireUser";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function withMedia<T extends { posterFilename: string | null; audioFilename: string | null }>(row: T) {
-  const { posterFilename, audioFilename, ...rest } = row;
+function withMedia<
+  T extends {
+    posterFilename: string | null;
+    audioFilename: string | null;
+    posterUrl: string | null;
+    audioUrl: string | null;
+  },
+>(row: T) {
+  const { posterFilename, audioFilename, posterUrl, audioUrl, ...rest } = row;
   return {
     ...rest,
     posterFilename,
     audioFilename,
-    posterUrl: posterFilename ? `/api/posters/${encodeURIComponent(posterFilename)}` : null,
-    audioUrl: audioFilename ? `/api/audio/${encodeURIComponent(audioFilename)}` : null,
+    posterUrl:
+      posterUrl?.trim() ||
+      (posterFilename ? `/api/posters/${encodeURIComponent(posterFilename)}` : null),
+    audioUrl:
+      audioUrl?.trim() ||
+      (audioFilename ? `/api/audio/${encodeURIComponent(audioFilename)}` : null),
   };
 }
 
@@ -86,8 +97,8 @@ export async function POST(req: Request) {
         );
       }
       const textChanged = existing.text !== text;
-      if (textChanged && existing.audioFilename) {
-        await removeStoryAudioFile(existing.audioFilename);
+      if (textChanged && (existing.audioFilename || existing.audioUrl)) {
+        await removeStoryAudioFile(existing);
       }
       const story = await prisma.story.update({
         where: { id: requestedId },
@@ -100,7 +111,7 @@ export async function POST(req: Request) {
           language,
           mainCharacterName,
           childGender,
-          ...(textChanged ? { audioFilename: null } : {}),
+          ...(textChanged ? { audioFilename: null, audioUrl: null } : {}),
         },
       });
       return jsonNoStore({ story: withMedia(story) });
