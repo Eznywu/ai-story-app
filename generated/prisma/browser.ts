@@ -53,6 +53,21 @@ export type KidProfile = Prisma.KidProfileModel
  */
 export type StoryCharacter = Prisma.StoryCharacterModel
 /**
+ * Model NarrationAsset
+ * One generated narration section. Older stories have no rows here.
+ */
+export type NarrationAsset = Prisma.NarrationAssetModel
+/**
+ * Model NarrationReviewItem
+ * A listening flag, a reported mispronunciation, or a baseline reminder.
+ */
+export type NarrationReviewItem = Prisma.NarrationReviewItemModel
+/**
+ * Model NarrationReviewReport
+ * One Monday review. The job writes this. It does not create audio.
+ */
+export type NarrationReviewReport = Prisma.NarrationReviewReportModel
+/**
  * Model ReadingStats
  * 
  */

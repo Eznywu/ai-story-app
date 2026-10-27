@@ -10,6 +10,11 @@
     "start": "next start",
     "postinstall": "prisma generate",
     "lint": "eslint",
+    "test": "tsx --test tests/narration/*.test.ts",
+    "narration:benchmark": "tsx scripts/run-narration-benchmark.ts",
+    "narration:compare": "tsx scripts/compare-tts-configs.ts",
+    "narration:weekly": "tsx scripts/narration-weekly-review.ts",
+    "narration:live": "tsx scripts/live-narration-benchmark.ts",
     "generate:story-library": "npx tsx scripts/generate-story-library.ts",
     "cap:sync": "cap sync",
     "cap:open:ios": "cap open ios"
@@ -41,6 +46,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }
