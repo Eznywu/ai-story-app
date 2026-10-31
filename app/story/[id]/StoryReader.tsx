@@ -9,6 +9,8 @@ import { TtsControls } from "@/app/components/TtsControls";
 import { friendlyVoiceName, languageLabel } from "@/app/components/voiceLabel";
 import { useTts } from "@/app/hooks/useTts";
 import { useStoryLibrary } from "@/app/hooks/useStoryLibrary";
+import { skipWithin } from "@/lib/audio/skipWithin";
+import { coverPresentation } from "@/lib/stories/coverPresentation";
 import { createStoryPoster, downloadPosterPng } from "@/lib/posters/poster";
 import type { PosterCreateOutcome } from "@/lib/posters/poster";
 import { getErrorMessage } from "@/lib/errors";
@@ -121,6 +123,8 @@ export function StoryReader({ storyId }: { storyId: string }) {
   const [loadError, setLoadError] = useState("");
   const [loading, setLoading] = useState(true);
   const [poster, setPoster] = useState<PosterState>({ status: "idle" });
+  const [brokenCoverUrl, setBrokenCoverUrl] = useState<string | null>(null);
+  const [coverAttempt, setCoverAttempt] = useState(0);
   const [playbackRate, setPlaybackRate] = useState<(typeof PLAYBACK_RATES)[number]>(1);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -202,6 +206,8 @@ export function StoryReader({ storyId }: { storyId: string }) {
 
   const generatePoster = useCallback(async () => {
     if (!story?.text.trim()) return;
+    setBrokenCoverUrl(null);
+    setCoverAttempt((attempt) => attempt + 1);
     setPoster({ status: "generating" });
     try {
       const result = await createStoryPoster({
@@ -315,7 +321,7 @@ export function StoryReader({ storyId }: { storyId: string }) {
     const audio = audioRef.current;
     if (!audio || !savedAudioUrl) return;
     const limit = Number.isFinite(audio.duration) ? audio.duration : duration;
-    const next = Math.min(Math.max(0, audio.currentTime + seconds), limit || 0);
+    const next = skipWithin(audio.currentTime, seconds, limit);
     audio.currentTime = next;
     setProgress(next);
   }
@@ -347,8 +353,9 @@ export function StoryReader({ storyId }: { storyId: string }) {
   const seekMax = knownDuration ? duration : 0;
   const seekValue = Math.min(progress, seekMax || progress);
   const progressPct = seekMax > 0 ? Math.min(100, (seekValue / seekMax) * 100) : 0;
-  const coverFailed = poster.status === "error" || (poster.status === "ready" && poster.outcome === "text_fallback");
-  const showArtwork = poster.status === "ready";
+  const cover = coverPresentation(poster, brokenCoverUrl);
+  const coverFallback =
+    cover.showFallbackArt || (poster.status === "ready" && poster.outcome === "text_fallback");
 
   let playLabel = "Play";
   if (isMakingMp3) playLabel = "Preparing narration";
@@ -392,15 +399,19 @@ export function StoryReader({ storyId }: { storyId: string }) {
             </div>
           ) : null}
 
-          <div className={`listenCover${coverFailed ? " listenCover--fallback" : ""}`}>
-            {showArtwork ? (
+          <div className={`listenCover${coverFallback ? " listenCover--fallback" : ""}`}>
+            {cover.showImage && cover.imageUrl ? (
               <Image
-                src={poster.status === "ready" ? poster.url : ""}
+                key={`${cover.imageUrl}:${coverAttempt}`}
+                src={cover.imageUrl}
                 alt={`${title} cover`}
                 width={800}
                 height={800}
                 unoptimized
                 className="listenCover__img"
+                onError={() => {
+                  if (cover.imageUrl) setBrokenCoverUrl(cover.imageUrl);
+                }}
               />
             ) : (
               <div className="listenCover__art" role="img" aria-label={story?.genre ? `${story.genre} cover` : "Story cover"}>
@@ -411,20 +422,14 @@ export function StoryReader({ storyId }: { storyId: string }) {
               </div>
             )}
           </div>
-          {poster.status === "error" ? (
+          {cover.message ? (
             <p className="listenHint" role="status">
-              {poster.message}
-              <button type="button" className="listenRetry" onClick={() => void generatePoster()}>
-                Try cover again
-              </button>
-            </p>
-          ) : null}
-          {poster.status === "ready" && poster.outcome === "text_fallback" ? (
-            <p className="listenHint">
-              Simple cover — illustrated artwork was unavailable.
-              <button type="button" className="listenRetry" onClick={() => void generatePoster()}>
-                Try cover again
-              </button>
+              {cover.message}
+              {cover.showRetry ? (
+                <button type="button" className="listenRetry" onClick={() => void generatePoster()}>
+                  Try cover again
+                </button>
+              ) : null}
             </p>
           ) : null}
 
@@ -608,7 +613,7 @@ export function StoryReader({ storyId }: { storyId: string }) {
           >
             {poster.status === "ready" ? "Download keepsake poster" : "Create keepsake poster"}
           </button>
-          {coverFailed ? (
+          {cover.showRetry ? (
             <button
               type="button"
               className="sheetAction"
