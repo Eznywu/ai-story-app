@@ -223,7 +223,7 @@ export function useTts(language: string, externalAudioRef?: RefObject<HTMLAudioE
   }
 
   const registerClonedVoice = useCallback(
-    async (elevenVoiceId: string, _label = "My voice") => {
+    async (elevenVoiceId: string) => {
       await fetchVoices();
       setSelectedVoiceId(makeCloneVoiceId(elevenVoiceId));
     },

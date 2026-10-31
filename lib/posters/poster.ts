@@ -166,7 +166,7 @@ export async function createStoryPoster(params: {
   const illustrationBottom = 720;
   const iw = "width" in bitmap ? bitmap.width : 0;
   const ih = "height" in bitmap ? bitmap.height : 0;
-  if (iw > 0 && ih > 0) {
+  if (iw >= 64 && ih >= 64) {
     drawImageCover(ctx, bitmap, 0, 0, 1080, illustrationBottom);
   } else {
     console.warn("[poster client] AI bitmap had zero size — painting genre art under text", {

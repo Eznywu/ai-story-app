@@ -43,7 +43,7 @@ export function PlayPageClient() {
             </div>
           ) : (
             <div className="panel">
-              <p style={{ margin: 0, fontWeight: 650 }}>
+              <p className="playPageEmpty">
                 No audio yet. Create or open a story, then tap <strong>Play</strong>. Saved narration shows up here
                 and in Library under Audio.
               </p>

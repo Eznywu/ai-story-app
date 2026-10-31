@@ -23,46 +23,72 @@ export function useAuthUser(): AuthContextValue {
   return value;
 }
 
+type SessionPayload = {
+  user?: AuthUser | null;
+  authEnabled?: boolean;
+  error?: string;
+};
+
+async function readSession(): Promise<{ ok: boolean; data: SessionPayload }> {
+  const res = await fetch("/api/auth/session", { cache: "no-store" });
+  const data = (await res.json().catch(() => ({}))) as SessionPayload;
+  return { ok: res.ok, data };
+}
+
 export function RequireAuth({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<"loading" | "in" | "out" | "error">("loading");
   const [user, setUser] = useState<AuthUser | null>(null);
   const [authEnabled, setAuthEnabled] = useState(true);
   const [error, setError] = useState("");
 
+  const commitSession = useCallback((ok: boolean, data: SessionPayload) => {
+    if (!ok) {
+      setUser(null);
+      setError(data.error || "We couldn't check your sign-in.");
+      setStatus("error");
+      return;
+    }
+    setAuthEnabled(data.authEnabled !== false);
+    if (data.user?.id && data.user.email) {
+      setUser({ id: data.user.id, email: data.user.email });
+      setError("");
+      setStatus("in");
+      return;
+    }
+    setUser(null);
+    setStatus("out");
+  }, []);
+
   const refresh = useCallback(async () => {
     setStatus("loading");
     try {
-      const res = await fetch("/api/auth/session", { cache: "no-store" });
-      const data = (await res.json().catch(() => ({}))) as {
-        user?: AuthUser | null;
-        authEnabled?: boolean;
-        error?: string;
-      };
-      if (!res.ok) {
-        setUser(null);
-        setError(data.error || "We couldn't check your sign-in.");
-        setStatus("error");
-        return;
-      }
-      setAuthEnabled(data.authEnabled !== false);
-      if (data.user?.id && data.user.email) {
-        setUser({ id: data.user.id, email: data.user.email });
-        setError("");
-        setStatus("in");
-        return;
-      }
-      setUser(null);
-      setStatus("out");
+      const { ok, data } = await readSession();
+      commitSession(ok, data);
     } catch {
       setUser(null);
       setError("We couldn't check your sign-in.");
       setStatus("error");
     }
-  }, []);
+  }, [commitSession]);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    let cancelled = false;
+    // The first paint is already "loading". Wait for the session response before setting state
+    // so this effect does not cascade a render on mount.
+    readSession()
+      .then(({ ok, data }) => {
+        if (!cancelled) commitSession(ok, data);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setUser(null);
+        setError("We couldn't check your sign-in.");
+        setStatus("error");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [commitSession]);
 
   const signOut = useCallback(async () => {
     await fetch("/api/auth/sign-out", { method: "POST" });

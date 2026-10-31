@@ -10,6 +10,7 @@
     "start": "next start",
     "postinstall": "prisma generate",
     "lint": "eslint",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
     "generate:story-library": "npx tsx scripts/generate-story-library.ts",
     "cap:sync": "cap sync",
     "cap:open:ios": "cap open ios"

@@ -13,23 +13,17 @@ const LAST_UPDATED = "April 2, 2026";
 
 export default function TermsPage() {
   return (
-    <main
-      style={{
-        maxWidth: 640,
-        margin: "0 auto",
-        padding: "2rem 1.25rem 4rem",
-        lineHeight: 1.65,
-        color: "#0f172a",
-      }}
-    >
+    <main className="pageRoot legalPage">
+      <div className="overlay">
+        <div className="container legalDoc">
       <AppChromeBar />
-      <div style={{ marginBottom: "0.5rem" }}>
+      <div className="legalDoc__back">
         <BackButton className="button">← Back</BackButton>
       </div>
-      <h1 style={{ fontSize: "1.5rem", marginTop: "1.5rem", marginBottom: "0.25rem" }}>
+      <h1>
         Terms of Use
       </h1>
-      <p style={{ marginTop: 0, color: "#64748b", fontSize: "0.95rem" }}>
+      <p className="legalDoc__meta">
         Last updated: {LAST_UPDATED}
       </p>
 
@@ -41,7 +35,7 @@ export default function TermsPage() {
         pricing, or behavior outside our control.
       </p>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>Apple App Store</h2>
+      <h2>Apple App Store</h2>
       <p>
         If you obtained the App from Apple’s App Store, you acknowledge that these Terms are between you and us, not
         Apple. Apple has no obligation to provide support for the App. Apple is not responsible for the App or its
@@ -58,14 +52,14 @@ export default function TermsPage() {
         different terms—in which case these Terms control as between you and us to the extent permitted by Apple.
       </p>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>Eligibility</h2>
+      <h2>Eligibility</h2>
       <p>
         You must be old enough to enter a binding contract where you live (and at least the age required by Apple’s
         terms for your region). If you allow a minor to benefit from content you create in the App, you are
         responsible for their supervision and for your use of the App.
       </p>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>Accounts, membership, and sample mode</h2>
+      <h2>Accounts, membership, and sample mode</h2>
       <p>
         Certain features require you to <strong>sign in</strong> and, where we use it, to activate{" "}
         <strong>membership</strong> with a code or other credential we provide (or with a subscription or purchase if
@@ -78,7 +72,7 @@ export default function TermsPage() {
         may be stored only on your device; you choose whether to use that information when generating stories.
       </p>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>License</h2>
+      <h2>License</h2>
       <p>
         Subject to these Terms, we grant you a personal, non-exclusive, non-transferable, revocable license to install
         and use the App for your own lawful, non-commercial or personal purposes, in accordance with the App Store
@@ -86,14 +80,14 @@ export default function TermsPage() {
         permitted by law.
       </p>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>Accounts and purchases</h2>
+      <h2>Accounts and purchases</h2>
       <p>
         Features that involve payment or subscriptions, if offered, will be presented in the App and processed in
         accordance with Apple’s rules. Unless stated otherwise at the time of purchase, subscriptions renew until
         canceled in your Apple ID account settings. Taxes and pricing are as shown at checkout.
       </p>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>AI-generated content and third-party models</h2>
+      <h2>AI-generated content and third-party models</h2>
       <p>
         The App may generate stories, audio, images, or other content using artificial intelligence operated by
         vendors such as OpenAI, ElevenLabs, Google, or others we may add or substitute. You may provide optional
@@ -111,7 +105,7 @@ export default function TermsPage() {
         If something does not seem right, do not use it.
       </p>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>Voice features and cloning</h2>
+      <h2>Voice features and cloning</h2>
       <p>
         If the App offers text-to-speech or voice cloning, you agree that: (a) you will provide recordings{" "}
         <strong>only of yourself</strong> or of another adult who has given you clear, informed consent to create a
@@ -121,7 +115,7 @@ export default function TermsPage() {
         region; (d) recordings you upload pass through our systems and are sent to our voice vendor under their terms.
       </p>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>Acceptable use</h2>
+      <h2>Acceptable use</h2>
       <p>You agree not to:</p>
       <ul style={{ paddingLeft: "1.25rem" }}>
         <li>Use the App in violation of law or third-party rights;</li>
@@ -136,7 +130,7 @@ export default function TermsPage() {
         <li>Circumvent technical limitations, usage rules, export controls, or payment requirements.</li>
       </ul>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>User content</h2>
+      <h2>User content</h2>
       <p>
         You retain ownership of content you submit, subject to the license below. You represent that you have the
         rights needed for your inputs and that you use a child’s name or other details only with appropriate
@@ -146,14 +140,14 @@ export default function TermsPage() {
         may remove content that violates these Terms or that we are required to remove.
       </p>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>Intellectual property</h2>
+      <h2>Intellectual property</h2>
       <p>
         The App, branding, and our materials are owned by us or our licensors and protected by intellectual property
         laws. Except for the license above, no rights are granted. Rights in AI outputs may be unsettled or vary by
         jurisdiction and provider terms; you are responsible for how you use and share outputs.
       </p>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>Third-party services</h2>
+      <h2>Third-party services</h2>
       <p>
         The App relies on independent third parties (including AI, voice, image, and hosting providers). Their services
         are subject to their own terms, privacy policies, uptime, and acceptable use rules.{" "}
@@ -162,7 +156,7 @@ export default function TermsPage() {
         or stop without liability to you except as required by law.
       </p>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>Disclaimer of warranties</h2>
+      <h2>Disclaimer of warranties</h2>
       <p>
         THE APP AND SERVICES ARE PROVIDED “AS IS” AND “AS AVAILABLE.” TO THE MAXIMUM EXTENT PERMITTED BY LAW, WE
         DISCLAIM ALL WARRANTIES, WHETHER EXPRESS, IMPLIED, OR STATUTORY, INCLUDING MERCHANTABILITY, FITNESS FOR A
@@ -170,7 +164,7 @@ export default function TermsPage() {
         CASES, DISCLAIMERS APPLY TO THE FULLEST EXTENT PERMITTED.
       </p>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>Limitation of liability</h2>
+      <h2>Limitation of liability</h2>
       <p>
         TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, WE (AND OUR AFFILIATES, LICENSORS, AND PROVIDERS) WILL NOT
         BE LIABLE FOR INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS,
@@ -181,28 +175,28 @@ export default function TermsPage() {
         EXCLUSIONS OR LIMITATIONS; IN THOSE CASES, LIMITS APPLY TO THE FULLEST EXTENT PERMITTED.
       </p>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>Indemnity</h2>
+      <h2>Indemnity</h2>
       <p>
         You will defend and indemnify us and our affiliates and personnel against claims, damages, losses, and expenses
         (including reasonable attorneys’ fees) arising from your use of the App, your content, your voice samples, or
         your breach of these Terms, to the extent permitted by law.
       </p>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>Termination</h2>
+      <h2>Termination</h2>
       <p>
         We may suspend or terminate access to the App or Services if you violate these Terms or if we cease offering
         the App. Provisions that by their nature should survive (including licenses for processing to wind down,
         disclaimers, limitations, indemnity, and governing law) will survive termination.
       </p>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>Changes</h2>
+      <h2>Changes</h2>
       <p>
         We may modify these Terms by posting an updated version and updating the “Last updated” date. Continued use
         after changes become effective constitutes acceptance, except where stricter consent is required by law or
         Apple. If you do not agree, stop using the App and uninstall it.
       </p>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>Governing law and disputes</h2>
+      <h2>Governing law and disputes</h2>
       <p>
         These Terms are governed by the laws of the jurisdiction where the developer is established, without regard to
         conflict-of-law principles, except where mandatory consumer protection laws in your country require
@@ -211,11 +205,13 @@ export default function TermsPage() {
         where eligible.
       </p>
 
-      <h2 style={{ fontSize: "1.15rem", marginTop: "2rem" }}>Contact</h2>
+      <h2>Contact</h2>
       <p>
         For questions about these Terms, use the support URL or developer contact email on our App Store product page
         for Bedtime Story.
       </p>
+            </div>
+      </div>
     </main>
   );
 }
