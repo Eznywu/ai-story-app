@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import "@/app/page.css";
+import { BrandMark } from "@/app/components/BrandMark";
+import { BRAND_NAME } from "@/lib/brand";
 
 type Props = {
   onSignedIn: () => void;
@@ -81,7 +83,8 @@ export function SignInScreen({ onSignedIn }: Props) {
       <div className="overlay">
         <div className="container">
           <header>
-            <p className="signInBrand">Emrsy Story</p>
+            <BrandMark variant="onDark" className="signInMark" label={null} />
+            <p className="signInBrand">{BRAND_NAME}</p>
             <h1 className="title">Sign in</h1>
             <p className="subtitle">
               Enter your email and we&apos;ll send a 6-digit code. No password, and the code stays in this app.

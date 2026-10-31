@@ -4,9 +4,9 @@ import { AppChromeBar } from "@/app/components/AppChromeBar";
 import { BackButton } from "@/app/components/BackButton";
 
 export const metadata: Metadata = {
-  title: "Terms — Bedtime Story",
+  title: "Terms — Happy Horse",
   description:
-    "Terms of use for Bedtime Story, including membership, AI features, and third-party providers.",
+    "Terms of use for Happy Horse, including membership, AI features, and third-party providers.",
 };
 
 const LAST_UPDATED = "April 2, 2026";
@@ -28,7 +28,7 @@ export default function TermsPage() {
       </p>
 
       <p style={{ marginTop: "1.25rem" }}>
-        These Terms of Use (“Terms”) govern your use of <strong>Bedtime Story</strong> (the “App”) and related online
+        These Terms of Use (“Terms”) govern your use of <strong>Happy Horse</strong> (the “App”) and related online
         services provided by the developer identified as the seller on the App Store (“we,” “us,” or “our”). By
         downloading, accessing, or using the App, you agree to these Terms. The App uses <strong>third-party AI,
         voice, and image services</strong>; those services have separate terms and may change availability,
@@ -208,7 +208,7 @@ export default function TermsPage() {
       <h2>Contact</h2>
       <p>
         For questions about these Terms, use the support URL or developer contact email on our App Store product page
-        for Bedtime Story.
+        for Happy Horse.
       </p>
             </div>
       </div>

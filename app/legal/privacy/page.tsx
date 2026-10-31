@@ -4,9 +4,9 @@ import { AppChromeBar } from "@/app/components/AppChromeBar";
 import { BackButton } from "@/app/components/BackButton";
 
 export const metadata: Metadata = {
-  title: "Privacy — Bedtime Story",
+  title: "Privacy — Happy Horse",
   description:
-    "How Bedtime Story handles accounts, membership, local profiles, AI providers, and optional voice features.",
+    "How Happy Horse handles accounts, membership, local profiles, AI providers, and optional voice features.",
 };
 
 const LAST_UPDATED = "April 2, 2026";
@@ -29,7 +29,7 @@ export default function PrivacyPage() {
 
       <p style={{ marginTop: "1.25rem" }}>
         This Privacy Policy explains how we collect, use, store, and share information when you use{" "}
-        <strong>Bedtime Story</strong> (the “App”) and the online services that power it (together, the
+        <strong>Happy Horse</strong> (the “App”) and the online services that power it (together, the
         “Services”). The App may offer a <strong>sample mode</strong> with limited features, and a{" "}
         <strong>signed-in membership</strong> experience that unlocks custom story generation, saving to your
         library, posters, narration beyond the sample, and optional voice cloning. The Services use{" "}
@@ -40,7 +40,7 @@ export default function PrivacyPage() {
 
       <h2>Who we are</h2>
       <p>
-        The Services are operated by the developer identified as the seller on the App Store for Bedtime Story
+        The Services are operated by the developer identified as the seller on the App Store for Happy Horse
         (“we,” “us,” or “our”). For privacy questions or requests, use the support URL or contact email shown on
         our App Store product page.
       </p>
@@ -262,7 +262,7 @@ export default function PrivacyPage() {
       <h2>Contact</h2>
       <p>
         For privacy-related requests or questions, use the support URL or developer contact email on our App Store
-        product page for Bedtime Story.
+        product page for Happy Horse.
       </p>
             </div>
       </div>

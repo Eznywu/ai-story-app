@@ -102,7 +102,7 @@ export function resolvePosterPromptGenre(genre?: string): PosterGenreKey {
 const STORY_SUMMARY_MAX_CHARS = 1200;
 
 export function buildPosterPrompt(params: { title: string; genre?: string; story?: string }) {
-  const title = params.title?.trim() || "Bedtime Story";
+  const title = params.title?.trim() || "Happy Horse";
   const genre = resolvePosterPromptGenre(params.genre);
 
   const base = posterPromptConfig.basePrompt.replaceAll("{title}", title).replaceAll("{genre}", genre);

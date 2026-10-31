@@ -10,7 +10,7 @@ const serverUrl = process.env.CAP_SERVER_URL;
 
 const config: CapacitorConfig = {
   appId: "com.bedtimestory.app",
-  appName: "Bedtime Story",
+  appName: "Happy Horse",
   webDir: "www",
   ...(serverUrl
     ? {
