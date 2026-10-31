@@ -5,10 +5,13 @@ export const COVER_SIZE = 1080;
 export const KEEPSAKE_WIDTH = 1080;
 export const KEEPSAKE_HEIGHT = 1350;
 
-/** 1053 / 1350 = 0.78, inside the 75–80% illustration band. */
-export const KEEPSAKE_ART_HEIGHT = 1053;
-/** Leaves the bottom band free for a three-line title, caption, dedication, and wordmark. */
-export const COVER_ART_HEIGHT = 760;
+/**
+ * 1080 / 1350 = 0.8. A square illustration fits this band edge to edge,
+ * so the whole scene stays visible.
+ */
+export const KEEPSAKE_ART_HEIGHT = 1080;
+/** Side margin for the keepsake text band. */
+export const POSTER_TEXT_MARGIN = 48;
 
 export function keepsakeArtRatio(): number {
   return KEEPSAKE_ART_HEIGHT / KEEPSAKE_HEIGHT;
@@ -75,16 +78,37 @@ export function wrapPosterText(text: string, maxUnits: number, maxLines: number)
   return { lines, truncated };
 }
 
+/** How many characters fit on one line at this font size and pixel width. */
+export function charsForWidth(sample: string, widthPx: number, fontPx: number): number {
+  const cjk = /[\u3400-\u9fff]/.test(sample);
+  const advance = cjk ? fontPx : fontPx * 0.56;
+  return Math.max(10, Math.floor(widthPx / advance));
+}
+
 export function posterCopy(input: {
   title: string;
   caption?: string | null;
   dedication?: string | null;
   large?: boolean;
+  /** When set, lines use the full text width instead of a short character budget. */
+  textWidth?: number;
+  titlePx?: number;
+  captionPx?: number;
 }): { title: WrappedText; caption: WrappedText; dedication: WrappedText } {
-  const units = input.large ? 16 : 28;
-  const captionUnits = input.large ? 18 : 36;
+  const titlePx = input.titlePx ?? 34;
+  const captionPx = input.captionPx ?? 24;
+  const titleUnits = input.textWidth
+    ? charsForWidth(input.title || "Happy Horse", input.textWidth, titlePx)
+    : input.large
+      ? 16
+      : 28;
+  const captionUnits = input.textWidth
+    ? charsForWidth(input.caption || input.dedication || "caption", input.textWidth, captionPx)
+    : input.large
+      ? 18
+      : 36;
   return {
-    title: wrapPosterText(input.title || "Happy Horse", units, 3),
+    title: wrapPosterText(input.title || "Happy Horse", titleUnits, 3),
     caption: wrapPosterText(input.caption ?? "", captionUnits, 2),
     dedication: wrapPosterText(input.dedication ?? "", captionUnits, 1),
   };

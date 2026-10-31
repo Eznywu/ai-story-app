@@ -5082,3 +5082,50 @@ textarea {
   outline: 2px solid rgba(193, 124, 99, 0.7);
 }
 
+.overlay,
+.container,
+.listen,
+.listen > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.listen > .artworkFrame {
+  justify-self: center;
+}
+
+h1.listenTitle,
+.listenMeta,
+.artworkFrame,
+.artworkFrame__title,
+.artworkFrame__caption,
+.artworkFrame__dedication,
+.artworkFrame__message {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.artworkFrame--cover,
+.artworkFrame--keepsake {
+  width: min(100%, 22rem);
+  aspect-ratio: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.artworkFrame__art {
+  width: 100%;
+  aspect-ratio: 1;
+  flex: none;
+}
+
+.artworkFrame__img {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: cover;
+}
+

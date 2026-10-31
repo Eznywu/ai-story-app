@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import { createError, getErrorMessage, getErrorStatus } from "@/lib/errors";
 import { generatePosterPngFromGemini } from "@/lib/posters/geminiPoster";
 import { generatePosterPngFromOpenAI } from "@/lib/posters/openaiPoster";
@@ -10,7 +12,7 @@ import {
   selectedImageProvider,
 } from "@/lib/posters/artworkPricing";
 import type { ImageProviderResult } from "@/lib/posters/artworkService";
-import { encodeRgbaPng } from "@/lib/posters/pngEncode";
+import { sceneKindFromPrompt, type SceneKind } from "@/lib/posters/fixtureScenes";
 import {
   mockPosterFallbackEnabled,
   mockProvidersEnabled,
@@ -28,15 +30,10 @@ function hasGeminiKey(): boolean {
   );
 }
 
-/** Stand-in square illustration. No provider is called. */
-export function mockIllustrationPng(): Buffer {
-  return encodeRgbaPng(128, 128, (x, y) => {
-    const dx = x - 64;
-    const dy = y - 72;
-    if (dx * dx + dy * dy < 26 * 26) return [193, 124, 99, 255];
-    if (y > 96) return [214, 190, 145, 255];
-    return [246, 241, 233, 255];
-  });
+/** Committed square scene. No provider is called. */
+export function mockIllustrationPng(kind: SceneKind = "human"): Buffer {
+  const file = path.join(process.cwd(), "lib/providers/fixtures", `mock-scene-${kind}.png`);
+  return fs.readFileSync(file);
 }
 
 /**
@@ -50,7 +47,7 @@ export async function generateOneIllustration(prompt: string): Promise<ImageProv
   if (mockProvidersEnabled()) {
     console.info("[poster] mock png");
     return {
-      bytes: mockIllustrationPng(),
+      bytes: mockIllustrationPng(sceneKindFromPrompt(prompt)),
       claimedMime: "image/png",
       model: "mock",
       quality: PRODUCTION_IMAGE_QUALITY,

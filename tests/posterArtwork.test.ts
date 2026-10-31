@@ -622,6 +622,15 @@ test("a legacy story gets a derived brief without another story generation", asy
   assert.match(brief?.protagonist ?? "", /Mei|human child|story character/);
 });
 
+test("a keepsake title uses the full text width", () => {
+  const copy = posterCopy({
+    title: "Mei and the very long lantern evening that keeps going past the garden gate",
+    textWidth: 984,
+    titlePx: 28,
+  });
+  assert.ok((copy.title.lines[0]?.length ?? 0) > 36);
+});
+
 test("keepsake art is 75 to 80 percent, and English and Traditional Chinese titles stay inside line limits", () => {
   const ratio = keepsakeArtRatio();
   assert.ok(ratio >= 0.75 && ratio <= 0.8);
