@@ -31,7 +31,7 @@ export function TtsControls({ speed, onSpeedChange }: Props) {
             </button>
           </div>
           <p className="hint">
-            Recording pace, {TTS_SPEED_MIN.toFixed(2)}–{TTS_SPEED_MAX.toFixed(2)}. This is separate from the playback speed on the story page. The storyteller stays calm. Warmth is no longer turned up into a bigger performance.
+            Recording pace, {TTS_SPEED_MIN.toFixed(2)}–{TTS_SPEED_MAX.toFixed(2)}. This is separate from the playback speed on the story page. A calmer bedtime preset stays off until someone has listened and approved it.
           </p>
         </div>
       </div>

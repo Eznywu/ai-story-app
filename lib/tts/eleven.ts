@@ -17,7 +17,7 @@ export type ElevenTtsInput = {
   speed?: number;
   voiceId?: string;
   language?: string;
-  /** Ignored. Warmth used to raise style and lower stability. That path is retired. */
+  /** Ignored. The warmth slider is gone. Everyday recordings use the frozen baseline until a preset is promoted. */
   emotion?: number;
 };
 

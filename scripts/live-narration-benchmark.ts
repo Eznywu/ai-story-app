@@ -1,54 +1,86 @@
 import { loadCheckedInDictionary } from "../lib/tts/benchmark";
+import { BENCHMARK_CASES } from "../lib/tts/benchmarkCases";
+import { COMPARISON_CONFIG_IDS } from "../lib/tts/config";
+import { assessLiveRun, runCappedLiveComparison } from "../lib/tts/liveHarness";
 import { estimateBenchmarkLiveCost } from "../lib/tts/pricing";
 
 /**
- * Opt-in live benchmark. This file is the only narration script allowed to call
- * a paid provider, and it refuses unless both gates below are set.
- * The cloud agent does not run it.
+ * Opt-in live comparison across the baseline and two bedtime candidates.
+ * Refuses unless RUN_LIVE_NARRATION=1 and LIVE_NARRATION_MAX_USD covers the estimate.
+ * Refuses when MOCK_PROVIDERS=1. Speech-to-text is left unchecked: no STT client is called.
+ * The cloud agent does not run this with the gates open.
  */
-const estimate = estimateBenchmarkLiveCost(loadCheckedInDictionary());
-const live = process.env.RUN_LIVE_NARRATION === "1";
-const cap = Number(process.env.LIVE_NARRATION_MAX_USD);
-const mock = process.env.MOCK_PROVIDERS === "1";
+async function main() {
+  const dictionary = loadCheckedInDictionary();
+  const estimate = estimateBenchmarkLiveCost(dictionary);
+  const gate = assessLiveRun(process.env, estimate.totalUsd);
+  if (!gate.allow) {
+    const payload = { refused: true, calledProvider: false, reason: gate.reason, estimate };
+    const line = JSON.stringify(payload, null, 2);
+    if (gate.exitCode === 1) console.error(line);
+    else console.log(line);
+    process.exit(gate.exitCode);
+  }
 
-if (mock) {
-  console.error("MOCK_PROVIDERS=1 is set. Refusing the live script. Run npm run narration:benchmark instead.");
-  process.exit(2);
-}
+  const { buildElevenSpeechRequest } = await import("../lib/tts/elevenRequest");
+  const { resolveNarrationVoice, speakWithElevenRequest } = await import("../lib/tts/eleven");
+  const { planNarration } = await import("../lib/tts/planNarration");
 
-if (!live || !Number.isFinite(cap)) {
+  const result = await runCappedLiveComparison({
+    cases: BENCHMARK_CASES.map((item) => ({ id: item.id, text: item.text, language: item.language })),
+    dictionary,
+    configIds: COMPARISON_CONFIG_IDS,
+    capUsd: gate.capUsd,
+    synthesize: async (job) => {
+      const voice = resolveNarrationVoice(job.language.toLowerCase().startsWith("zh") ? "Eason_CN" : "Eason_EN", job.language);
+      const plan = planNarration({
+        text: job.text,
+        language: job.language,
+        voiceId: voice.appVoiceId,
+        dictionary,
+        comparisonConfigId: job.configId,
+      });
+      for (const section of plan.sections) {
+        const request = buildElevenSpeechRequest({
+          text: section.text,
+          modelId: plan.modelId,
+          language: plan.language,
+          voiceSettings: plan.voiceSettings,
+          previousText: section.previousText,
+          nextText: section.nextText,
+        });
+        await speakWithElevenRequest(voice.elevenVoiceId, request);
+      }
+    },
+  });
+
   console.log(
     JSON.stringify(
       {
-        refused: true,
-        calledProvider: false,
-        reason: "Set RUN_LIVE_NARRATION=1 and LIVE_NARRATION_MAX_USD to a cap at or above the estimate. Nothing was sent to ElevenLabs or a speech-to-text service.",
+        refused: false,
+        ...result,
         estimate,
+        note: "Speech-to-text was not called. Unchecked does not mean the words were correct. Bedtime presets are still not promoted.",
       },
       null,
       2
     )
   );
-  process.exit(2);
 }
 
-if (cap < estimate.totalUsd) {
+main().catch((error: unknown) => {
+  const message = error instanceof Error ? error.message : "Live narration failed.";
   console.error(
     JSON.stringify(
       {
-        refused: true,
-        calledProvider: false,
-        reason: `Cap $${cap.toFixed(2)} is below the estimate $${estimate.totalUsd.toFixed(2)}.`,
-        estimate,
+        refused: false,
+        calledProvider: true,
+        error: message,
+        note: "A live call may have started. Check the provider account before trying again.",
       },
       null,
       2
     )
   );
   process.exit(1);
-}
-
-console.error(
-  "The cap would allow a live run, but this script stops here until Eason asks for that run in a controlled environment. No provider was called."
-);
-process.exit(2);
+});

@@ -8,11 +8,19 @@ export function usdForCharacters(characters: number, usdPerThousand = 0.08): num
   return (characters / 1000) * usdPerThousand;
 }
 
-export function retryBudgetUsd(env: NodeJS.ProcessEnv = process.env): number {
+/**
+ * Extra paid tries are off unless Eason has approved them for this environment.
+ * Both gates are required: NARRATION_RETRY_APPROVED=1 and a real non-negative
+ * NARRATION_RETRY_BUDGET_USD. Unset, blank, invalid, or negative values mean
+ * $0, so the first requested take still runs and automatic retries do not.
+ * This cap covers one narration request. It is not a shared spend ledger.
+ */
+export function retryBudgetUsd(env: Record<string, string | undefined> = process.env): number {
+  if (env.NARRATION_RETRY_APPROVED !== "1") return 0;
   const raw = env.NARRATION_RETRY_BUDGET_USD;
-  if (raw == null || String(raw).trim() === "") return 1;
+  if (raw == null || String(raw).trim() === "") return 0;
   const value = Number(raw);
-  if (!Number.isFinite(value) || value < 0) return 1;
+  if (!Number.isFinite(value) || value < 0) return 0;
   return value;
 }
 

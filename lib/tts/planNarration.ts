@@ -1,6 +1,12 @@
 import { narrationCacheKey } from "./cacheKey";
 import { chunkNarrationScript, continuityContext, transitionCheckIndexes, type NarrationChunk } from "./chunking";
-import { activeTtsConfig, settingsForSelectedModel, type VoiceSettingsSent } from "./config";
+import {
+  resolveOrdinaryNarrationConfig,
+  settingsForSelectedModel,
+  TTS_CONFIGS,
+  type PresetRequest,
+  type VoiceSettingsSent,
+} from "./config";
 import { getModelCapability, languageCodeForModel, maxChunkChars, resolveTtsModelId } from "./modelCapabilities";
 import { buildNarrationScript, type NarrationScript } from "./narrationScript";
 import type { PronunciationDictionary } from "./pronunciationDictionary";
@@ -36,12 +42,22 @@ export function planNarration(input: {
   dictionary: PronunciationDictionary;
   speed?: number;
   modelId?: string;
+  /** Refused unless it is the everyday preset. Comparison uses comparisonConfigId. */
   configId?: string;
+  /** Explicit comparison path. Proposed presets are allowed here only. */
+  comparisonConfigId?: string;
+  /** Defaults to the checked-in switch, which has not approved a candidate. */
+  presetRequest?: PresetRequest;
 }): NarrationPlan {
-  const config = activeTtsConfig();
-  const configId = input.configId ?? config.id;
-  if (input.configId && input.configId !== config.id) {
-    throw new Error("New recordings use the active narration config. Other presets are for the comparison harness only.");
+  const comparison = input.comparisonConfigId ? TTS_CONFIGS[input.comparisonConfigId] : undefined;
+  if (input.comparisonConfigId && !comparison) {
+    throw new Error(`Unknown narration config ${input.comparisonConfigId}`);
+  }
+  const choice = comparison
+    ? { config: comparison, promotionStatus: comparison.promotionStatus }
+    : resolveOrdinaryNarrationConfig(input.presetRequest);
+  if (!comparison && input.configId && input.configId !== choice.config.id) {
+    throw new Error("New recordings use the everyday narration preset. Other presets are for the comparison harness only.");
   }
   const modelId = resolveTtsModelId(input.modelId);
   const capability = getModelCapability(modelId);
@@ -49,16 +65,16 @@ export function planNarration(input: {
   if (!spoken.script.trim()) {
     throw new Error("Add story text before making narration.");
   }
-  const voiceSettings = settingsForSelectedModel(capability, input.language, input.speed);
+  const voiceSettings = settingsForSelectedModel(capability, input.language, input.speed, choice.config.id);
   const chunks = chunkNarrationScript(spoken.script, maxChunkChars(modelId));
   const sections = chunks.map((chunk) => toSection(modelId, chunks, chunk));
   return {
     displayText: spoken.displayText,
     script: spoken,
     modelId,
-    configId,
-    configVersion: config.version,
-    promotionStatus: config.promotionStatus,
+    configId: choice.config.id,
+    configVersion: choice.config.version,
+    promotionStatus: choice.promotionStatus,
     dictionaryVersion: input.dictionary.version,
     voiceId: input.voiceId,
     language: input.language,
@@ -71,7 +87,7 @@ export function planNarration(input: {
       modelId,
       voiceSettings,
       dictionaryVersion: input.dictionary.version,
-      configVersion: config.version,
+      configVersion: choice.config.version,
       language: input.language,
     }),
   };

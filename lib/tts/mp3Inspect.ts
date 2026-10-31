@@ -73,7 +73,7 @@ export function inspectMp3(audio: Buffer): Mp3Inspection {
   const durationMs = sampleRate ? Math.round((samples / sampleRate) * 1000) : 0;
   const valid = frames > 0 && !truncated && durationMs > 0;
   const notes = valid
-    ? `Decoded ${frames} MP3 frames, about ${durationMs} ms.`
+    ? `Counted ${frames} MP3 frames from the file headers, about ${durationMs} ms. This is not a full audio decode.`
     : truncated
       ? "The MP3 ended before a frame finished. This looks truncated."
       : "The file could not be decoded as MP3.";

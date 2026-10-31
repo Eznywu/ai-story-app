@@ -35,9 +35,21 @@ export async function GET(req: Request) {
           where: { status: "pending" },
           orderBy: { createdAt: "asc" },
           take: 200,
-          select: { id: true, createdAt: true },
+          select: { id: true, assetId: true, createdAt: true },
         });
-        return rows.map((row) => ({ id: row.id, createdAt: row.createdAt.toISOString() }));
+        const assetIds = rows.map((row) => row.assetId).filter((id): id is string => Boolean(id));
+        const assets = assetIds.length
+          ? await prisma.narrationAsset.findMany({
+              where: { id: { in: assetIds } },
+              select: { id: true, url: true },
+            })
+          : [];
+        const urls = new Map(assets.map((asset) => [asset.id, asset.url]));
+        return rows.map((row) => ({
+          id: row.id,
+          url: row.assetId ? urls.get(row.assetId) ?? null : null,
+          createdAt: row.createdAt.toISOString(),
+        }));
       },
       loadNewClips: async () => {
         const rows = await prisma.narrationAsset.findMany({

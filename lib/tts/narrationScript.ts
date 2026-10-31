@@ -126,12 +126,12 @@ function expandEnglishSpeech(text: string): string {
   });
   out = out.replace(/(?<!\d)(\d+)\.(\d+)(?!\d)/g, (_all, whole: string, frac: string) => {
     const digits = frac.split("").map((digit) => ONES[Number(digit)] ?? digit).join(" ");
-    return `${englishInt(Number(whole))} point ${digits}`;
+    return `${englishCardinal(Number(whole))} point ${digits}`;
   });
   out = out.replace(/(?<!\d)(\d+)(?!\d)/g, (match) => {
     const value = Number(match);
     if (!Number.isInteger(value) || value > 9999) return match;
-    return englishInt(value);
+    return englishCardinal(value);
   });
   return out;
 }
@@ -155,7 +155,9 @@ function expandChineseSpeech(text: string): string {
   return out;
 }
 
-function englishInt(value: number): string {
+/** Cardinal reading. Never calls englishYear. */
+function englishCardinal(value: number): string {
+  if (!Number.isInteger(value) || value < 0) return String(value);
   if (value < 20) return ONES[value];
   if (value < 100) {
     const ten = Math.floor(value / 10);
@@ -165,29 +167,48 @@ function englishInt(value: number): string {
   if (value < 1000) {
     const hundred = Math.floor(value / 100);
     const rest = value % 100;
-    return rest ? `${ONES[hundred]} hundred ${englishInt(rest)}` : `${ONES[hundred]} hundred`;
+    return rest ? `${ONES[hundred]} hundred ${englishCardinal(rest)}` : `${ONES[hundred]} hundred`;
   }
-  if (value <= 9999) return englishYear(value);
+  if (value < 10000) {
+    const thousands = Math.floor(value / 1000);
+    const rest = value % 1000;
+    const head = `${ONES[thousands]} thousand`;
+    return rest ? `${head} ${englishCardinal(rest)}` : head;
+  }
   return String(value);
 }
 
+/**
+ * Year reading for dates. Uses cardinals only for the pieces, so 2100–9999
+ * cannot recurse back into this function.
+ */
 function englishYear(value: number): string {
-  if (value >= 2000 && value < 2010) return `two thousand ${value === 2000 ? "" : englishInt(value - 2000)}`.trim();
+  if (value >= 2000 && value < 2010) {
+    return value === 2000 ? "two thousand" : `two thousand ${englishCardinal(value - 2000)}`;
+  }
   if (value >= 2010 && value <= 2099) {
-    return `twenty ${englishInt(value - 2000)}`;
+    return `twenty ${englishCardinal(value - 2000)}`;
   }
   if (value >= 1000 && value <= 1999) {
     const century = Math.floor(value / 100);
     const rest = value % 100;
-    const head = englishInt(century);
+    const head = englishCardinal(century);
     if (rest === 0) return `${head} hundred`;
-    return `${head} ${englishInt(rest)}`;
+    return `${head} ${englishCardinal(rest)}`;
   }
-  return englishInt(value);
+  if (value >= 2100 && value <= 9999) {
+    if (value % 1000 === 0) return englishCardinal(value);
+    const hundreds = Math.floor(value / 100);
+    const rest = value % 100;
+    if (rest === 0) return `${englishCardinal(hundreds)} hundred`;
+    const tail = rest < 10 ? `oh-${ONES[rest]}` : englishCardinal(rest);
+    return `${englishCardinal(hundreds)} ${tail}`;
+  }
+  return englishCardinal(value);
 }
 
 function ordinal(day: number): string {
-  const word = englishInt(day);
+  const word = englishCardinal(day);
   if (word.endsWith("one") && !word.endsWith("eleven")) return word.replace(/one$/, "first");
   if (word.endsWith("two")) return word.replace(/two$/, "second");
   if (word.endsWith("three")) return word.replace(/three$/, "third");

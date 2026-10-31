@@ -14,6 +14,11 @@ export function reviewWeekKey(now = new Date()): string {
   }).format(now);
 }
 
+export type ReviewClipRef = {
+  id: string;
+  url: string | null;
+};
+
 export type WeeklySelection<T> = {
   outcome: "review" | "no-new-samples";
   unresolved: T[];
@@ -77,7 +82,18 @@ export type WeeklyReport = {
   unresolvedIssues: string[];
   recommendations: string[];
   note: string;
+  /** The clips a person should open. Counts alone are not enough to find them. */
+  samples: ReviewClipRef[];
+  unresolvedFlags: ReviewClipRef[];
 };
+
+export function clipRef(item: unknown): ReviewClipRef | null {
+  if (!item || typeof item !== "object") return null;
+  const record = item as { id?: unknown; url?: unknown };
+  if (typeof record.id !== "string" || !record.id.trim()) return null;
+  const url = typeof record.url === "string" && record.url.trim() ? record.url : null;
+  return { id: record.id, url };
+}
 
 export function buildWeeklyReport(input: {
   weekKey: string;
@@ -117,6 +133,8 @@ export function buildWeeklyReport(input: {
     unresolvedIssues: unresolvedCount ? [`${unresolvedCount} flag${unresolvedCount === 1 ? "" : "s"} still waiting.`] : [],
     recommendations,
     note: input.selection.note,
+    samples: input.selection.sample.map(clipRef).filter((item): item is ReviewClipRef => item != null),
+    unresolvedFlags: input.selection.unresolved.map(clipRef).filter((item): item is ReviewClipRef => item != null),
   };
 }
 

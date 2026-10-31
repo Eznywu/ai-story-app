@@ -2,10 +2,10 @@
  * One place for the voice settings Happy Horse sends to ElevenLabs.
  * Playback speed (the 0.75x–1.5x player control) is not a field here.
  *
- * Current baseline is the formula the app used to send at the default
- * warmth of 40 and speed 0.95. It stays available for comparison.
- * New recordings use bedtime-v3-a. That preset is proposed, not promoted:
- * nobody has listened to a live sample of it yet.
+ * Everyday recordings stay on the baseline the app already sent at warmth 40
+ * and speed 0.95. Bedtime candidates are for the comparison harness only.
+ * A candidate is used for new stories only after resolveOrdinaryNarrationConfig
+ * accepts a promotion review. Nothing in this file is marked promoted.
  */
 
 import { getModelCapability, type ModelCapability } from "./modelCapabilities";
@@ -74,7 +74,7 @@ export const TTS_CONFIGS: Record<string, TtsConfig> = {
     modelId: "eleven_v3",
     voiceSettings: null,
     summary:
-      "What the app sent before this change, at warmth 40. English style was 0.47 on a model built for dramatic delivery. Kept only so the comparison harness can render the old numbers. Not used for new recordings.",
+      "Everyday voice until a bedtime preset passes a live benchmark and a human listen. English settings at the old warmth of 40: stability 0.47, similarity 0.85, style 0.47, speaker boost on, speed 0.95. The warmth slider is gone; this is the frozen baseline, not a new performance.",
   },
   "bedtime-v3-a": {
     id: "bedtime-v3-a",
@@ -90,7 +90,7 @@ export const TTS_CONFIGS: Record<string, TtsConfig> = {
       useSpeakerBoost: true,
     },
     summary:
-      "Starting bedtime preset for eleven_v3. Speed 0.90, stability 0.50, similarity 0.75, style 0, speaker boost on. Style is 0 so the voice is not pushed into a bigger performance. Not proven by a listener.",
+      "Proposed bedtime preset for eleven_v3. Speed 0.90, stability 0.50, similarity 0.75, style 0, speaker boost on. Comparison harness only until a promotion review passes. Not approved, and not used for everyday recordings.",
   },
   "bedtime-v3-b": {
     id: "bedtime-v3-b",
@@ -110,16 +110,34 @@ export const TTS_CONFIGS: Record<string, TtsConfig> = {
   },
 };
 
-export const ACTIVE_TTS_CONFIG_ID = "bedtime-v3-a";
+/** Waiting for a listen. Naming it here does not turn it on. */
+export const PROPOSED_TTS_CONFIG_ID = "bedtime-v3-a";
 
 export const COMPARISON_CONFIG_IDS = ["legacy-emotion", "bedtime-v3-a", "bedtime-v3-b"] as const;
 
-export function activeTtsConfig(): TtsConfig {
-  return TTS_CONFIGS[ACTIVE_TTS_CONFIG_ID];
+/**
+ * The switch for an approved preset. requestedConfigId stays null until a
+ * person has heard a live sample and the promotion review below would pass.
+ * Setting the id alone does nothing: resolveOrdinaryNarrationConfig still
+ * keeps the baseline when the review is missing, mock, or incomplete.
+ */
+export const APPROVED_PRESET_REQUEST: PresetRequest = {
+  requestedConfigId: null,
+  promotion: null,
+};
+
+export type PresetRequest = {
+  requestedConfigId: string | null;
+  promotion: PromotionInput | null;
+};
+
+export function activeTtsConfig(request: PresetRequest = APPROVED_PRESET_REQUEST): TtsConfig {
+  return resolveOrdinaryNarrationConfig(request).config;
 }
 
-export function activeNarrationSpeed(): number {
-  return activeTtsConfig().voiceSettings?.speed ?? 0.9;
+export function activeNarrationSpeed(request: PresetRequest = APPROVED_PRESET_REQUEST): number {
+  const config = activeTtsConfig(request);
+  return voiceSettingsForConfig(config.id, "en").speed ?? 0.95;
 }
 
 export function roundSetting(value: number): number {
@@ -163,15 +181,22 @@ export function settingsActuallySent(configId: string, modelId: string, language
 }
 
 /**
- * If Multilingual v2 is the selected model, map the active preset onto the
- * candidate Eason asked to try. eleven_v3 keeps its own preset.
+ * If Multilingual v2 is the selected model, map onto the candidate Eason asked
+ * to try. That model is not the one everyday stories use. eleven_v3 uses the
+ * config id passed in, or the everyday preset when none is passed.
  */
-export function settingsForSelectedModel(model: ModelCapability, language: string, speedOverride?: number): VoiceSettingsSent {
+export function settingsForSelectedModel(
+  model: ModelCapability,
+  language: string,
+  speedOverride?: number,
+  configId?: string
+): VoiceSettingsSent {
   if (model.modelId === "eleven_multilingual_v2") {
     const speed = speedOverride == null ? MULTILINGUAL_V2_BEDTIME_CANDIDATE.speed : speedOverride;
     return voiceSettingsForModel({ ...MULTILINGUAL_V2_BEDTIME_CANDIDATE, speed }, model.modelId);
   }
-  return settingsActuallySent(ACTIVE_TTS_CONFIG_ID, model.modelId, language, speedOverride);
+  const id = configId ?? resolveOrdinaryNarrationConfig().config.id;
+  return settingsActuallySent(id, model.modelId, language, speedOverride);
 }
 
 export type PromotionInput = {
@@ -208,4 +233,47 @@ export function evaluatePromotion(input: PromotionInput): { promote: boolean; re
     reasons.push(`These cases failed: ${input.failedCaseIds.join(", ")}.`);
   }
   return { promote: reasons.length === 0, reasons };
+}
+
+export type OrdinaryNarrationChoice = {
+  config: TtsConfig;
+  promotionStatus: TtsPromotionStatus;
+  reasons: string[];
+};
+
+/**
+ * Everyday stories use the baseline. A proposed preset is switched on only
+ * when this request names it and evaluatePromotion accepts the review.
+ * A missing, mock, or incomplete review keeps the baseline.
+ */
+export function resolveOrdinaryNarrationConfig(request: PresetRequest = APPROVED_PRESET_REQUEST): OrdinaryNarrationChoice {
+  const baseline = TTS_CONFIGS["legacy-emotion"];
+  const requested = request.requestedConfigId?.trim() || null;
+  if (!requested || requested === baseline.id) {
+    return {
+      config: baseline,
+      promotionStatus: "baseline",
+      reasons: ["Everyday recordings use the current baseline until a preset passes promotion."],
+    };
+  }
+  const candidate = TTS_CONFIGS[requested];
+  if (!candidate) {
+    return {
+      config: baseline,
+      promotionStatus: "baseline",
+      reasons: [`Unknown preset ${requested}. Everyday recordings stay on the baseline.`],
+    };
+  }
+  if (!request.promotion || request.promotion.configId !== requested) {
+    return {
+      config: baseline,
+      promotionStatus: "baseline",
+      reasons: ["That preset has no promotion review, so everyday recordings stay on the baseline."],
+    };
+  }
+  const decision = evaluatePromotion(request.promotion);
+  if (!decision.promote) {
+    return { config: baseline, promotionStatus: "baseline", reasons: decision.reasons };
+  }
+  return { config: candidate, promotionStatus: "promoted", reasons: [] };
 }

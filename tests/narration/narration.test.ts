@@ -9,8 +9,11 @@ import { narrationCacheKey } from "../../lib/tts/cacheKey";
 import { chunkNarrationScript, continuityContext, transitionCheckIndexes } from "../../lib/tts/chunking";
 import {
   activeTtsConfig,
+  APPROVED_PRESET_REQUEST,
   evaluatePromotion,
   legacyEmotionSettings,
+  PROPOSED_TTS_CONFIG_ID,
+  resolveOrdinaryNarrationConfig,
   settingsActuallySent,
   settingsForSelectedModel,
   TTS_CONFIGS,
@@ -20,8 +23,10 @@ import { getModelCapability, maxChunkChars } from "../../lib/tts/modelCapabiliti
 import { concatMp3, inspectMp3 } from "../../lib/tts/mp3Inspect";
 import { buildNarrationScript, legacyPunctuationSpacing } from "../../lib/tts/narrationScript";
 import { parsePronunciationDictionary } from "../../lib/tts/pronunciationDictionary";
+import { assessLiveRun, runCappedLiveComparison } from "../../lib/tts/liveHarness";
+import { planNarration } from "../../lib/tts/planNarration";
 import { estimateBenchmarkLiveCost } from "../../lib/tts/pricing";
-import { MAX_AUTOMATIC_REGENERATIONS, renderSectionsWithRetry } from "../../lib/tts/retry";
+import { MAX_AUTOMATIC_REGENERATIONS, renderSectionsWithRetry, retryBudgetUsd } from "../../lib/tts/retry";
 import {
   buildWeeklyReport,
   regressionCaseFromReport,
@@ -31,28 +36,22 @@ import {
 } from "../../lib/tts/review";
 import { createMockSpeechToText, screenTranscript } from "../../lib/tts/stt";
 import { PLAYBACK_RATES } from "../../lib/tts/ttsLimits";
+import { runWeeklyNarrationReview } from "../../lib/tts/weeklyJob";
 
 const dictionary = loadCheckedInDictionary();
 const fixture = readFileSync("lib/providers/fixtures/mock-narration.mp3");
 
-test("active preset is proposed bedtime settings, not the old warmth formula", () => {
+test("everyday narration stays on the baseline while bedtime presets stay proposed", () => {
   const active = activeTtsConfig();
-  assert.equal(active.id, "bedtime-v3-a");
-  assert.equal(active.promotionStatus, "proposed");
-  assert.equal(active.modelId, "eleven_v3");
-  assert.deepEqual(active.voiceSettings, {
-    speed: 0.9,
-    stability: 0.5,
-    similarityBoost: 0.75,
-    style: 0,
-    useSpeakerBoost: true,
-  });
+  assert.equal(active.id, "legacy-emotion");
+  assert.equal(active.promotionStatus, "baseline");
+  assert.equal(APPROVED_PRESET_REQUEST.requestedConfigId, null);
+  assert.equal(TTS_CONFIGS[PROPOSED_TTS_CONFIG_ID].promotionStatus, "proposed");
+  assert.equal(TTS_CONFIGS[PROPOSED_TTS_CONFIG_ID].id, "bedtime-v3-a");
   const legacy = legacyEmotionSettings("en", 0.95, 40);
   assert.equal(legacy.style, 0.47);
   assert.equal(legacy.stability, 0.47);
   assert.equal(legacy.similarityBoost, 0.85);
-  assert.notEqual(legacy.style, active.voiceSettings?.style);
-  assert.equal(TTS_CONFIGS["legacy-emotion"].role, "current-baseline");
   assert.equal(Object.values(TTS_CONFIGS).filter((config) => config.role === "candidate").length, 2);
   assert.equal(Object.values(TTS_CONFIGS).some((config) => config.promotionStatus === "promoted"), false);
 });
@@ -279,6 +278,8 @@ test("mp3 checks catch a truncated file and skip duration on the mock fixture", 
   assert.equal(whole.valid, true);
   assert.equal(whole.truncated, false);
   assert.ok(whole.durationMs > 0);
+  assert.match(whole.notes, /Counted/);
+  assert.equal(whole.notes.includes("Decoded"), false);
   const cut = inspectMp3(fixture.subarray(0, Math.floor(fixture.length / 2)));
   assert.equal(cut.truncated, true);
   assert.equal(cut.valid, false);
@@ -371,6 +372,8 @@ test("weekly review takes unresolved flags plus at most 10 new clips and never i
   assert.equal(report.costs.liveProviderUsd, 0);
   assert.equal(report.generatedAudio, false);
   assert.equal(report.weekKey, "2026-10-26");
+  assert.deepEqual(report.unresolvedFlags, [{ id: "flag-1", url: null }]);
+  assert.deepEqual(report.samples, []);
   assert.equal(shouldFlagBaseline(19), true);
   assert.equal(shouldFlagBaseline(20), false);
 });
@@ -460,4 +463,190 @@ test("live cost estimate is labeled and the weekly route does not call a voice p
   assert.equal(route.includes("narrateWithEleven"), false);
   assert.equal(route.includes("speakWithEleven"), false);
   assert.match(readFileSync("vercel.json", "utf8"), /"schedule": "0 2 \* \* 1"/);
+});
+
+test("numbers from 2100 through 9999 are spoken, including dates", () => {
+  const quantities = buildNarrationScript(
+    "There were 2100 stars, 3000 moons, and 9999 pebbles in 2026.",
+    "en",
+    dictionary
+  );
+  assert.match(quantities.script, /two thousand one hundred stars/);
+  assert.match(quantities.script, /three thousand moons/);
+  assert.match(quantities.script, /nine thousand nine hundred ninety-nine pebbles/);
+  assert.match(quantities.script, /two thousand twenty-six/);
+  const dated = buildNarrationScript(
+    "On January 1, 2100, the jar held 3000 beans. On March 9, 9999, it held 1.",
+    "en",
+    dictionary
+  );
+  assert.match(dated.script, /January first, twenty-one hundred/);
+  assert.match(dated.script, /three thousand beans/);
+  assert.match(dated.script, /March ninth, ninety-nine ninety-nine/);
+  assert.match(
+    buildNarrationScript("On October 27, 2026, the light stayed on.", "en", dictionary).script,
+    /twenty twenty-six/
+  );
+});
+
+test("automatic retries stay off unless an approval and a cap are both set", () => {
+  assert.equal(retryBudgetUsd({}), 0);
+  assert.equal(retryBudgetUsd({ NARRATION_RETRY_BUDGET_USD: "" }), 0);
+  assert.equal(retryBudgetUsd({ NARRATION_RETRY_BUDGET_USD: "1" }), 0);
+  assert.equal(retryBudgetUsd({ NARRATION_RETRY_APPROVED: "1", NARRATION_RETRY_BUDGET_USD: "" }), 0);
+  assert.equal(retryBudgetUsd({ NARRATION_RETRY_APPROVED: "1", NARRATION_RETRY_BUDGET_USD: "nope" }), 0);
+  assert.equal(retryBudgetUsd({ NARRATION_RETRY_APPROVED: "1", NARRATION_RETRY_BUDGET_USD: "-1" }), 0);
+  assert.equal(retryBudgetUsd({ NARRATION_RETRY_APPROVED: "yes", NARRATION_RETRY_BUDGET_USD: "1" }), 0);
+  assert.equal(retryBudgetUsd({ NARRATION_RETRY_APPROVED: "1", NARRATION_RETRY_BUDGET_USD: "0" }), 0);
+  assert.equal(retryBudgetUsd({ NARRATION_RETRY_APPROVED: "1", NARRATION_RETRY_BUDGET_USD: "0.5" }), 0.5);
+  assert.match(readFileSync("lib/tts/eleven.ts", "utf8"), /budgetUsd: retryBudgetUsd\(\)/);
+});
+
+test("the saved weekly report keeps the clip links and unresolved flags", async () => {
+  const selection = selectWeeklyReviewSamples({
+    unresolved: [{ id: "flag-9", url: "/api/audio/flag.mp3" }],
+    newClips: [{ id: "clip-2", url: "https://example.com/clip.mp3" }],
+  });
+  const report = buildWeeklyReport({ weekKey: "2026-10-27", selection, newClipCount: 1 });
+  assert.deepEqual(report.samples, [{ id: "clip-2", url: "https://example.com/clip.mp3" }]);
+  assert.deepEqual(report.unresolvedFlags, [{ id: "flag-9", url: "/api/audio/flag.mp3" }]);
+  const saved: Array<typeof report> = [];
+  const written = await runWeeklyNarrationReview({
+    now: new Date("2026-10-26T02:00:00.000Z"),
+    loadUnresolved: async () => [{ id: "flag-9", url: "/api/audio/flag.mp3" }],
+    loadNewClips: async () => [{ id: "clip-2", url: "https://example.com/clip.mp3" }],
+    saveReport: async (next) => {
+      saved.push(next);
+    },
+  });
+  assert.equal(saved.length, 1);
+  assert.equal(saved[0].samples[0]?.id, "clip-2");
+  assert.equal(saved[0].samples[0]?.url, "https://example.com/clip.mp3");
+  assert.equal(saved[0].unresolvedFlags[0]?.id, "flag-9");
+  assert.equal(saved[0].unresolvedFlags[0]?.url, "/api/audio/flag.mp3");
+  assert.equal(written.generatedAudio, false);
+  assert.equal(saved[0], written);
+});
+
+test("a proposed bedtime preset stays off until a promotion review passes", () => {
+  const everyday = planNarration({
+    text: "Bramble counted 3 breaths.",
+    language: "en",
+    voiceId: "Eason_EN",
+    dictionary,
+  });
+  assert.equal(everyday.configId, "legacy-emotion");
+  assert.equal(everyday.promotionStatus, "baseline");
+  assert.equal(everyday.voiceSettings.style, 0.47);
+  assert.equal(everyday.voiceSettings.speed, 0.95);
+  assert.throws(() =>
+    planNarration({
+      text: "Bramble counted 3 breaths.",
+      language: "en",
+      voiceId: "Eason_EN",
+      dictionary,
+      configId: "bedtime-v3-a",
+    })
+  );
+  const namedOnly = resolveOrdinaryNarrationConfig({ requestedConfigId: "bedtime-v3-a", promotion: null });
+  assert.equal(namedOnly.config.id, "legacy-emotion");
+  const ids = BENCHMARK_CASES.map((item) => item.id);
+  const blocked = resolveOrdinaryNarrationConfig({
+    requestedConfigId: "bedtime-v3-a",
+    promotion: {
+      configId: "bedtime-v3-a",
+      benchmarkCaseIds: ids,
+      requiredCaseIds: ids,
+      failedCaseIds: [],
+      previouslyFailingCaseIds: [],
+      resultsAreMock: true,
+      humanListeningComplete: false,
+    },
+  });
+  assert.equal(blocked.config.id, "legacy-emotion");
+  assert.ok(blocked.reasons.length > 0);
+  const switched = planNarration({
+    text: "Bramble counted 3 breaths.",
+    language: "en",
+    voiceId: "Eason_EN",
+    dictionary,
+    presetRequest: {
+      requestedConfigId: "bedtime-v3-a",
+      promotion: {
+        configId: "bedtime-v3-a",
+        benchmarkCaseIds: ids,
+        requiredCaseIds: ids,
+        failedCaseIds: [],
+        previouslyFailingCaseIds: ["en-name"],
+        resultsAreMock: false,
+        humanListeningComplete: true,
+      },
+    },
+  });
+  assert.equal(switched.configId, "bedtime-v3-a");
+  assert.equal(switched.promotionStatus, "promoted");
+  assert.equal(switched.voiceSettings.style, 0);
+  assert.equal(switched.voiceSettings.speed, 0.9);
+  assert.equal(TTS_CONFIGS[PROPOSED_TTS_CONFIG_ID].promotionStatus, "proposed");
+  assert.equal(activeTtsConfig().id, "legacy-emotion");
+  const comparison = planNarration({
+    text: "Bramble counted 3 breaths.",
+    language: "en",
+    voiceId: "Eason_EN",
+    dictionary,
+    comparisonConfigId: "bedtime-v3-b",
+  });
+  assert.equal(comparison.configId, "bedtime-v3-b");
+  assert.equal(comparison.promotionStatus, "proposed");
+  assert.equal(comparison.voiceSettings.speed, 0.85);
+});
+
+test("the live comparison harness speaks only inside an explicit cap", async () => {
+  const estimate = estimateBenchmarkLiveCost(dictionary);
+  const blocked = assessLiveRun({}, estimate.totalUsd);
+  assert.equal(blocked.allow, false);
+  if (!blocked.allow) assert.equal(blocked.calledProvider, false);
+  const mocked = assessLiveRun(
+    { RUN_LIVE_NARRATION: "1", LIVE_NARRATION_MAX_USD: "5", MOCK_PROVIDERS: "1" },
+    estimate.totalUsd
+  );
+  assert.equal(mocked.allow, false);
+  const low = assessLiveRun({ RUN_LIVE_NARRATION: "1", LIVE_NARRATION_MAX_USD: "0.01" }, estimate.totalUsd);
+  assert.equal(low.allow, false);
+  const open = assessLiveRun(
+    { RUN_LIVE_NARRATION: "1", LIVE_NARRATION_MAX_USD: String(estimate.suggestedCapUsd) },
+    estimate.totalUsd
+  );
+  assert.equal(open.allow, true);
+  if (!open.allow) return;
+  const calls: string[] = [];
+  const ran = await runCappedLiveComparison({
+    cases: [{ id: "one", text: "Bramble said goodnight.", language: "en" }],
+    dictionary,
+    configIds: ["legacy-emotion", "bedtime-v3-a"],
+    capUsd: open.capUsd,
+    synthesize: async (job) => {
+      calls.push(job.configId);
+    },
+  });
+  assert.deepEqual(calls, ["legacy-emotion", "bedtime-v3-a"]);
+  assert.equal(ran.calledProvider, true);
+  assert.equal(ran.stt, "unchecked");
+  assert.equal(ran.stoppedEarly, false);
+  const stopped = await runCappedLiveComparison({
+    cases: [{ id: "one", text: "Bramble said goodnight.", language: "en" }],
+    dictionary,
+    configIds: ["legacy-emotion", "bedtime-v3-a"],
+    capUsd: 0,
+    synthesize: async () => {
+      throw new Error("should not speak");
+    },
+  });
+  assert.equal(stopped.calledProvider, false);
+  assert.equal(stopped.completed, 0);
+  assert.equal(stopped.stoppedEarly, true);
+  const script = readFileSync("scripts/live-narration-benchmark.ts", "utf8");
+  assert.equal(script.includes("stops here until Eason"), false);
+  assert.match(script, /assessLiveRun/);
+  assert.match(script, /speakWithElevenRequest/);
 });
