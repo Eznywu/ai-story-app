@@ -388,6 +388,8 @@ export const ModelName = {
   Session: 'Session',
   LoginCode: 'LoginCode',
   Story: 'Story',
+  ArtworkJob: 'ArtworkJob',
+  ArtworkSpendDay: 'ArtworkSpendDay',
   Voice: 'Voice',
   KidProfile: 'KidProfile',
   StoryCharacter: 'StoryCharacter',
@@ -410,7 +412,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "session" | "loginCode" | "story" | "voice" | "kidProfile" | "storyCharacter" | "narrationAsset" | "narrationReviewItem" | "narrationReviewReport" | "readingStats"
+    modelProps: "user" | "session" | "loginCode" | "story" | "artworkJob" | "artworkSpendDay" | "voice" | "kidProfile" | "storyCharacter" | "narrationAsset" | "narrationReviewItem" | "narrationReviewReport" | "readingStats"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -707,6 +709,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.StoryCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.StoryCountAggregateOutputType> | number
+        }
+      }
+    }
+    ArtworkJob: {
+      payload: Prisma.$ArtworkJobPayload<ExtArgs>
+      fields: Prisma.ArtworkJobFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ArtworkJobFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkJobPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ArtworkJobFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkJobPayload>
+        }
+        findFirst: {
+          args: Prisma.ArtworkJobFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkJobPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ArtworkJobFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkJobPayload>
+        }
+        findMany: {
+          args: Prisma.ArtworkJobFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkJobPayload>[]
+        }
+        create: {
+          args: Prisma.ArtworkJobCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkJobPayload>
+        }
+        createMany: {
+          args: Prisma.ArtworkJobCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ArtworkJobCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkJobPayload>[]
+        }
+        delete: {
+          args: Prisma.ArtworkJobDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkJobPayload>
+        }
+        update: {
+          args: Prisma.ArtworkJobUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkJobPayload>
+        }
+        deleteMany: {
+          args: Prisma.ArtworkJobDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ArtworkJobUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ArtworkJobUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkJobPayload>[]
+        }
+        upsert: {
+          args: Prisma.ArtworkJobUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkJobPayload>
+        }
+        aggregate: {
+          args: Prisma.ArtworkJobAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateArtworkJob>
+        }
+        groupBy: {
+          args: Prisma.ArtworkJobGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArtworkJobGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ArtworkJobCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArtworkJobCountAggregateOutputType> | number
+        }
+      }
+    }
+    ArtworkSpendDay: {
+      payload: Prisma.$ArtworkSpendDayPayload<ExtArgs>
+      fields: Prisma.ArtworkSpendDayFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ArtworkSpendDayFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkSpendDayPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ArtworkSpendDayFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkSpendDayPayload>
+        }
+        findFirst: {
+          args: Prisma.ArtworkSpendDayFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkSpendDayPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ArtworkSpendDayFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkSpendDayPayload>
+        }
+        findMany: {
+          args: Prisma.ArtworkSpendDayFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkSpendDayPayload>[]
+        }
+        create: {
+          args: Prisma.ArtworkSpendDayCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkSpendDayPayload>
+        }
+        createMany: {
+          args: Prisma.ArtworkSpendDayCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ArtworkSpendDayCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkSpendDayPayload>[]
+        }
+        delete: {
+          args: Prisma.ArtworkSpendDayDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkSpendDayPayload>
+        }
+        update: {
+          args: Prisma.ArtworkSpendDayUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkSpendDayPayload>
+        }
+        deleteMany: {
+          args: Prisma.ArtworkSpendDayDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ArtworkSpendDayUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ArtworkSpendDayUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkSpendDayPayload>[]
+        }
+        upsert: {
+          args: Prisma.ArtworkSpendDayUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkSpendDayPayload>
+        }
+        aggregate: {
+          args: Prisma.ArtworkSpendDayAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateArtworkSpendDay>
+        }
+        groupBy: {
+          args: Prisma.ArtworkSpendDayGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArtworkSpendDayGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ArtworkSpendDayCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArtworkSpendDayCountAggregateOutputType> | number
         }
       }
     }
@@ -1325,10 +1475,54 @@ export const StoryScalarFieldEnum = {
   audioConfigId: 'audioConfigId',
   audioCacheKey: 'audioCacheKey',
   dailyAutomated: 'dailyAutomated',
+  characterId: 'characterId',
+  characterSnapshot: 'characterSnapshot',
+  visualBrief: 'visualBrief',
+  illustrationFilename: 'illustrationFilename',
+  illustrationUrl: 'illustrationUrl',
+  coverFilename: 'coverFilename',
+  coverUrl: 'coverUrl',
+  artworkStatus: 'artworkStatus',
+  artworkCacheKey: 'artworkCacheKey',
+  posterCaption: 'posterCaption',
+  dedication: 'dedication',
+  artworkMeta: 'artworkMeta',
   createdAt: 'createdAt'
 } as const
 
 export type StoryScalarFieldEnum = (typeof StoryScalarFieldEnum)[keyof typeof StoryScalarFieldEnum]
+
+
+export const ArtworkJobScalarFieldEnum = {
+  id: 'id',
+  cacheKey: 'cacheKey',
+  scopeKey: 'scopeKey',
+  storyId: 'storyId',
+  status: 'status',
+  provider: 'provider',
+  model: 'model',
+  quality: 'quality',
+  attemptCount: 'attemptCount',
+  estimatedCostUsd: 'estimatedCostUsd',
+  leaseUntil: 'leaseUntil',
+  blockedUntil: 'blockedUntil',
+  errorMessage: 'errorMessage',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArtworkJobScalarFieldEnum = (typeof ArtworkJobScalarFieldEnum)[keyof typeof ArtworkJobScalarFieldEnum]
+
+
+export const ArtworkSpendDayScalarFieldEnum = {
+  id: 'id',
+  scopeKey: 'scopeKey',
+  dayKey: 'dayKey',
+  generations: 'generations',
+  estimatedUsd: 'estimatedUsd'
+} as const
+
+export type ArtworkSpendDayScalarFieldEnum = (typeof ArtworkSpendDayScalarFieldEnum)[keyof typeof ArtworkSpendDayScalarFieldEnum]
 
 
 export const VoiceScalarFieldEnum = {
@@ -1682,6 +1876,8 @@ export type GlobalOmitConfig = {
   session?: Prisma.SessionOmit
   loginCode?: Prisma.LoginCodeOmit
   story?: Prisma.StoryOmit
+  artworkJob?: Prisma.ArtworkJobOmit
+  artworkSpendDay?: Prisma.ArtworkSpendDayOmit
   voice?: Prisma.VoiceOmit
   kidProfile?: Prisma.KidProfileOmit
   storyCharacter?: Prisma.StoryCharacterOmit

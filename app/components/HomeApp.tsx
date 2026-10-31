@@ -21,7 +21,7 @@ import { useStoryCharacters } from "@/app/hooks/useStoryCharacters";
 import { useReadingStats } from "@/app/hooks/useReadingStats";
 import { getErrorMessage } from "@/lib/errors";
 import { trackEvent } from "@/lib/analytics";
-import type { AppBannerError, AppBannerSource } from "@/lib/types";
+import type { AppBannerError, AppBannerSource, StoryGenerationInput } from "@/lib/types";
 import { STORY_INPUT_MAX_CHARS } from "@/lib/types";
 import type { StoryLibraryItem } from "@/app/hooks/useStoryLibrary";
 import type { KidProfile, StoryCharacterProfile } from "@/lib/profiles/profilesTypes";
@@ -132,6 +132,7 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
   const [age, setAge] = useState("6 months");
   const [language, setLanguage] = useState("zh-Hant");
   const [mainCharacterName, setMainCharacterName] = useState("嚕嚕");
+  const [characterPick, setCharacterPick] = useState<NonNullable<StoryGenerationInput["character"]> | null>(null);
   const [childGender, setChildGender] = useState("any");
   const [genre, setGenre] = useState("Animals");
   const [length, setLength] = useState("short");
@@ -296,6 +297,12 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
   const applyKidProfile = useCallback((k: KidProfile) => {
     setAge(k.age);
     setMainCharacterName(k.name);
+    setCharacterPick({
+      id: k.id,
+      name: k.name,
+      type: "human child",
+      characterAge: k.age,
+    });
     setChildGender(k.gender === "boy" ? "boy" : k.gender === "girl" ? "girl" : "nonbinary");
     const base = k.interests.length ? `Interests: ${k.interests.join(", ")}` : "";
     setStoryInput(base.slice(0, STORY_INPUT_MAX_CHARS));
@@ -304,6 +311,13 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
 
   const applyCharacterProfile = useCallback((c: StoryCharacterProfile) => {
     setMainCharacterName(c.name);
+    setCharacterPick({
+      id: c.id,
+      name: c.name,
+      type: c.characterType || "story character",
+      characterAge: c.ageRange || null,
+      visualStyle: c.visualStyle,
+    });
     setChildGender("any");
     const parts = [
       c.characterType && `Type: ${c.characterType}`,
@@ -317,9 +331,23 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
     setActiveTab("create");
   }, []);
 
-  async function persistStory(text: string) {
+  function snapshotForSave() {
+    return {
+      id: characterPick?.id ?? null,
+      version: characterPick?.version ?? null,
+      name: mainCharacterName.trim() || characterPick?.name || "the listener",
+      type: characterPick?.type || (childGender === "any" ? "story character" : "human child"),
+      characterAge: characterPick?.characterAge ?? null,
+      visualStyle: characterPick?.visualStyle ?? null,
+      appearance: characterPick?.appearance ?? null,
+      referenceImageUrl: characterPick?.referenceImageUrl ?? null,
+    };
+  }
+
+  async function persistStory(text: string, visualBrief: unknown) {
     const trimmed = text.trim();
     if (!trimmed) throw new Error("Generate a story first.");
+    const snapshot = snapshotForSave();
     const saved = await saveStory({
       age,
       language,
@@ -329,6 +357,9 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
       length,
       title: `${mainCharacterName.trim() || "A new"} story`,
       story: trimmed,
+      characterId: snapshot.id,
+      characterSnapshot: snapshot,
+      visualBrief,
     });
     return saved && typeof saved.id === "string" ? saved.id : null;
   }
@@ -339,7 +370,7 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
     setBanner(null);
     const guidance = buildGuidance(storyInput, theme, mood, seriesMode, educationalGoal, moralLesson);
     try {
-      const text = await generateStory({
+      const generated = await generateStory({
         age,
         language,
         mainCharacterName,
@@ -348,14 +379,16 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
         length,
         title: `${mainCharacterName.trim() || "A new"} story`,
         storyInput: guidance,
+        character: snapshotForSave(),
       });
+      const text = generated.text;
       if (!text.trim()) {
         setBanner({ source: "story", message: "The story came back empty. Try again." });
         return;
       }
       trackEvent("story_generated", { genre, length, language });
       try {
-        const sid = await persistStory(text);
+        const sid = await persistStory(text, generated.visualBrief);
         if (!sid) {
           setBanner({
             source: "save",
@@ -584,6 +617,8 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
                 onRetryVoices={() => void fetchVoices()}
                 onAddKid={() => setKidModalOpen(true)}
                 onAddCharacter={() => setCharModalOpen(true)}
+                onSelectKid={applyKidProfile}
+                onSelectCharacter={applyCharacterProfile}
                 onCreate={() => void onGenerate()}
               />
             ) : null}

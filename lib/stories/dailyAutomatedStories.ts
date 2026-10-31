@@ -87,8 +87,8 @@ export async function runDailyAutomatedStories(now = new Date()): Promise<DailyS
     const p = presets[slot];
     const { saveTitle, ...genInput } = p;
     try {
-      const text = await generateStoryWithRetry(genInput, { retries: 2 });
-      const trimmed = text.trim();
+      const generated = await generateStoryWithRetry(genInput, { retries: 2 });
+      const trimmed = generated.text.trim();
       if (!trimmed) {
         errors.push({ slot, message: "Empty model output" });
         continue;
@@ -105,6 +105,7 @@ export async function runDailyAutomatedStories(now = new Date()): Promise<DailyS
             ? String(genInput.mainCharacterName)
             : null,
           childGender: genInput.childGender ? String(genInput.childGender) : null,
+          visualBrief: generated.visualBrief ?? undefined,
           dailyAutomated: true,
         },
       });

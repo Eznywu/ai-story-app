@@ -9,6 +9,14 @@ import { posterProviderTransportFailureMessage } from "@/lib/posters/posterProvi
 import { loadAntiRepeatLibraryContext } from "@/lib/stories/storyLibraryContext";
 import { normalizeChildGenderForStoryInput } from "@/lib/profiles/childGender";
 import { mockProvidersEnabled, mockStoryText } from "@/lib/providers/mockProviders";
+import { parseAudienceAge } from "@/lib/posters/audienceAge";
+import { buildCharacterSnapshot, type CharacterSnapshot } from "@/lib/posters/characterSnapshot";
+import {
+  deriveVisualBrief,
+  splitStoryAndBrief,
+  visualBriefInstructions,
+  type VisualBrief,
+} from "@/lib/posters/visualBrief";
 
 export function lengthHint(length: string) {
   if (length === "short") return "about 250-400 words";
@@ -127,10 +135,30 @@ function libraryAntiRepeatBlock(
   ].join("\n");
 }
 
-function buildPrompt(
+function characterBlock(character: CharacterSnapshot, isZh: boolean): string {
+  if (isZh) {
+    return [
+      `選定角色：${character.name}，是「${character.type}」。`,
+      character.characterAge ? `角色自己的年齡：${character.characterAge}。這和聽故事的孩子年齡是兩件事。` : "角色年齡未指定，不要把它改成聽故事的孩子。",
+      `外觀：顏色 ${character.appearance.colours}；比例 ${character.appearance.proportions}；服裝 ${character.appearance.clothing}；配件 ${character.appearance.accessories}。`,
+      "類型只改變場景、道具、光線和心情，不可把主角換成另一種生物。",
+    ].join("\n");
+  }
+  return [
+    `Selected character: ${character.name}, a ${character.type}.`,
+    character.characterAge
+      ? `The character's own age is ${character.characterAge}. That is separate from the listener's age.`
+      : "The character's age is unspecified. Do not replace it with the listener's age.",
+    `Appearance: colours ${character.appearance.colours}; proportions ${character.appearance.proportions}; clothing ${character.appearance.clothing}; accessories ${character.appearance.accessories}.`,
+    "Genre may change the setting, props, light, and mood. It must not change the protagonist's species or identity.",
+  ].join("\n");
+}
+
+export function buildStoryGenerationPrompt(
   input: ReturnType<typeof normalizeStoryInput>,
   freshnessSeed: string,
-  libraryContext: string
+  libraryContext: string,
+  character: CharacterSnapshot
 ) {
   const isZh = input.language.toLowerCase().includes("zh");
   const gh = genderHint(input);
@@ -149,6 +177,8 @@ function buildPrompt(
         : "",
       "語氣：像真實的睡前說故事的人，溫柔、安撫、慢慢說。",
       "格式要求：不要用標題或條列；句子短一點；多用重複句式讓寶寶安心；最後一句要很溫柔地收尾。",
+      characterBlock(character, true),
+      visualBriefInstructions(true),
       libraryBlock,
       freshness,
     ]
@@ -168,6 +198,8 @@ function buildPrompt(
       : "",
     "Tone: gentle, soothing, like a real bedtime storyteller. Calm pacing.",
     "Constraints: no headings or bullet points, short sentences, comforting repetition, end with a soft final line.",
+    characterBlock(character, false),
+    visualBriefInstructions(false),
     libraryBlock,
     freshness,
   ]
@@ -235,22 +267,70 @@ function fallbackStory(input: ReturnType<typeof normalizeStoryInput>) {
   return [pick(openers), pick(middles), pick(bridges), pick(closers)].join("\n");
 }
 
+export type GeneratedStory = {
+  text: string;
+  visualBrief: VisualBrief | null;
+};
+
+function characterFromRequest(body: StoryGenerationInput, name: string): CharacterSnapshot {
+  const character = body.character;
+  return buildCharacterSnapshot({
+    id: character?.id,
+    version: character?.version,
+    name: character?.name || name,
+    type: character?.type,
+    characterAge: character?.characterAge,
+    appearance: character?.appearance,
+    visualStyle: character?.visualStyle,
+    referenceImageUrl: character?.referenceImageUrl,
+    childGender: body.childGender,
+  });
+}
+
+function withDerivedBrief(
+  text: string,
+  body: StoryGenerationInput,
+  normalized: ReturnType<typeof normalizeStoryInput>
+): GeneratedStory {
+  const split = splitStoryAndBrief(text, parseAudienceAge(normalized.age).band);
+  const story = split.story.trim() ? split.story : text.trim();
+  const character = characterFromRequest(body, normalized.mainCharacterName);
+  return {
+    text: story,
+    visualBrief:
+      split.visualBrief ??
+      deriveVisualBrief({
+        title: normalized.title,
+        story,
+        genre: normalized.genre,
+        age: normalized.age,
+        character,
+      }),
+  };
+}
+
 export async function generateStoryWithRetry(
   body: StoryGenerationInput,
-  opts?: { retries?: number; userId?: string | null }
-) {
+  opts?: {
+    retries?: number;
+    userId?: string | null;
+    /** Test hook. Production leaves this unset and uses one model request. */
+    complete?: (prompt: string) => Promise<string>;
+  }
+): Promise<GeneratedStory> {
   const normalized = normalizeStoryInput(body);
   const validationError = validateStoryInput(normalized);
   if (validationError) {
     throw createError(validationError, 400);
   }
+  const character = characterFromRequest(body, normalized.mainCharacterName);
 
-  if (mockProvidersEnabled()) {
-    return mockStoryText(normalized);
+  if (mockProvidersEnabled() && !opts?.complete) {
+    return withDerivedBrief(mockStoryText(normalized), body, normalized);
   }
 
   const apiKey = process.env.OPENAI_API_KEY?.trim();
-  if (!apiKey) {
+  if (!opts?.complete && !apiKey) {
     throw createError(
       "Story generation needs an OpenAI API key. Set OPENAI_API_KEY and try again.",
       500
@@ -258,13 +338,15 @@ export async function generateStoryWithRetry(
   }
 
   const timeoutMs = providerTimeoutMs(Number(process.env.OPENAI_STORY_TIMEOUT_MS), 180_000);
-  const client = new OpenAI({
-    apiKey,
-    baseURL: getOpenAiBaseUrl(),
-    timeout: timeoutMs,
-    maxRetries: 0,
-    fetchOptions: { dispatcher: getPosterHttpDispatcher(timeoutMs) },
-  });
+  const client = opts?.complete
+    ? null
+    : new OpenAI({
+        apiKey: apiKey ?? "",
+        baseURL: getOpenAiBaseUrl(),
+        timeout: timeoutMs,
+        maxRetries: 0,
+        fetchOptions: { dispatcher: getPosterHttpDispatcher(timeoutMs) },
+      });
   const retries = Math.max(0, opts?.retries ?? 1);
   const models = (process.env.OPENAI_STORY_MODELS ?? "gpt-4o-mini")
     .split(",")
@@ -283,23 +365,34 @@ export async function generateStoryWithRetry(
 
   let attempt = 0;
   let lastError: unknown = null;
+  const band = parseAudienceAge(normalized.age).band;
   while (attempt <= retries) {
     try {
-      const prompt = buildPrompt(
+      const prompt = buildStoryGenerationPrompt(
         normalized,
         randomBytes(8).toString("hex"),
-        libraryContext
+        libraryContext,
+        character
       );
-      for (const model of models) {
-        const response = await client.responses.create({
-          model,
-          input: prompt,
-          max_output_tokens: outputTokenHint(normalized.length),
-          temperature,
-        });
-        if (response.output_text?.trim()) {
-          return response.output_text;
-        }
+      const raw = opts?.complete
+        ? await opts.complete(prompt)
+        : await (async () => {
+            if (!client) throw new Error("Story model is not configured");
+            for (const model of models) {
+              const response = await client.responses.create({
+                model,
+                input: prompt,
+                max_output_tokens: outputTokenHint(normalized.length),
+                temperature,
+              });
+              if (response.output_text?.trim()) return response.output_text;
+            }
+            return "";
+          })();
+      const split = splitStoryAndBrief(raw, band);
+      if (split.story.trim()) {
+        // A missing or invalid brief does not send the story request again.
+        return { text: split.story, visualBrief: split.visualBrief };
       }
       throw new Error("Model returned empty story output");
     } catch (error) {
@@ -311,7 +404,17 @@ export async function generateStoryWithRetry(
 
   const msg = getErrorMessage(lastError, "");
   if (posterProviderTransportFailureMessage(msg)) {
-    return fallbackStory(normalized);
+    const text = fallbackStory(normalized);
+    return {
+      text,
+      visualBrief: deriveVisualBrief({
+        title: normalized.title,
+        story: text,
+        genre: normalized.genre,
+        age: normalized.age,
+        character,
+      }),
+    };
   }
 
   throw lastError ?? new Error("Story generation failed");

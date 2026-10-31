@@ -1,3 +1,8 @@
+import { buildArtworkPrompt } from "@/lib/posters/artworkPrompt";
+import { parseAudienceAge } from "@/lib/posters/audienceAge";
+import { buildCharacterSnapshot } from "@/lib/posters/characterSnapshot";
+import { deriveVisualBrief } from "@/lib/posters/visualBrief";
+
 export const posterPromptConfig = {
   basePrompt: `
 Create a vertical illustrated children's story poster for "{title}" in the "{genre}" style. The poster must match the story's mood, setting, and emotional tone. Include at least 1 character and no more than 3 characters total. Make the characters the clear focal point, expressive, memorable, and appropriate for the story. Avoid crowded scenes and do not include extra background people. The environment should strongly reflect the genre atmosphere and support the narrative visually. Leave clean space for the title at the top. Use cinematic composition, rich storybook illustration, beautiful lighting, polished details, whimsical children's poster aesthetic, emotionally engaging, premium quality, no text, no watermark.
@@ -98,30 +103,27 @@ export function resolvePosterPromptGenre(genre?: string): PosterGenreKey {
   return "Bedtime Classic";
 }
 
-/** Keeps full image prompt within ~4k limits (e.g. DALL·E 3) alongside base + genre blocks. */
-const STORY_SUMMARY_MAX_CHARS = 1200;
-
+/**
+ * Compatibility wrapper. New artwork uses `buildArtworkPrompt`, which takes a
+ * character snapshot and a visual brief instead of the first 1,200 story characters.
+ */
 export function buildPosterPrompt(params: { title: string; genre?: string; story?: string }) {
-  const title = params.title?.trim() || "Happy Horse";
-  const genre = resolvePosterPromptGenre(params.genre);
-
-  const base = posterPromptConfig.basePrompt.replaceAll("{title}", title).replaceAll("{genre}", genre);
-
-  const genrePrompt = posterPromptConfig.genrePrompts[genre].replaceAll("{title}", title);
-
-  const enhancer = posterPromptConfig.styleEnhancers[genre];
-  const storyNorm = params.story?.trim().replace(/\s+/g, " ");
-  const storyBlock = storyNorm ? `Story summary: ${storyNorm.slice(0, STORY_SUMMARY_MAX_CHARS)}` : "";
-
-  return [base, genrePrompt, storyBlock, `Style enhancer: ${enhancer}.`, posterPromptConfig.consistencyAddon]
-    .filter(Boolean)
-    .join("\n\n");
+  return buildPosterImagePrompt(params);
 }
 
-/** Full image-model prompt including avoid-list (DALL·E / Imagen have no separate negative field). */
 export function buildPosterImagePrompt(params: { title: string; genre?: string; story?: string }): string {
-  return [
-    buildPosterPrompt(params),
-    `Avoid or minimize: ${posterPromptConfig.negativePrompt.replace(/\s+/g, " ").trim()}`,
-  ].join("\n\n");
+  const character = buildCharacterSnapshot({ name: "the listener", type: "story character" });
+  const audience = parseAudienceAge(null);
+  const brief = deriveVisualBrief({
+    title: params.title,
+    story: params.story,
+    genre: params.genre,
+    character,
+  });
+  return buildArtworkPrompt({
+    audience,
+    character,
+    brief,
+    genre: params.genre || brief.genre,
+  });
 }

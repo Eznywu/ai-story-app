@@ -15,7 +15,14 @@ export async function userOwnsMedia(
     where:
       kind === "audio"
         ? { userId, audioFilename: filename }
-        : { userId, posterFilename: filename },
+        : {
+            userId,
+            OR: [
+              { posterFilename: filename },
+              { illustrationFilename: filename },
+              { coverFilename: filename },
+            ],
+          },
     select: { id: true },
   });
   return Boolean(story);

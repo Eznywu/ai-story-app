@@ -15,8 +15,8 @@ export async function POST(req: Request) {
   if (auth.response) return auth.response;
   try {
     const body = (await req.json().catch(() => ({}))) as StoryGenerationInput;
-    const story = await generateStoryWithRetry(body, { retries: 1, userId: auth.user.id });
-    return NextResponse.json({ story });
+    const generated = await generateStoryWithRetry(body, { retries: 1, userId: auth.user.id });
+    return NextResponse.json({ story: generated.text, visualBrief: generated.visualBrief });
   } catch (err: unknown) {
     captureException(err, { route: "/api/story" });
     const message = getErrorMessage(err, "Unknown error");

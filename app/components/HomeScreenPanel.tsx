@@ -93,7 +93,7 @@ export function HomeScreenPanel({
       {featured ? (
         <article className="homeFeature">
           <button type="button" className="homeFeature__main" onClick={() => onOpenStory(featured)}>
-            <CoverThumb url={featured.posterUrl ?? null} />
+            <CoverThumb url={featured.coverUrl || featured.posterUrl || null} />
             <span className="homeFeature__text">
               <span className="homeFeature__title">{featured.title?.trim() || "Untitled story"}</span>
               <span className="homeFeature__meta">

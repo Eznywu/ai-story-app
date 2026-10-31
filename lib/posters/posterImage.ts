@@ -4,8 +4,15 @@ import { generatePosterPngFromOpenAI } from "@/lib/posters/openaiPoster";
 import { posterErrorLooksLikeContentBlocked, posterErrorLooksLikeMissingConfig } from "@/lib/posters/posterDiagnostics";
 import { isRecoverablePosterProviderConnectivityFailure } from "@/lib/posters/posterProviderErrors";
 import {
+  PRODUCTION_IMAGE_MODEL,
+  PRODUCTION_IMAGE_QUALITY,
+  PRODUCTION_IMAGE_SIZE,
+  selectedImageProvider,
+} from "@/lib/posters/artworkPricing";
+import type { ImageProviderResult } from "@/lib/posters/artworkService";
+import { encodeRgbaPng } from "@/lib/posters/pngEncode";
+import {
   mockPosterFallbackEnabled,
-  mockPosterPngBuffer,
   mockProvidersEnabled,
 } from "@/lib/providers/mockProviders";
 
@@ -21,136 +28,89 @@ function hasGeminiKey(): boolean {
   );
 }
 
+/** Stand-in square illustration. No provider is called. */
+export function mockIllustrationPng(): Buffer {
+  return encodeRgbaPng(128, 128, (x, y) => {
+    const dx = x - 64;
+    const dy = y - 72;
+    if (dx * dx + dy * dy < 26 * 26) return [193, 124, 99, 255];
+    if (y > 96) return [214, 190, 145, 255];
+    return [246, 241, 233, 255];
+  });
+}
+
 /**
- * Illustrated poster raster. Provider selection:
- * - `POSTER_IMAGE_PROVIDER=openai` — GPT scene + DALL·E (needs OPENAI_API_KEY)
- * - `POSTER_IMAGE_PROVIDER=gemini` — Gemini image API (needs Gemini key). Set `GEMINI_IMAGE_MODEL` to an Imagen id (`imagen-…`, `:predict`) or a native image model such as `gemini-2.5-flash-image` (“Nano Banana”, `:generateContent`).
- * - omit / `auto` — prefer OpenAI when OPENAI_API_KEY is set, else Gemini
+ * One illustration from the selected provider.
+ * Production does not fall through to a second provider.
  */
-export async function generatePosterPngBuffer(input: {
-  title: string;
-  story: string;
-  genre?: string;
-}): Promise<Buffer> {
+export async function generateOneIllustration(prompt: string): Promise<ImageProviderResult> {
   if (mockPosterFallbackEnabled()) {
     throw createError("OpenAI timed out or was blocked on the network.", 503);
   }
   if (mockProvidersEnabled()) {
     console.info("[poster] mock png");
-    return mockPosterPngBuffer();
+    return {
+      bytes: mockIllustrationPng(),
+      claimedMime: "image/png",
+      model: "mock",
+      quality: PRODUCTION_IMAGE_QUALITY,
+      provider: "mock",
+      size: PRODUCTION_IMAGE_SIZE,
+      usage: null,
+    };
   }
 
-  const rawProvider = process.env.POSTER_IMAGE_PROVIDER?.trim();
-  const mode = rawProvider?.toLowerCase();
-  const hasOpen = hasOpenAiKey();
-  const hasGemini = hasGeminiKey();
+  const provider = selectedImageProvider();
+  console.info("[poster] one provider", { provider, model: provider === "openai" ? PRODUCTION_IMAGE_MODEL : process.env.GEMINI_IMAGE_MODEL ?? "gemini-3.1-flash-lite-image" });
 
-  console.info("[poster] start", {
-    mode: mode || "auto",
-    primary: hasOpen ? "openai" : hasGemini ? "gemini" : "none",
-    hasOpenAIKey: hasOpen,
-    hasGeminiKey: hasGemini,
-    genre: input.genre ?? null,
-    storyChars: input.story.length,
-  });
-
-  if (mode === "gemini") {
-    if (!hasGemini) {
-      console.warn("[poster] event", { event: "missing_api_key", provider: "gemini" });
-      throw createError(
-        "POSTER_IMAGE_PROVIDER=gemini but no Gemini API key. Set GEMINI_API_KEY (or GOOGLE_API_KEY).",
-        500
-      );
+  if (provider === "gemini") {
+    if (!hasGeminiKey()) {
+      throw createError("POSTER_IMAGE_PROVIDER=gemini but no Gemini API key is set.", 500);
     }
-    console.info("[poster] invoke", { provider: "gemini", model: process.env.GEMINI_IMAGE_MODEL ?? "imagen-4.0-fast-generate-001" });
     try {
-      const buf = await generatePosterPngFromGemini(input);
-      console.info("[poster] ok", { provider: "gemini", bytes: buf.length });
-      return buf;
-    } catch (e: unknown) {
-      const msg = getErrorMessage(e, "");
-      if (posterErrorLooksLikeContentBlocked(getErrorStatus(e, 0), msg)) {
-        console.warn("[poster] event", { event: "content_block", provider: "gemini" });
-      } else if (isRecoverablePosterProviderConnectivityFailure(e)) {
-        console.warn("[poster] event", { event: "gemini_transport", provider: "gemini" });
-      }
-      throw e;
+      const image = await generatePosterPngFromGemini({ prompt });
+      return {
+        bytes: image.bytes,
+        claimedMime: "image/png",
+        model: image.model,
+        quality: "1K",
+        provider: "gemini",
+        size: image.size,
+        usage: null,
+      };
+    } catch (error: unknown) {
+      logProviderFailure("gemini", error);
+      throw error;
     }
   }
 
-  if (mode === "openai") {
-    console.info("[poster] invoke", { provider: "openai", forced: true });
-    try {
-      const buf = await generatePosterPngFromOpenAI(input);
-      console.info("[poster] ok", { provider: "openai", bytes: buf.length });
-      return buf;
-    } catch (e: unknown) {
-      const msg = getErrorMessage(e, "");
-      if (posterErrorLooksLikeContentBlocked(getErrorStatus(e, 0), msg)) {
-        console.warn("[poster] event", { event: "content_block", provider: "openai" });
-      } else if (isRecoverablePosterProviderConnectivityFailure(e)) {
-        console.warn("[poster] event", { event: "openai_transport", provider: "openai" });
-      }
-      throw e;
-    }
+  if (!hasOpenAiKey()) {
+    throw createError("Illustrated artwork needs OPENAI_API_KEY for the selected image provider.", 500);
   }
+  try {
+    const image = await generatePosterPngFromOpenAI({ prompt });
+    return {
+      bytes: image.bytes,
+      claimedMime: "image/png",
+      model: image.model,
+      quality: image.quality,
+      provider: "openai",
+      size: image.size,
+      usage: image.usage,
+    };
+  } catch (error: unknown) {
+    logProviderFailure("openai", error);
+    throw error;
+  }
+}
 
-  // auto
-  if (hasOpen) {
-    try {
-      console.info("[poster] invoke", { provider: "openai", mode: "auto" });
-      const buf = await generatePosterPngFromOpenAI(input);
-      console.info("[poster] ok", { provider: "openai", bytes: buf.length });
-      return buf;
-    } catch (e: unknown) {
-      if (!hasGemini || !isRecoverablePosterProviderConnectivityFailure(e)) {
-        const msg = getErrorMessage(e, "");
-        if (posterErrorLooksLikeContentBlocked(getErrorStatus(e, 0), msg)) {
-          console.warn("[poster] event", { event: "content_block", provider: "openai", mode: "auto" });
-        } else if (posterErrorLooksLikeMissingConfig(msg)) {
-          console.warn("[poster] event", { event: "missing_config", provider: "openai" });
-        }
-        throw e;
-      }
-      console.warn("[poster] event", {
-        event: "openai_transport_fallback_gemini",
-        detail: getErrorMessage(e, "").slice(0, 120),
-      });
-      try {
-        const buf = await generatePosterPngFromGemini(input);
-        console.info("[poster] ok", { provider: "gemini", via: "fallback_after_openai", bytes: buf.length });
-        return buf;
-      } catch (e2: unknown) {
-        console.error("[poster] event", { event: "both_providers_failed", mode: "auto" });
-        const o = getErrorMessage(e, "OpenAI failed");
-        const g = getErrorMessage(e2, "Gemini failed");
-        throw createError(
-          `Poster image failed after OpenAI and Gemini. OpenAI: ${o} · Gemini: ${g}`,
-          502
-        );
-      }
-    }
+function logProviderFailure(provider: string, error: unknown) {
+  const message = getErrorMessage(error, "");
+  if (posterErrorLooksLikeContentBlocked(getErrorStatus(error, 0), message)) {
+    console.warn("[poster] event", { event: "content_block", provider });
+  } else if (posterErrorLooksLikeMissingConfig(message)) {
+    console.warn("[poster] event", { event: "missing_config", provider });
+  } else if (isRecoverablePosterProviderConnectivityFailure(error)) {
+    console.warn("[poster] event", { event: "provider_transport", provider });
   }
-  if (hasGemini) {
-    console.info("[poster] invoke", { provider: "gemini", mode: "auto" });
-    try {
-      const buf = await generatePosterPngFromGemini(input);
-      console.info("[poster] ok", { provider: "gemini", bytes: buf.length });
-      return buf;
-    } catch (e: unknown) {
-      const msg = getErrorMessage(e, "");
-      if (posterErrorLooksLikeContentBlocked(getErrorStatus(e, 0), msg)) {
-        console.warn("[poster] event", { event: "content_block", provider: "gemini", mode: "auto" });
-      } else if (isRecoverablePosterProviderConnectivityFailure(e)) {
-        console.warn("[poster] event", { event: "gemini_transport", provider: "gemini", mode: "auto" });
-      }
-      throw e;
-    }
-  }
-
-  console.warn("[poster] event", { event: "missing_api_key", provider: "any" });
-  throw createError(
-    "Add OPENAI_API_KEY for illustrated posters (recommended), or set GEMINI_API_KEY and optionally POSTER_IMAGE_PROVIDER=gemini.",
-    500
-  );
 }

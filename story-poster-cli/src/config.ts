@@ -16,7 +16,7 @@ export function loadGeminiKey(): string {
 
 export const creativeModel = process.env.OPENAI_CREATIVE_MODEL ?? "gpt-4o";
 
-export const openaiPosterModel = process.env.OPENAI_POSTER_MODEL ?? "gpt-image-1.5";
+export const openaiPosterModel = process.env.OPENAI_POSTER_MODEL ?? "gpt-image-2.5-flare";
 
 const posterSizeRaw = process.env.OPENAI_POSTER_SIZE?.trim();
 export const openaiPosterSize: "1024x1024" | "1024x1536" | "1536x1024" | "auto" =
@@ -25,7 +25,7 @@ export const openaiPosterSize: "1024x1024" | "1024x1536" | "1536x1024" | "auto" 
   posterSizeRaw === "1536x1024" ||
   posterSizeRaw === "auto"
     ? posterSizeRaw
-    : "1024x1536";
+    : "1024x1024";
 
 const posterQualityRaw = process.env.OPENAI_POSTER_QUALITY?.trim();
 export const openaiPosterQuality: "low" | "medium" | "high" | "auto" =
@@ -34,10 +34,10 @@ export const openaiPosterQuality: "low" | "medium" | "high" | "auto" =
   posterQualityRaw === "high" ||
   posterQualityRaw === "auto"
     ? posterQualityRaw
-    : "high";
+    : "low";
 
-export const geminiNativeModel = process.env.GEMINI_NATIVE_IMAGE_MODEL ?? "gemini-2.5-flash-image";
-export const geminiNativeAspectRatio = process.env.GEMINI_NATIVE_IMAGE_ASPECT_RATIO ?? "3:4";
+export const geminiNativeModel = process.env.GEMINI_NATIVE_IMAGE_MODEL ?? "gemini-3.1-flash-lite-image";
+export const geminiNativeAspectRatio = process.env.GEMINI_NATIVE_IMAGE_ASPECT_RATIO ?? "1:1";
 export const geminiNativeImageSize = process.env.GEMINI_NATIVE_IMAGE_SIZE ?? "2K";
 
 /** `native` = gemini-*-image generateContent; `imagen` = models.generateImages */

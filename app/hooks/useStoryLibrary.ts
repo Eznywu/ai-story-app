@@ -28,6 +28,15 @@ function toLibraryItem(raw: Record<string, unknown>): StoryLibraryItem {
     createdAt: String(raw?.createdAt ?? ""),
     dailyAutomated: Boolean(raw?.dailyAutomated),
     posterUrl,
+    coverUrl:
+      raw?.coverUrl != null && String(raw.coverUrl).trim() !== "" ? String(raw.coverUrl) : null,
+    illustrationUrl:
+      raw?.illustrationUrl != null && String(raw.illustrationUrl).trim() !== ""
+        ? String(raw.illustrationUrl)
+        : null,
+    artworkStatus: raw?.artworkStatus ? String(raw.artworkStatus) : null,
+    posterCaption: raw?.posterCaption ? String(raw.posterCaption) : null,
+    dedication: raw?.dedication ? String(raw.dedication) : null,
     audioUrl:
       raw?.audioUrl != null && String(raw.audioUrl).trim() !== "" ? String(raw.audioUrl) : null,
   };
@@ -89,6 +98,9 @@ export function useStoryLibrary() {
     title: string;
     story: string;
     id?: string | null;
+    characterId?: string | null;
+    characterSnapshot?: unknown;
+    visualBrief?: unknown;
   }) {
     setIsSaving(true);
     try {
@@ -105,6 +117,9 @@ export function useStoryLibrary() {
           title: input.title,
           text: input.story,
           ...(input.id ? { id: input.id } : {}),
+          ...(input.characterId ? { characterId: input.characterId } : {}),
+          ...(input.characterSnapshot ? { characterSnapshot: input.characterSnapshot } : {}),
+          ...(input.visualBrief ? { visualBrief: input.visualBrief } : {}),
         }),
       });
       const data = await res.json().catch(() => ({}));

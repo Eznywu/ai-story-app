@@ -17,16 +17,34 @@ function withMedia<
     audioFilename: string | null;
     posterUrl: string | null;
     audioUrl: string | null;
+    illustrationFilename?: string | null;
+    illustrationUrl?: string | null;
+    coverFilename?: string | null;
+    coverUrl?: string | null;
   },
 >(row: T) {
-  const { posterFilename, audioFilename, posterUrl, audioUrl, ...rest } = row;
+  const {
+    posterFilename,
+    audioFilename,
+    posterUrl,
+    audioUrl,
+    illustrationFilename,
+    illustrationUrl,
+    coverFilename,
+    coverUrl,
+    ...rest
+  } = row;
+  const fileUrl = (filename: string | null | undefined) =>
+    filename ? `/api/posters/${encodeURIComponent(filename)}` : null;
   return {
     ...rest,
     posterFilename,
     audioFilename,
-    posterUrl:
-      posterUrl?.trim() ||
-      (posterFilename ? `/api/posters/${encodeURIComponent(posterFilename)}` : null),
+    illustrationFilename: illustrationFilename ?? null,
+    coverFilename: coverFilename ?? null,
+    illustrationUrl: illustrationUrl?.trim() || fileUrl(illustrationFilename),
+    coverUrl: coverUrl?.trim() || fileUrl(coverFilename),
+    posterUrl: posterUrl?.trim() || fileUrl(posterFilename),
     audioUrl:
       audioUrl?.trim() ||
       (audioFilename ? `/api/audio/${encodeURIComponent(audioFilename)}` : null),
@@ -74,6 +92,10 @@ export async function POST(req: Request) {
       ? String(body.mainCharacterName).trim()
       : null;
     const childGender = parseChildGenderFromClient(body.childGender);
+    const characterSnapshot = body.characterSnapshot ?? null;
+    const visualBrief = body.visualBrief ?? null;
+    const characterId =
+      typeof body.characterId === "string" && body.characterId.trim() ? body.characterId.trim() : null;
 
     if (!genre || !length || !text) {
       return jsonNoStore(
@@ -111,6 +133,8 @@ export async function POST(req: Request) {
           language,
           mainCharacterName,
           childGender,
+          ...(characterSnapshot ? { characterId, characterSnapshot } : {}),
+          ...(visualBrief ? { visualBrief } : {}),
           ...(textChanged ? { audioFilename: null, audioUrl: null } : {}),
         },
       });
@@ -128,6 +152,9 @@ export async function POST(req: Request) {
         language,
         mainCharacterName,
         childGender,
+        characterId,
+        characterSnapshot: characterSnapshot ?? undefined,
+        visualBrief: visualBrief ?? undefined,
       },
     });
 

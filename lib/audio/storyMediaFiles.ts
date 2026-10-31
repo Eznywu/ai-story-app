@@ -113,6 +113,10 @@ export async function removeStoryMediaFiles(story: {
   audioUrl?: string | null;
   posterFilename?: string | null;
   posterUrl?: string | null;
+  illustrationFilename?: string | null;
+  illustrationUrl?: string | null;
+  coverFilename?: string | null;
+  coverUrl?: string | null;
 }) {
   await deleteMediaReference({
     folder: "audio",
@@ -123,6 +127,16 @@ export async function removeStoryMediaFiles(story: {
     folder: "posters",
     filename: story.posterFilename,
     url: story.posterUrl,
+  });
+  await deleteMediaReference({
+    folder: "posters",
+    filename: story.illustrationFilename,
+    url: story.illustrationUrl,
+  });
+  await deleteMediaReference({
+    folder: "posters",
+    filename: story.coverFilename,
+    url: story.coverUrl,
   });
 }
 

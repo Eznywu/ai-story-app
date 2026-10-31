@@ -155,7 +155,7 @@ export async function compareProviderOutputs(params: {
       {
         role: "system",
         content:
-          "You compare two illustration pipelines (OpenAI GPT Image vs Gemini/Imagen-class) based on prompts and creative intent only — you cannot see pixels. Give 2 short paragraphs: (1) what each prompt likely emphasizes, (2) what to watch for when reviewing the saved PNGs. Be practical, not hype. No markdown headings.",
+          "You compare two illustration prompts only. You cannot see pixels. This is prompt comparison, not visual QA. Give 2 short paragraphs: (1) what each prompt likely emphasizes, (2) what a person would still need to check by looking at the pictures. Be practical, not hype. No markdown headings.",
       },
       {
         role: "user",
