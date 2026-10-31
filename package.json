@@ -10,7 +10,7 @@
     "start": "next start",
     "postinstall": "prisma generate",
     "lint": "eslint",
-    "test": "tsx --test tests/narration/*.test.ts",
+    "test": "tsx --test tests/*.test.ts tests/narration/*.test.ts",
     "narration:benchmark": "tsx scripts/run-narration-benchmark.ts",
     "narration:compare": "tsx scripts/compare-tts-configs.ts",
     "narration:weekly": "tsx scripts/narration-weekly-review.ts",

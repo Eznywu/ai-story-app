@@ -3378,14 +3378,30 @@ textarea::placeholder {
   border-color: #f2c94c;
 }
 
-.quietSheet {
+dialog.quietSheet {
+  display: none;
   position: fixed;
   inset: 0;
   z-index: 80;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: #fff;
   background: rgba(6, 10, 24, 0.62);
+}
+
+dialog.quietSheet[open] {
   display: flex;
   align-items: flex-end;
   justify-content: center;
+}
+
+dialog.quietSheet::backdrop {
+  background: transparent;
 }
 
 .quietSheet__panel {
@@ -3427,11 +3443,25 @@ textarea::placeholder {
   min-width: 44px;
   padding: 0 8px;
   border: 0;
+  border-radius: 10px;
   background: transparent;
   color: #d5dcf2;
   font-size: 1rem;
   font-weight: 650;
   cursor: pointer;
+}
+
+.quietSheet__panel:focus {
+  outline: none;
+}
+
+.quietSheet button:focus-visible,
+.quietSheet a:focus-visible,
+.quietSheet input:focus-visible,
+.quietSheet select:focus-visible,
+.quietSheet textarea:focus-visible {
+  outline: 2px solid #f2c94c;
+  outline-offset: 2px;
 }
 
 .sheetAction {
