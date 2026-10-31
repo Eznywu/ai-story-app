@@ -735,7 +735,10 @@ textarea::placeholder {
 }
 
 .homeTabBar__btn {
+  position: relative;
+  container-type: inline-size;
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -776,6 +779,22 @@ textarea::placeholder {
   text-align: center;
   max-width: 100%;
   padding: 0 4px;
+  overflow-wrap: normal;
+  word-break: keep-all;
+  white-space: nowrap;
+}
+
+@container (max-width: 5.4rem) {
+  .homeTabBar__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+  }
 }
 
 .homeTabBar__btn--active {
@@ -3164,7 +3183,7 @@ textarea::placeholder {
 
 .createThemes {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 6.75rem), 1fr));
   gap: 10px;
 }
 
@@ -3204,7 +3223,9 @@ textarea::placeholder {
   font-weight: 650;
   line-height: 1.15;
   text-align: center;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  word-break: keep-all;
+  white-space: nowrap;
 }
 
 .createLink {
@@ -3226,8 +3247,8 @@ textarea::placeholder {
 }
 
 .createLength {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   padding: 4px;
   border-radius: 14px;
@@ -3236,6 +3257,7 @@ textarea::placeholder {
 }
 
 .createLength__opt {
+  flex: 1 1 5.5rem;
   min-height: 44px;
   border: 0;
   border-radius: 11px;
@@ -3244,6 +3266,9 @@ textarea::placeholder {
   font-size: 1rem;
   font-weight: 650;
   cursor: pointer;
+  overflow-wrap: normal;
+  word-break: keep-all;
+  white-space: nowrap;
 }
 
 .createLength__opt--on {
@@ -4879,5 +4904,47 @@ select,
     gap: 0.5rem;
     padding: 0.7rem 0.85rem;
   }
+}
+
+/* Whole words only. Large text reflows controls instead of splitting a word. */
+html,
+body,
+button,
+a,
+h1,
+h2,
+h3,
+p,
+span,
+label,
+li,
+input,
+textarea {
+  overflow-wrap: normal;
+  word-break: keep-all;
+}
+
+.createRow__title,
+.createTheme__label,
+.listenTitle,
+.homeFeature__title,
+.homeRecent__title,
+.storyCard__title,
+.profileRow__title,
+.container,
+.onboardingCard,
+.legalDoc,
+.signInEmail,
+.libraryTitle,
+.libraryMeta {
+  overflow-wrap: normal;
+  word-break: keep-all;
+}
+
+.homeFeature__title,
+.homeRecent__title,
+.storyCard__title,
+.listenTitle {
+  white-space: normal;
 }
 
