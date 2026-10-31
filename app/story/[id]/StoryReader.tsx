@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import "@/app/page.css";
+import { BrandMark } from "@/app/components/BrandMark";
 import { QuietSheet } from "@/app/components/QuietSheet";
 import { TtsControls } from "@/app/components/TtsControls";
 import { friendlyVoiceName, languageLabel } from "@/app/components/voiceLabel";
@@ -144,6 +145,7 @@ export function StoryReader({ storyId }: { storyId: string }) {
   const [narrationOpen, setNarrationOpen] = useState(false);
   const [scriptOpen, setScriptOpen] = useState(false);
   const [speedOpen, setSpeedOpen] = useState(false);
+  const [readScale, setReadScale] = useState(0);
 
   const language = story?.language?.trim() || "zh-Hant";
   const {
@@ -210,6 +212,28 @@ export function StoryReader({ storyId }: { storyId: string }) {
     const absolute = new URL(savedAudioUrl, window.location.origin).href;
     if (audio.src !== absolute) audio.src = savedAudioUrl;
   }, [savedAudioUrl]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    function remember() {
+      if (!audio || !Number.isFinite(audio.duration) || audio.duration <= 0) return;
+      try {
+        sessionStorage.setItem(
+          `happy-horse.playback.${storyId}`,
+          JSON.stringify({ t: audio.currentTime, d: audio.duration })
+        );
+      } catch {
+        /* ignore private mode */
+      }
+    }
+    audio.addEventListener("timeupdate", remember);
+    audio.addEventListener("pause", remember);
+    return () => {
+      audio.removeEventListener("timeupdate", remember);
+      audio.removeEventListener("pause", remember);
+    };
+  }, [savedAudioUrl, storyId]);
 
   const generatePoster = useCallback(async () => {
     if (!story?.text.trim()) return;
@@ -385,14 +409,17 @@ export function StoryReader({ storyId }: { storyId: string }) {
     downloadPosterPng(blob, title);
   }
 
-  const title = story?.title?.trim() || (loading ? "Opening story…" : "Bedtime story");
+  const title = story?.title?.trim() || (loading ? "Opening story…" : "Story");
   const childName = story?.mainCharacterName?.trim() || "";
   const narratorVoice = voices.find((voice) => voice.id === selectedVoiceId);
-  const narratorName = friendlyVoiceName(narratorVoice);
-  const spokenLanguage = languageLabel(language);
+  const recordedVoice = voices.find((voice) => voice.id === story?.audioVoiceId);
+  const shownVoice = savedAudioUrl && story?.audioVoiceId ? recordedVoice : narratorVoice;
+  const shownName =
+    friendlyVoiceName(shownVoice) || (savedAudioUrl && story?.audioVoiceId ? "Saved narrator" : friendlyVoiceName(narratorVoice));
+  const spokenLanguage = languageLabel(story?.audioLanguage || language);
   const creditLine = [
     childName ? `For ${childName}` : "",
-    narratorName && spokenLanguage ? `${narratorName} in ${spokenLanguage}` : narratorName || spokenLanguage,
+    shownName && spokenLanguage ? `${shownName} in ${spokenLanguage}` : shownName || spokenLanguage,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -408,12 +435,13 @@ export function StoryReader({ storyId }: { storyId: string }) {
   let playLabel = "Play";
   if (isMakingMp3) playLabel = "Preparing narration";
   else if (playing) playLabel = "Pause";
-  else if (!savedAudioUrl) playLabel = "Play";
+  else if (!savedAudioUrl) playLabel = "Prepare narration";
 
   let statusText = "";
   if (isMakingMp3) statusText = "Preparing narration";
   else if (playing) statusText = "Playing";
   else if (audioIdentity === "stale") statusText = "Older recording. Regenerate narration to use the current voice setup.";
+  else if (!savedAudioUrl) statusText = "Narration isn't ready yet";
   else if (story && !loadError) statusText = "Ready to play";
 
   return (
@@ -464,9 +492,9 @@ export function StoryReader({ storyId }: { storyId: string }) {
               />
             ) : (
               <div className="listenCover__art" role="img" aria-label={story?.genre ? `${story.genre} cover` : "Story cover"}>
-                <span className="listenCover__moon" aria-hidden />
+                <BrandMark variant="onDark" className="listenCover__mark" label={null} />
                 <span className="listenCover__caption">
-                  {poster.status === "generating" || (loading && !loadError) ? "Painting the cover…" : story?.genre || "Bedtime"}
+                  {poster.status === "generating" || (loading && !loadError) ? "Painting the cover…" : story?.genre || "Story"}
                 </span>
               </div>
             )}
@@ -543,7 +571,7 @@ export function StoryReader({ storyId }: { storyId: string }) {
             </button>
             <button
               type="button"
-              className="listenPlay"
+              className={`listenPlay${!savedAudioUrl && !playing ? " listenPlay--prepare" : ""}`}
               onClick={() => void onTogglePlay()}
               disabled={!story || isMakingMp3 || Boolean(loadError)}
               aria-label={playLabel}
@@ -553,8 +581,10 @@ export function StoryReader({ storyId }: { storyId: string }) {
                 <span className="listenSpinner" />
               ) : playing ? (
                 <span className="listenPause" aria-hidden />
-              ) : (
+              ) : savedAudioUrl ? (
                 <span className="listenTriangle" aria-hidden />
+              ) : (
+                <span className="listenPrepare">Prepare narration</span>
               )}
             </button>
             <button
@@ -621,7 +651,19 @@ export function StoryReader({ storyId }: { storyId: string }) {
               <IconChevron down={!scriptOpen} />
             </button>
             {scriptOpen ? (
-              <div className="listenScript__body">
+              <div
+                className="listenScript__body"
+                style={{ ["--read-size" as string]: ["1.125rem", "1.25rem", "1.45rem"][readScale] }}
+              >
+                <div className="listenReadTools">
+                  <span>Text size</span>
+                  <button type="button" onClick={() => setReadScale((size) => Math.max(0, size - 1))} disabled={readScale === 0} aria-label="Smaller text">
+                    A−
+                  </button>
+                  <button type="button" onClick={() => setReadScale((size) => Math.min(2, size + 1))} disabled={readScale === 2} aria-label="Larger text">
+                    A+
+                  </button>
+                </div>
                 {loading ? <p className="listenHint">Loading the script…</p> : null}
                 {story?.text ? <p className="listenScript__text">{story.text}</p> : null}
                 {!loading && !story?.text ? <p className="listenHint">This story has no script yet.</p> : null}
@@ -638,7 +680,26 @@ export function StoryReader({ storyId }: { storyId: string }) {
             onPause={() => setPlaying(false)}
             onEnded={() => setPlaying(false)}
             onTimeUpdate={(event) => setProgress(event.currentTarget.currentTime)}
-            onLoadedMetadata={(event) => setDuration(event.currentTarget.duration || 0)}
+            onLoadedMetadata={(event) => {
+              const audio = event.currentTarget;
+              const nextDuration = audio.duration || 0;
+              setDuration(nextDuration);
+              try {
+                const raw = sessionStorage.getItem(`happy-horse.playback.${storyId}`);
+                const parsed = raw ? (JSON.parse(raw) as { t?: number }) : null;
+                if (
+                  parsed &&
+                  typeof parsed.t === "number" &&
+                  parsed.t > 1 &&
+                  nextDuration > parsed.t + 1
+                ) {
+                  audio.currentTime = parsed.t;
+                  setProgress(parsed.t);
+                }
+              } catch {
+                /* ignore */
+              }
+            }}
             onDurationChange={(event) => setDuration(event.currentTarget.duration || 0)}
           />
         </div>

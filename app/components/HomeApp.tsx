@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import "@/app/page.css";
 import { AppChromeBar } from "@/app/components/AppChromeBar";
@@ -34,16 +34,16 @@ import { useAuthUser } from "@/app/components/RequireAuth";
 
 export type HomeUiMode = "responsive" | "mobile" | "desktop";
 
-function bannerSourceLabel(source: AppBannerSource): string {
+function warmBanner(source: AppBannerSource): string {
   switch (source) {
     case "story":
-      return "Story";
+      return "We couldn't write the story. Your choices are still here.";
     case "save":
-      return "Save";
+      return "We couldn't save the story. Your choices are still here.";
     case "tts":
-      return "Audio";
+      return "We couldn't prepare the narration. You can try again.";
     case "poster":
-      return "Poster";
+      return "We couldn't make the cover. The story is still here.";
   }
 }
 
@@ -73,6 +73,59 @@ type Props = {
   uiMode?: HomeUiMode;
 };
 
+const CREATE_DRAFT_KEY = "happy-horse.createDraft.v1";
+
+type CreateDraft = {
+  age: string;
+  language: string;
+  mainCharacterName: string;
+  childGender: string;
+  genre: string;
+  length: string;
+  storyInput: string;
+  theme: string;
+  mood: string;
+  seriesMode: "one_shot" | "series";
+  educationalGoal: string;
+  moralLesson: string;
+  selectedVoiceId: string;
+};
+
+function loadCreateDraft(): CreateDraft | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(CREATE_DRAFT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<CreateDraft>;
+    if (!parsed || typeof parsed !== "object") return null;
+    return {
+      age: String(parsed.age || ""),
+      language: String(parsed.language || ""),
+      mainCharacterName: String(parsed.mainCharacterName || ""),
+      childGender: String(parsed.childGender || ""),
+      genre: String(parsed.genre || ""),
+      length: String(parsed.length || ""),
+      storyInput: String(parsed.storyInput || ""),
+      theme: String(parsed.theme || ""),
+      mood: String(parsed.mood || ""),
+      seriesMode: parsed.seriesMode === "series" ? "series" : "one_shot",
+      educationalGoal: String(parsed.educationalGoal || ""),
+      moralLesson: String(parsed.moralLesson || ""),
+      selectedVoiceId: String(parsed.selectedVoiceId || ""),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function saveCreateDraft(draft: CreateDraft) {
+  try {
+    localStorage.setItem(CREATE_DRAFT_KEY, JSON.stringify(draft));
+  } catch {
+    /* private mode */
+  }
+}
+
 export function HomeApp({ uiMode = "responsive" }: Props) {
   const router = useRouter();
   const { user, authEnabled } = useAuthUser();
@@ -89,13 +142,16 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
   const [educationalGoal, setEducationalGoal] = useState("");
   const [moralLesson, setMoralLesson] = useState("");
   const [banner, setBanner] = useState<AppBannerError | null>(null);
-  const [showEntry, setShowEntry] = useState(true);
+  const [gateReady, setGateReady] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingMode, setOnboardingMode] = useState<"setup" | "returning">("setup");
   const [activeTab, setActiveTab] = useState<HomeTabId>("home");
   const [kidModalOpen, setKidModalOpen] = useState(false);
   const [charModalOpen, setCharModalOpen] = useState(false);
 
   const { isGenerating, generateStory } = useStoryGeneration();
+  const generateLock = useRef(false);
   const {
     library,
     loadingLibrary,
@@ -132,10 +188,28 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
       tab === "home" || tab === "create" || tab === "library" || tab === "profile" ? tab : null;
     if (explicitTab) setActiveTab(explicitTab);
     const onboarding = loadOnboardingState(user.id);
-    setShowOnboarding(!onboarding.completed);
+    setShowWelcome(!onboarding.completed);
+    setShowOnboarding(false);
+    setGateReady(true);
+    const draft = loadCreateDraft();
+    if (draft) {
+      if (draft.age) setAge(draft.age);
+      if (draft.language) setLanguage(draft.language);
+      if (draft.mainCharacterName) setMainCharacterName(draft.mainCharacterName);
+      if (draft.childGender) setChildGender(draft.childGender);
+      if (draft.genre) setGenre(draft.genre);
+      if (draft.length) setLength(draft.length);
+      if (typeof draft.storyInput === "string") setStoryInput(draft.storyInput);
+      if (typeof draft.theme === "string") setTheme(draft.theme);
+      if (typeof draft.mood === "string") setMood(draft.mood);
+      if (draft.seriesMode === "series" || draft.seriesMode === "one_shot") setSeriesMode(draft.seriesMode);
+      if (typeof draft.educationalGoal === "string") setEducationalGoal(draft.educationalGoal);
+      if (typeof draft.moralLesson === "string") setMoralLesson(draft.moralLesson);
+      if (draft.selectedVoiceId) setSelectedVoiceId(draft.selectedVoiceId);
+    }
     // A saved onboarding intent (for example "create a story") must not override
     // an explicit ?tab= link such as the story page's back-to-library control.
-    if (!explicitTab) applyOnboardingIntent(onboarding.selectedIntent ?? null);
+    if (!explicitTab && onboarding.completed) applyOnboardingIntent(onboarding.selectedIntent ?? null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user.id]);
 
@@ -143,6 +217,70 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
     const line = mainCharacterName.trim() ? `${mainCharacterName.trim()} · ${genre}` : null;
     setDraftSummary(line);
   }, [mainCharacterName, genre, setDraftSummary]);
+
+  useEffect(() => {
+    document.documentElement.lang = language.toLowerCase().startsWith("zh") ? "zh-Hant" : "en";
+  }, [language]);
+
+  useEffect(() => {
+    if (!gateReady) return;
+    saveCreateDraft({
+      age,
+      language,
+      mainCharacterName,
+      childGender,
+      genre,
+      length,
+      storyInput,
+      theme,
+      mood,
+      seriesMode,
+      educationalGoal,
+      moralLesson,
+      selectedVoiceId,
+    });
+  }, [
+    age,
+    childGender,
+    educationalGoal,
+    gateReady,
+    genre,
+    language,
+    length,
+    mainCharacterName,
+    mood,
+    moralLesson,
+    selectedVoiceId,
+    seriesMode,
+    storyInput,
+    theme,
+  ]);
+
+  useEffect(() => {
+    if (!gateReady || showWelcome || showOnboarding) return;
+    const key = `happy-horse.scroll.${activeTab}`;
+    const scroller = document.querySelector(".overlay--withTabs");
+    const deviceScrolls =
+      scroller instanceof HTMLElement && scroller.scrollHeight > scroller.clientHeight + 8;
+    const saved = Number(sessionStorage.getItem(key) || "0");
+    if (Number.isFinite(saved) && saved > 0) {
+      requestAnimationFrame(() => {
+        if (deviceScrolls && scroller instanceof HTMLElement) scroller.scrollTop = saved;
+        else window.scrollTo(0, saved);
+      });
+    }
+    function persist() {
+      const top = deviceScrolls && scroller instanceof HTMLElement ? scroller.scrollTop : window.scrollY;
+      sessionStorage.setItem(key, String(top));
+    }
+    window.addEventListener("scroll", persist, { passive: true });
+    scroller?.addEventListener("scroll", persist, { passive: true });
+    return () => {
+      persist();
+      window.removeEventListener("scroll", persist);
+      scroller?.removeEventListener("scroll", persist);
+    };
+  }, [activeTab, gateReady, showOnboarding, showWelcome]);
 
   function openStory(id: string, play = false) {
     router.push(play ? `/story/${id}?play=1` : `/story/${id}`);
@@ -189,13 +327,15 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
       childGender,
       genre,
       length,
-      title: `${mainCharacterName.trim() || "Bedtime"} story`,
+      title: `${mainCharacterName.trim() || "A new"} story`,
       story: trimmed,
     });
     return saved && typeof saved.id === "string" ? saved.id : null;
   }
 
   async function onGenerate() {
+    if (generateLock.current || isGenerating || isSaving) return;
+    generateLock.current = true;
     setBanner(null);
     const guidance = buildGuidance(storyInput, theme, mood, seriesMode, educationalGoal, moralLesson);
     try {
@@ -206,7 +346,7 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
         childGender,
         genre,
         length,
-        title: `${mainCharacterName.trim() || "Bedtime"} story`,
+        title: `${mainCharacterName.trim() || "A new"} story`,
         storyInput: guidance,
       });
       if (!text.trim()) {
@@ -236,6 +376,8 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
         source: "story",
         message: getErrorMessage(e, "Failed to generate story."),
       });
+    } finally {
+      generateLock.current = false;
     }
   }
 
@@ -297,6 +439,10 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
     }
   }
 
+  if (!gateReady) {
+    return <main className="pageRoot" aria-busy="true" />;
+  }
+
   const rootClass = [
     "pageRoot",
     "pageRoot--tabs",
@@ -309,13 +455,27 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
 
   return (
     <>
-      {showEntry ? <EntryScreen onFinished={() => setShowEntry(false)} /> : null}
-      {!showEntry && showOnboarding ? (
+      {showWelcome ? (
+        <EntryScreen
+          onFirstStory={() => {
+            setShowWelcome(false);
+            setOnboardingMode("setup");
+            setShowOnboarding(true);
+          }}
+          onReturning={() => {
+            setShowWelcome(false);
+            setOnboardingMode("returning");
+            setShowOnboarding(true);
+          }}
+        />
+      ) : null}
+      {!showWelcome && showOnboarding ? (
         <OnboardingFlow
-          onCreateKid={({ name, age, interests }) => {
+          mode={onboardingMode}
+          onCreateKid={({ name, age: kidAge, interests }) => {
             const created = addKid({
               name,
-              age,
+              age: kidAge,
               gender: "other",
               interests,
             });
@@ -340,20 +500,17 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
       <main className={rootClass}>
         <div className="overlay overlay--withTabs">
           <div className="container">
-            <AppChromeBar variant={activeTab === "create" ? "create" : "default"} />
+            <AppChromeBar />
             {activeTab === "library" ? (
               <header>
                 <div className="title">My Stories</div>
-                <div className="subtitle">Browse, listen, and reopen your saved bedtime stories.</div>
+                <div className="subtitle">Stories, narration, and keepsakes stay together.</div>
               </header>
             ) : null}
 
             {banner ? (
               <div className="errorBox" role="alert">
-                <span className="errorText">
-                  <span className="errorSource">{bannerSourceLabel(banner.source)}: </span>
-                  {banner.message}
-                </span>
+                <p className="errorText">{warmBanner(banner.source)}</p>
                 <div className="errorActions">
                   <button
                     className="button errorRetry"
@@ -379,23 +536,11 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
               <HomeScreenPanel
                 library={library}
                 loadingLibrary={loadingLibrary}
-                playBusy={false}
                 stats={stats}
                 onOpenStory={(item) => openLibraryStory(item)}
                 onPlayStory={(item) => openLibraryStory(item, true)}
-                onContinueReading={handleContinueReading}
-                canContinueReading={canContinueReading}
-                onQuickCreate={() => {
-                  setActiveTab("create");
-                }}
-                onAddKid={() => {
-                  setActiveTab("create");
-                  setKidModalOpen(true);
-                }}
-                onAddCharacter={() => {
-                  setActiveTab("create");
-                  setCharModalOpen(true);
-                }}
+                onSeeAll={() => setActiveTab("library")}
+                onQuickCreate={() => setActiveTab("create")}
               />
             ) : null}
 
@@ -419,7 +564,10 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
                 selectedVoiceId={selectedVoiceId}
                 isLoadingVoices={isLoadingVoices}
                 voicesError={voicesError}
-                isGenerating={isGenerating}
+                isGenerating={isGenerating || isSaving}
+                submitLabel={
+                  isSaving ? "Saving your story" : isGenerating ? "Writing your story" : "Create story"
+                }
                 onAgeChange={setAge}
                 onLanguageChange={onLanguagePick}
                 onMainCharacterNameChange={setMainCharacterName}
@@ -459,16 +607,17 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
             {activeTab === "profile" ? (
               <ProfilePanel
                 email={authEnabled ? user.email : undefined}
+                language={language}
                 stats={stats}
                 kids={kids}
                 characters={characters}
-                onGoToCreateHub={() => {
-                  setActiveTab("create");
-                }}
+                onAddKid={() => setKidModalOpen(true)}
+                onAddCharacter={() => setCharModalOpen(true)}
+                onCreateStory={() => setActiveTab("create")}
               />
             ) : null}
 
-            {!showEntry ? (
+            {gateReady && !showWelcome ? (
               <footer className="legalFooter">
                 <a href="/legal/privacy">Privacy</a>
                 <span aria-hidden="true"> · </span>

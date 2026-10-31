@@ -61,6 +61,7 @@ type Props = {
   isLoadingVoices?: boolean;
   voicesError?: string;
   isGenerating: boolean;
+  submitLabel?: string;
   onAgeChange: (value: string) => void;
   onLanguageChange: (value: string) => void;
   onMainCharacterNameChange: (value: string) => void;
@@ -273,6 +274,7 @@ export function CreateStoryPicker(props: Props) {
               onClick={() => props.onGenreChange(genre)}
             >
               <ThemeIcon genre={genre} />
+              {selected ? <span className="createTheme__check" aria-hidden>✓</span> : null}
               <span className="createTheme__label">{genre}</span>
             </button>
           );
@@ -365,7 +367,7 @@ export function CreateStoryPicker(props: Props) {
           disabled={props.isGenerating}
         >
           <IconSpark className="createScreen__submitIcon" />
-          {props.isGenerating ? "Creating…" : "Create story"}
+          {props.submitLabel || (props.isGenerating ? "Writing your story" : "Create story")}
         </button>
       </div>
 

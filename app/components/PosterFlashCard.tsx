@@ -21,7 +21,7 @@ export function PosterFlashCard(props: Props) {
       : "Story poster (simple genre artwork)";
 
   function handleDownload() {
-    downloadPosterPng(props.blob, props.title.trim() || "Bedtime Story");
+    downloadPosterPng(props.blob, props.title.trim() || "Happy Horse");
   }
 
   return (

@@ -62,7 +62,7 @@ async function renderTextOnlyPosterBlob(params: {
   ctx.lineTo(1032, illustrationBottom + 6);
   ctx.stroke();
 
-  const title = params.title.trim() || "Bedtime Story";
+  const title = params.title.trim() || "Happy Horse";
   ctx.fillStyle = "#5a3b2e";
   ctx.font = "700 58px Arial";
   wrapText(ctx, title, 72, illustrationBottom + 88, 936, 72);
@@ -74,7 +74,7 @@ async function renderTextOnlyPosterBlob(params: {
 
   ctx.fillStyle = footerTintForGenre(params.genre);
   ctx.font = "700 28px Arial";
-  ctx.fillText("Generated with Bedtime Story", 72, 1260);
+  ctx.fillText("Generated with Happy Horse", 72, 1260);
 
   ctx.fillStyle = "rgba(107, 88, 79, 0.7)";
   ctx.font = "500 22px Arial";
@@ -192,7 +192,7 @@ export async function createStoryPoster(params: {
 
   ctx.fillStyle = "#5a3b2e";
   ctx.font = "700 58px Arial";
-  const title = params.title.trim() || "Bedtime Story";
+  const title = params.title.trim() || "Happy Horse";
   wrapText(ctx, title, 72, illustrationBottom + 88, 936, 72);
 
   ctx.fillStyle = "#6b584f";
@@ -202,7 +202,7 @@ export async function createStoryPoster(params: {
 
   ctx.fillStyle = footerTintForGenre(params.genre);
   ctx.font = "700 28px Arial";
-  ctx.fillText("Generated with Bedtime Story", 72, 1260);
+  ctx.fillText("Generated with Happy Horse", 72, 1260);
 
   const blob = await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((result) => {

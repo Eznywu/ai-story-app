@@ -22,10 +22,11 @@ type Props = {
   hasClone: boolean;
   onCloned: (voiceId: string, label: string, requiresVerification: boolean) => void;
   onClearClone: () => void;
+  onChooseNarrator?: () => void;
 };
 
 export function VoiceRecorder(props: Props) {
-  const { language, disabled, hasClone, onCloned, onClearClone } = props;
+  const { language, disabled, hasClone, onCloned, onClearClone, onChooseNarrator } = props;
   const [phase, setPhase] = useState<Phase>("idle");
   const [error, setError] = useState("");
   const [verifyHint, setVerifyHint] = useState("");
@@ -163,8 +164,13 @@ export function VoiceRecorder(props: Props) {
 
       recorder.start(250);
       setPhase("recording");
-    } catch {
-      setError("Could not access the microphone—check permissions.");
+    } catch (error: unknown) {
+      const denied = error instanceof DOMException && (error.name === "NotAllowedError" || error.name === "SecurityError");
+      setError(
+        denied
+          ? "The microphone is off. Allow it in the browser if you want to record, or choose a narrator instead."
+          : "Recording didn't start. Try again, or choose a narrator instead."
+      );
       setPhase("idle");
     }
   }, [stopStream]);
@@ -181,8 +187,8 @@ export function VoiceRecorder(props: Props) {
   return (
     <div className="voiceRecorder">
       <p className="voiceRecorderHint">
-        Record a short sample (about 30 seconds to a few minutes) of your own voice in a quiet place. When you stop,
-        you can listen, name it, and save—then it appears in the Voice list above.
+        Record a short sample of your own voice in a quiet place. When you stop, you can listen, name it, and save.
+        Standard narrators stay available if you skip this.
       </p>
       <div className="voiceRecorderActions">
         {phase === "recording" ? (
@@ -211,9 +217,14 @@ export function VoiceRecorder(props: Props) {
         ) : null}
       </div>
       {error ? (
-        <p className="fieldErrorText" role="alert">
-          {error}
-        </p>
+        <div role="alert">
+          <p className="fieldErrorText">{error}</p>
+          {onChooseNarrator ? (
+            <button className="button" type="button" onClick={onChooseNarrator}>
+              Choose a narrator instead
+            </button>
+          ) : null}
+        </div>
       ) : null}
       {verifyHint ? <p className="voiceRecorderVerify">{verifyHint}</p> : null}
 

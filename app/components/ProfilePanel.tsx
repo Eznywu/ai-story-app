@@ -1,85 +1,149 @@
 "use client";
 
-import React from "react";
-import type { KidProfile, StoryCharacterProfile } from "@/lib/profiles/profilesTypes";
-import type { ReadingStatsState } from "@/lib/profiles/profilesTypes";
+import React, { useState } from "react";
+import { QuietSheet } from "@/app/components/QuietSheet";
+import { VoiceRecorder } from "@/app/components/VoiceRecorder";
+import type { KidProfile, ReadingStatsState, StoryCharacterProfile } from "@/lib/profiles/profilesTypes";
 
 type Props = {
   email?: string;
+  language: string;
   stats: ReadingStatsState | null;
   kids: KidProfile[];
   characters: StoryCharacterProfile[];
-  onGoToCreateHub: () => void;
+  onAddKid: () => void;
+  onAddCharacter: () => void;
+  onCreateStory: () => void;
 };
 
-export function ProfilePanel({ email, stats, kids, characters, onGoToCreateHub }: Props) {
+export function ProfilePanel({
+  email,
+  language,
+  stats,
+  kids,
+  characters,
+  onAddKid,
+  onAddCharacter,
+  onCreateStory,
+}: Props) {
+  const [voiceOpen, setVoiceOpen] = useState(false);
+  const [hasClone, setHasClone] = useState(false);
+
   return (
-    <section className="profilePanel fadeEnter" aria-labelledby="profile-heading">
+    <section className="profilePanel" aria-labelledby="profile-heading">
       <h1 id="profile-heading" className="profilePanel__title">
-        Family Profile
+        Profile
       </h1>
-      <p className="profilePanel__lede">Your reading companion settings and saved story profiles.</p>
+      <p className="profilePanel__lede">Children, characters, voices, and settings.</p>
       {email ? <p className="profilePanel__muted">Signed in as {email}</p> : null}
 
-      <div className="profilePanel__card">
-        <h2 className="profilePanel__h2">Reading snapshot</h2>
-        <p className="profilePanel__statLine">
-          <strong>{stats?.storiesReadToday ?? 0}</strong> reads today · <strong>{stats?.streakDays ?? 0}</strong> day streak
+      <section className="profileGroup" aria-labelledby="profile-children">
+        <div className="profileGroup__head">
+          <h2 id="profile-children">Children</h2>
+          <button type="button" className="profileGroup__add" onClick={onAddKid}>
+            Add
+          </button>
+        </div>
+        {kids.length === 0 ? <p className="profilePanel__muted">No children yet.</p> : null}
+        <ul className="profileRows">
+          {kids.map((kid) => (
+            <li key={kid.id}>
+              <button type="button" className="profileRow" onClick={onCreateStory}>
+                <span className="profileRow__title">{kid.name}</span>
+                <span className="profileRow__meta">{kid.age}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="profileGroup" aria-labelledby="profile-characters">
+        <div className="profileGroup__head">
+          <h2 id="profile-characters">Characters</h2>
+          <button type="button" className="profileGroup__add" onClick={onAddCharacter}>
+            Add
+          </button>
+        </div>
+        {characters.length === 0 ? <p className="profilePanel__muted">No characters yet.</p> : null}
+        <ul className="profileRows">
+          {characters.map((character) => (
+            <li key={character.id}>
+              <button type="button" className="profileRow" onClick={onCreateStory}>
+                <span className="profileRow__title">{character.name}</span>
+                <span className="profileRow__meta">{character.characterType || "Story character"}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="profileGroup" aria-labelledby="profile-voices">
+        <div className="profileGroup__head">
+          <h2 id="profile-voices">Voices</h2>
+        </div>
+        <p className="profilePanel__muted">
+          Standard narrators are ready for every story. A personal voice is optional and needs your consent when you
+          record.
         </p>
-        <p className="profilePanel__muted">Last story: {stats?.lastStoryTitle?.trim() || "None yet"}</p>
-      </div>
-
-      <div className="profilePanel__card">
-        <h2 className="profilePanel__h2">Kid profiles</h2>
-        {kids.length === 0 ? (
-          <p className="profilePanel__muted">None yet.</p>
-        ) : (
-          <ul className="profilePanel__list">
-            {kids.map((k) => (
-              <li key={k.id}>
-                {k.name} · {k.age}
-              </li>
-            ))}
-          </ul>
-        )}
-        <button type="button" className="button buttonPrimary profilePanel__btn" onClick={onGoToCreateHub}>
-          Create with This Profile
-        </button>
-      </div>
-
-      <div className="profilePanel__card">
-        <h2 className="profilePanel__h2">Story characters</h2>
-        {characters.length === 0 ? (
-          <p className="profilePanel__muted">None yet.</p>
-        ) : (
-          <ul className="profilePanel__list">
-            {characters.map((c) => (
-              <li key={c.id}>
-                {c.name}
-                {c.characterType ? ` · ${c.characterType}` : ""}
-              </li>
-            ))}
-          </ul>
-        )}
-        <button type="button" className="button buttonPrimary profilePanel__btn" onClick={onGoToCreateHub}>
-          Use in Story
-        </button>
-      </div>
-
-      <div className="profilePanel__card">
-        <h2 className="profilePanel__h2">Settings, legal, support</h2>
-        <ul className="profilePanel__links">
+        <ul className="profileRows">
           <li>
-            <a href="/settings">Settings</a>
+            <button type="button" className="profileRow" onClick={() => setVoiceOpen(true)}>
+              <span className="profileRow__title">Personal voice</span>
+              <span className="profileRow__meta">{hasClone ? "A sample is saved" : "Record if you want"}</span>
+            </button>
           </li>
           <li>
-            <a href="/legal/privacy">Privacy Policy</a>
-          </li>
-          <li>
-            <a href="/legal/terms">Terms of Use</a>
+            <button type="button" className="profileRow" onClick={onCreateStory}>
+              <span className="profileRow__title">Choose a narrator</span>
+              <span className="profileRow__meta">On the create screen</span>
+            </button>
           </li>
         </ul>
-      </div>
+      </section>
+
+      <section className="profileGroup" aria-labelledby="profile-settings">
+        <div className="profileGroup__head">
+          <h2 id="profile-settings">Settings</h2>
+        </div>
+        {stats ? (
+          <p className="profilePanel__muted">
+            Opened today: {stats.storiesReadToday ?? 0}. Last story: {stats.lastStoryTitle?.trim() || "None yet"}.
+          </p>
+        ) : null}
+        <ul className="profileRows">
+          <li>
+            <a className="profileRow" href="/settings">
+              <span className="profileRow__title">Account and preferences</span>
+              <span className="profileRow__meta">Settings</span>
+            </a>
+          </li>
+          <li>
+            <a className="profileRow" href="/legal/privacy">
+              <span className="profileRow__title">Privacy</span>
+            </a>
+          </li>
+          <li>
+            <a className="profileRow" href="/legal/terms">
+              <span className="profileRow__title">Terms</span>
+            </a>
+          </li>
+        </ul>
+      </section>
+
+      {voiceOpen ? (
+        <QuietSheet title="Personal voice" onClose={() => setVoiceOpen(false)}>
+          <VoiceRecorder
+            language={language}
+            hasClone={hasClone}
+            onCloned={() => setHasClone(true)}
+            onClearClone={() => setHasClone(false)}
+            onChooseNarrator={() => {
+              setVoiceOpen(false);
+              onCreateStory();
+            }}
+          />
+        </QuietSheet>
+      ) : null}
     </section>
   );
 }

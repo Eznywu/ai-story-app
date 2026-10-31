@@ -17,7 +17,8 @@ export function friendlyVoiceName(voice?: VoiceLike | null): string {
 
 export function languageLabel(language?: string | null): string {
   const value = (language || "").toLowerCase();
-  if (value.startsWith("zh")) return "Mandarin";
+  if (value.includes("hant") || value.includes("tw") || value.includes("hk")) return "Traditional Chinese";
+  if (value.startsWith("zh")) return "Traditional Chinese";
   if (value.startsWith("en")) return "English";
   return (language || "").trim();
 }
