@@ -16,12 +16,12 @@ import { fileURLToPath } from 'node:url'
 globalThis['__dirname'] = path.dirname(fileURLToPath(import.meta.url))
 
 import * as runtime from "@prisma/client/runtime/client"
-import * as $Enums from "./enums"
-import * as $Class from "./internal/class"
-import * as Prisma from "./internal/prismaNamespace"
+import * as $Enums from "./enums.ts"
+import * as $Class from "./internal/class.ts"
+import * as Prisma from "./internal/prismaNamespace.ts"
 
-export * as $Enums from './enums'
-export * from "./enums"
+export * as $Enums from './enums.ts'
+export * from "./enums.ts"
 /**
  * ## Prisma Client
  * 
@@ -74,6 +74,21 @@ export type KidProfile = Prisma.KidProfileModel
  * 
  */
 export type StoryCharacter = Prisma.StoryCharacterModel
+/**
+ * Model NarrationAsset
+ * One generated narration section. Older stories have no rows here.
+ */
+export type NarrationAsset = Prisma.NarrationAssetModel
+/**
+ * Model NarrationReviewItem
+ * A listening flag, a reported mispronunciation, or a baseline reminder.
+ */
+export type NarrationReviewItem = Prisma.NarrationReviewItemModel
+/**
+ * Model NarrationReviewReport
+ * One Monday review. The job writes this. It does not create audio.
+ */
+export type NarrationReviewReport = Prisma.NarrationReviewReportModel
 /**
  * Model ReadingStats
  * 

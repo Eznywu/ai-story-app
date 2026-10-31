@@ -18,8 +18,23 @@ export function storyAudioPublicUrl(filename: string) {
   return `/api/audio/${encodeURIComponent(filename)}`;
 }
 
-/** Overwrites this story's MP3 and stores the playback URL on the row. */
-export async function saveStoryAudioFile(storyId: string, audio: Buffer): Promise<string> {
+export type StoryAudioIdentity = {
+  modelId: string;
+  voiceId: string;
+  voiceSettings: Record<string, string | number | boolean | null>;
+  language: string;
+  dictionaryVersion: string;
+  configVersion: string;
+  configId: string;
+  cacheKey: string;
+};
+
+/** Saves a new MP3, then drops the previous file. Call this only after the new audio passed its checks. */
+export async function saveStoryAudioFile(
+  storyId: string,
+  audio: Buffer,
+  identity?: StoryAudioIdentity
+): Promise<string> {
   if (!isSafeStoryId(storyId)) {
     throw new Error("Invalid story id");
   }
@@ -36,7 +51,22 @@ export async function saveStoryAudioFile(storyId: string, audio: Buffer): Promis
   });
   await prisma.story.update({
     where: { id: storyId },
-    data: { audioFilename: filename, audioUrl: saved.url },
+    data: {
+      audioFilename: filename,
+      audioUrl: saved.url,
+      ...(identity
+        ? {
+            audioModelId: identity.modelId,
+            audioVoiceId: identity.voiceId,
+            audioVoiceSettings: identity.voiceSettings,
+            audioLanguage: identity.language,
+            audioDictionaryVersion: identity.dictionaryVersion,
+            audioConfigVersion: identity.configVersion,
+            audioConfigId: identity.configId,
+            audioCacheKey: identity.cacheKey,
+          }
+        : {}),
+    },
   });
   if (previous?.audioFilename && previous.audioFilename !== filename) {
     await deleteMediaReference({

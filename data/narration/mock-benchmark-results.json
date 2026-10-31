@@ -1,0 +1,649 @@
+{
+  "label": "mock",
+  "sampleSize": 20,
+  "humanListeners": 0,
+  "humanReviewStatus": "pending",
+  "pronunciationProven": false,
+  "matched": 20,
+  "mismatch": 0,
+  "uncertain": 0,
+  "rows": [
+    {
+      "id": "en-ordinary",
+      "language": "en",
+      "focus": "Ordinary narration",
+      "displayText": "The night light stayed warm while Bramble counted three slow breaths.",
+      "expectedScript": "The night light stayed warm while Bramble counted three slow breaths.",
+      "appliedEntryIds": [],
+      "pendingEntryIds": [],
+      "screen": {
+        "pronunciationProven": false,
+        "label": "mock",
+        "missing": [],
+        "added": [],
+        "substituted": [],
+        "repeated": [],
+        "status": "matched"
+      },
+      "audio": {
+        "label": "mock",
+        "fixture": "lib/providers/fixtures/mock-narration.mp3",
+        "playableLiveSample": false
+      },
+      "review": {
+        "pronunciation": null,
+        "clarity": null,
+        "naturalness": null,
+        "pacing": null,
+        "notes": "Pending. Nobody has listened to a live recording of this line.",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "en-dialogue",
+      "language": "en",
+      "focus": "Dialogue",
+      "displayText": "“Are you sleepy?” asked Bramble. “A little,” said the moon, “but I can wait.”",
+      "expectedScript": "“Are you sleepy?” asked Bramble. “A little,” said the moon, “but I can wait.”",
+      "appliedEntryIds": [],
+      "pendingEntryIds": [],
+      "screen": {
+        "pronunciationProven": false,
+        "label": "mock",
+        "missing": [],
+        "added": [],
+        "substituted": [],
+        "repeated": [],
+        "status": "matched"
+      },
+      "audio": {
+        "label": "mock",
+        "fixture": "lib/providers/fixtures/mock-narration.mp3",
+        "playableLiveSample": false
+      },
+      "review": {
+        "pronunciation": null,
+        "clarity": null,
+        "naturalness": null,
+        "pacing": null,
+        "notes": "Pending. Nobody has listened to a live recording of this line.",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "en-name",
+      "language": "en",
+      "focus": "Difficult fictional name",
+      "displayText": "Xylophina found a blue pebble and put it under the pillow.",
+      "expectedScript": "Zye-loff-ee-nah found a blue pebble and put it under the pillow.",
+      "appliedEntryIds": [
+        "xylophina"
+      ],
+      "pendingEntryIds": [],
+      "screen": {
+        "pronunciationProven": false,
+        "label": "mock",
+        "missing": [],
+        "added": [],
+        "substituted": [],
+        "repeated": [],
+        "status": "matched"
+      },
+      "audio": {
+        "label": "mock",
+        "fixture": "lib/providers/fixtures/mock-narration.mp3",
+        "playableLiveSample": false
+      },
+      "review": {
+        "pronunciation": null,
+        "clarity": null,
+        "naturalness": null,
+        "pacing": null,
+        "notes": "Pending. Nobody has listened to a live recording of this line.",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "en-pending-name",
+      "language": "en",
+      "focus": "Personal name left unchanged",
+      "displayText": "Eason closed the little book and listened to the rain.",
+      "expectedScript": "Eason closed the little book and listened to the rain.",
+      "appliedEntryIds": [],
+      "pendingEntryIds": [
+        "eason"
+      ],
+      "screen": {
+        "pronunciationProven": false,
+        "label": "mock",
+        "missing": [],
+        "added": [],
+        "substituted": [],
+        "repeated": [],
+        "status": "matched"
+      },
+      "audio": {
+        "label": "mock",
+        "fixture": "lib/providers/fixtures/mock-narration.mp3",
+        "playableLiveSample": false
+      },
+      "review": {
+        "pronunciation": null,
+        "clarity": null,
+        "naturalness": null,
+        "pacing": null,
+        "notes": "Pending. Nobody has listened to a live recording of this line.",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "en-numbers",
+      "language": "en",
+      "focus": "Numbers and a decimal",
+      "displayText": "Bramble had 3 blankets and a mug marked 3.14.",
+      "expectedScript": "Bramble had three blankets and a mug marked three point one four.",
+      "appliedEntryIds": [],
+      "pendingEntryIds": [],
+      "screen": {
+        "pronunciationProven": false,
+        "label": "mock",
+        "missing": [],
+        "added": [],
+        "substituted": [],
+        "repeated": [],
+        "status": "matched"
+      },
+      "audio": {
+        "label": "mock",
+        "fixture": "lib/providers/fixtures/mock-narration.mp3",
+        "playableLiveSample": false
+      },
+      "review": {
+        "pronunciation": null,
+        "clarity": null,
+        "naturalness": null,
+        "pacing": null,
+        "notes": "Pending. Nobody has listened to a live recording of this line.",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "en-date",
+      "language": "en",
+      "focus": "Date",
+      "displayText": "On October 27, 2026, the lantern was lit just once.",
+      "expectedScript": "On October twenty-seventh, twenty twenty-six, the lantern was lit just once.",
+      "appliedEntryIds": [],
+      "pendingEntryIds": [],
+      "screen": {
+        "pronunciationProven": false,
+        "label": "mock",
+        "missing": [],
+        "added": [],
+        "substituted": [],
+        "repeated": [],
+        "status": "matched"
+      },
+      "audio": {
+        "label": "mock",
+        "fixture": "lib/providers/fixtures/mock-narration.mp3",
+        "playableLiveSample": false
+      },
+      "review": {
+        "pronunciation": null,
+        "clarity": null,
+        "naturalness": null,
+        "pacing": null,
+        "notes": "Pending. Nobody has listened to a live recording of this line.",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "en-abbreviations",
+      "language": "en",
+      "focus": "Abbreviations",
+      "displayText": "Dr. Bramble turned the TV off before the U.S.A. postcard slipped to the floor.",
+      "expectedScript": "Doctor Bramble turned the television off before the U S A postcard slipped to the floor.",
+      "appliedEntryIds": [
+        "usa",
+        "dr",
+        "tv"
+      ],
+      "pendingEntryIds": [],
+      "screen": {
+        "pronunciationProven": false,
+        "label": "mock",
+        "missing": [],
+        "added": [],
+        "substituted": [],
+        "repeated": [],
+        "status": "matched"
+      },
+      "audio": {
+        "label": "mock",
+        "fixture": "lib/providers/fixtures/mock-narration.mp3",
+        "playableLiveSample": false
+      },
+      "review": {
+        "pronunciation": null,
+        "clarity": null,
+        "naturalness": null,
+        "pacing": null,
+        "notes": "Pending. Nobody has listened to a live recording of this line.",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "en-question",
+      "language": "en",
+      "focus": "Question",
+      "displayText": "Will the little boat still be here in the morning?",
+      "expectedScript": "Will the little boat still be here in the morning?",
+      "appliedEntryIds": [],
+      "pendingEntryIds": [],
+      "screen": {
+        "pronunciationProven": false,
+        "label": "mock",
+        "missing": [],
+        "added": [],
+        "substituted": [],
+        "repeated": [],
+        "status": "matched"
+      },
+      "audio": {
+        "label": "mock",
+        "fixture": "lib/providers/fixtures/mock-narration.mp3",
+        "playableLiveSample": false
+      },
+      "review": {
+        "pronunciation": null,
+        "clarity": null,
+        "naturalness": null,
+        "pacing": null,
+        "notes": "Pending. Nobody has listened to a live recording of this line.",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "en-pause-shift",
+      "language": "en",
+      "focus": "Pause and a gentle change of feeling",
+      "displayText": "Bramble waited… then smiled. The room felt quiet, and nobody shouted.",
+      "expectedScript": "Bramble waited… then smiled. The room felt quiet, and nobody shouted.",
+      "appliedEntryIds": [],
+      "pendingEntryIds": [],
+      "screen": {
+        "pronunciationProven": false,
+        "label": "mock",
+        "missing": [],
+        "added": [],
+        "substituted": [],
+        "repeated": [],
+        "status": "matched"
+      },
+      "audio": {
+        "label": "mock",
+        "fixture": "lib/providers/fixtures/mock-narration.mp3",
+        "playableLiveSample": false
+      },
+      "review": {
+        "pronunciation": null,
+        "clarity": null,
+        "naturalness": null,
+        "pacing": null,
+        "notes": "Pending. Nobody has listened to a live recording of this line.",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "en-longer",
+      "language": "en",
+      "focus": "Longer narration",
+      "displayText": "Bramble walked the long way home past the quiet trees. The path was soft, the wind was small, and every step had time to finish. At the gate, the fox shook the rain from one ear and looked back only once.",
+      "expectedScript": "Bramble walked the long way home past the quiet trees. The path was soft, the wind was small, and every step had time to finish. At the gate, the fox shook the rain from one ear and looked back only once.",
+      "appliedEntryIds": [],
+      "pendingEntryIds": [],
+      "screen": {
+        "pronunciationProven": false,
+        "label": "mock",
+        "missing": [],
+        "added": [],
+        "substituted": [],
+        "repeated": [],
+        "status": "matched"
+      },
+      "audio": {
+        "label": "mock",
+        "fixture": "lib/providers/fixtures/mock-narration.mp3",
+        "playableLiveSample": false
+      },
+      "review": {
+        "pronunciation": null,
+        "clarity": null,
+        "naturalness": null,
+        "pacing": null,
+        "notes": "Pending. Nobody has listened to a live recording of this line.",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "en-two-paragraphs",
+      "language": "en",
+      "focus": "Paragraph boundary",
+      "displayText": "The first paragraph ends at the window.\n\nThe second paragraph begins with the kettle and ends with goodnight.",
+      "expectedScript": "The first paragraph ends at the window.\n\nThe second paragraph begins with the kettle and ends with goodnight.",
+      "appliedEntryIds": [],
+      "pendingEntryIds": [],
+      "screen": {
+        "pronunciationProven": false,
+        "label": "mock",
+        "missing": [],
+        "added": [],
+        "substituted": [],
+        "repeated": [],
+        "status": "matched"
+      },
+      "audio": {
+        "label": "mock",
+        "fixture": "lib/providers/fixtures/mock-narration.mp3",
+        "playableLiveSample": false
+      },
+      "review": {
+        "pronunciation": null,
+        "clarity": null,
+        "naturalness": null,
+        "pacing": null,
+        "notes": "Pending. Nobody has listened to a live recording of this line.",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "zh-ordinary",
+      "language": "zh-Hant",
+      "focus": "Ordinary Chinese narration",
+      "displayText": "小狐狸把被子拉好，看著青石灣的燈一盞一盞暗下來。",
+      "expectedScript": "小狐狸把被子拉好，看著青石灣的燈一盞一盞暗下來。",
+      "appliedEntryIds": [],
+      "pendingEntryIds": [],
+      "screen": {
+        "pronunciationProven": false,
+        "label": "mock",
+        "missing": [],
+        "added": [],
+        "substituted": [],
+        "repeated": [],
+        "status": "matched"
+      },
+      "audio": {
+        "label": "mock",
+        "fixture": "lib/providers/fixtures/mock-narration.mp3",
+        "playableLiveSample": false
+      },
+      "review": {
+        "pronunciation": null,
+        "clarity": null,
+        "naturalness": null,
+        "pacing": null,
+        "notes": "Pending. Nobody has listened to a live recording of this line.",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "zh-dialogue",
+      "language": "zh-Hant",
+      "focus": "Chinese dialogue",
+      "displayText": "「你還醒著嗎？」月亮問。小狐狸說：「醒著，可是眼睛想休息。」",
+      "expectedScript": "「你還醒著嗎？」月亮問。小狐狸說：「醒著，可是眼睛想休息。」",
+      "appliedEntryIds": [],
+      "pendingEntryIds": [],
+      "screen": {
+        "pronunciationProven": false,
+        "label": "mock",
+        "missing": [],
+        "added": [],
+        "substituted": [],
+        "repeated": [],
+        "status": "matched"
+      },
+      "audio": {
+        "label": "mock",
+        "fixture": "lib/providers/fixtures/mock-narration.mp3",
+        "playableLiveSample": false
+      },
+      "review": {
+        "pronunciation": null,
+        "clarity": null,
+        "naturalness": null,
+        "pacing": null,
+        "notes": "Pending. Nobody has listened to a live recording of this line.",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "zh-polyphone",
+      "language": "zh-Hant",
+      "focus": "Polyphonic characters left unchanged",
+      "displayText": "快樂的樂和音樂的樂還在等大人決定，月亮升上來了。",
+      "expectedScript": "快樂的樂和音樂的樂還在等大人決定，月亮升上來了。",
+      "appliedEntryIds": [],
+      "pendingEntryIds": [],
+      "screen": {
+        "pronunciationProven": false,
+        "label": "mock",
+        "missing": [],
+        "added": [],
+        "substituted": [],
+        "repeated": [],
+        "status": "matched"
+      },
+      "audio": {
+        "label": "mock",
+        "fixture": "lib/providers/fixtures/mock-narration.mp3",
+        "playableLiveSample": false
+      },
+      "review": {
+        "pronunciation": null,
+        "clarity": null,
+        "naturalness": null,
+        "pacing": null,
+        "notes": "Pending. Nobody has listened to a live recording of this line.",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "zh-pending-name",
+      "language": "zh-Hant",
+      "focus": "Personal name left unchanged",
+      "displayText": "單舟把燈放低，沒有讓故事變大聲。",
+      "expectedScript": "單舟把燈放低，沒有讓故事變大聲。",
+      "appliedEntryIds": [],
+      "pendingEntryIds": [
+        "shan-zhou"
+      ],
+      "screen": {
+        "pronunciationProven": false,
+        "label": "mock",
+        "missing": [],
+        "added": [],
+        "substituted": [],
+        "repeated": [],
+        "status": "matched"
+      },
+      "audio": {
+        "label": "mock",
+        "fixture": "lib/providers/fixtures/mock-narration.mp3",
+        "playableLiveSample": false
+      },
+      "review": {
+        "pronunciation": null,
+        "clarity": null,
+        "naturalness": null,
+        "pacing": null,
+        "notes": "Pending. Nobody has listened to a live recording of this line.",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "zh-numbers",
+      "language": "zh-Hant",
+      "focus": "Chinese numbers",
+      "displayText": "枕頭邊有 3 顆小石子，杯子上寫著 3.14。",
+      "expectedScript": "枕頭邊有 三 顆小石子，杯子上寫著 三點一四。",
+      "appliedEntryIds": [],
+      "pendingEntryIds": [],
+      "screen": {
+        "pronunciationProven": false,
+        "label": "mock",
+        "missing": [],
+        "added": [],
+        "substituted": [],
+        "repeated": [],
+        "status": "matched"
+      },
+      "audio": {
+        "label": "mock",
+        "fixture": "lib/providers/fixtures/mock-narration.mp3",
+        "playableLiveSample": false
+      },
+      "review": {
+        "pronunciation": null,
+        "clarity": null,
+        "naturalness": null,
+        "pacing": null,
+        "notes": "Pending. Nobody has listened to a live recording of this line.",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "zh-date",
+      "language": "zh-Hant",
+      "focus": "Chinese date",
+      "displayText": "2026年10月27日，青石灣只點了一盞燈。",
+      "expectedScript": "二零二六年十月二十七日，青石灣只點了一盞燈。",
+      "appliedEntryIds": [],
+      "pendingEntryIds": [],
+      "screen": {
+        "pronunciationProven": false,
+        "label": "mock",
+        "missing": [],
+        "added": [],
+        "substituted": [],
+        "repeated": [],
+        "status": "matched"
+      },
+      "audio": {
+        "label": "mock",
+        "fixture": "lib/providers/fixtures/mock-narration.mp3",
+        "playableLiveSample": false
+      },
+      "review": {
+        "pronunciation": null,
+        "clarity": null,
+        "naturalness": null,
+        "pacing": null,
+        "notes": "Pending. Nobody has listened to a live recording of this line.",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "zh-mixed",
+      "language": "zh-Hant",
+      "focus": "Mixed Chinese and English",
+      "displayText": "他輕聲說 Happy，然後把 TV 關掉，再說一聲晚安。",
+      "expectedScript": "他輕聲說 Happy，然後把 television 關掉，再說一聲晚安。",
+      "appliedEntryIds": [
+        "tv"
+      ],
+      "pendingEntryIds": [],
+      "screen": {
+        "pronunciationProven": false,
+        "label": "mock",
+        "missing": [],
+        "added": [],
+        "substituted": [],
+        "repeated": [],
+        "status": "matched"
+      },
+      "audio": {
+        "label": "mock",
+        "fixture": "lib/providers/fixtures/mock-narration.mp3",
+        "playableLiveSample": false
+      },
+      "review": {
+        "pronunciation": null,
+        "clarity": null,
+        "naturalness": null,
+        "pacing": null,
+        "notes": "Pending. Nobody has listened to a live recording of this line.",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "zh-question",
+      "language": "zh-Hant",
+      "focus": "Chinese question and pause",
+      "displayText": "小船明天還會在嗎？小狐狸想了想…然後把眼睛閉上。",
+      "expectedScript": "小船明天還會在嗎？小狐狸想了想…然後把眼睛閉上。",
+      "appliedEntryIds": [],
+      "pendingEntryIds": [],
+      "screen": {
+        "pronunciationProven": false,
+        "label": "mock",
+        "missing": [],
+        "added": [],
+        "substituted": [],
+        "repeated": [],
+        "status": "matched"
+      },
+      "audio": {
+        "label": "mock",
+        "fixture": "lib/providers/fixtures/mock-narration.mp3",
+        "playableLiveSample": false
+      },
+      "review": {
+        "pronunciation": null,
+        "clarity": null,
+        "naturalness": null,
+        "pacing": null,
+        "notes": "Pending. Nobody has listened to a live recording of this line.",
+        "status": "pending"
+      }
+    },
+    {
+      "id": "zh-phrase",
+      "language": "zh-Hant",
+      "focus": "Disambiguated phrase",
+      "displayText": "故事裡的銀行只是一間小小的橡實店，門口沒有人排隊。",
+      "expectedScript": "故事裡的銀行只是一間小小的橡實店，門口沒有人排隊。",
+      "appliedEntryIds": [],
+      "pendingEntryIds": [],
+      "screen": {
+        "pronunciationProven": false,
+        "label": "mock",
+        "missing": [],
+        "added": [],
+        "substituted": [],
+        "repeated": [],
+        "status": "matched"
+      },
+      "audio": {
+        "label": "mock",
+        "fixture": "lib/providers/fixtures/mock-narration.mp3",
+        "playableLiveSample": false
+      },
+      "review": {
+        "pronunciation": null,
+        "clarity": null,
+        "naturalness": null,
+        "pacing": null,
+        "notes": "Pending. Nobody has listened to a live recording of this line.",
+        "status": "pending"
+      }
+    }
+  ],
+  "targets": {
+    "criticalNameErrors": "0 confirmed. Not measured on live audio.",
+    "omittedInventedOrRepeatedSentences": "0 confirmed. Not measured on live audio.",
+    "humanScore": "At least 4 out of 5. No listener has scored these clips."
+  }
+}

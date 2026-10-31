@@ -16,10 +16,10 @@
  */
 
 import * as runtime from "@prisma/client/runtime/client"
-import type * as Prisma from "../models"
-import { type PrismaClient } from "./class"
+import type * as Prisma from "../models.ts"
+import { type PrismaClient } from "./class.ts"
 
-export type * from '../models'
+export type * from '../models.ts'
 
 export type DMMF = typeof runtime.DMMF
 
@@ -391,6 +391,9 @@ export const ModelName = {
   Voice: 'Voice',
   KidProfile: 'KidProfile',
   StoryCharacter: 'StoryCharacter',
+  NarrationAsset: 'NarrationAsset',
+  NarrationReviewItem: 'NarrationReviewItem',
+  NarrationReviewReport: 'NarrationReviewReport',
   ReadingStats: 'ReadingStats'
 } as const
 
@@ -407,7 +410,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "session" | "loginCode" | "story" | "voice" | "kidProfile" | "storyCharacter" | "readingStats"
+    modelProps: "user" | "session" | "loginCode" | "story" | "voice" | "kidProfile" | "storyCharacter" | "narrationAsset" | "narrationReviewItem" | "narrationReviewReport" | "readingStats"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -929,6 +932,228 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    NarrationAsset: {
+      payload: Prisma.$NarrationAssetPayload<ExtArgs>
+      fields: Prisma.NarrationAssetFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.NarrationAssetFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationAssetPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.NarrationAssetFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationAssetPayload>
+        }
+        findFirst: {
+          args: Prisma.NarrationAssetFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationAssetPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.NarrationAssetFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationAssetPayload>
+        }
+        findMany: {
+          args: Prisma.NarrationAssetFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationAssetPayload>[]
+        }
+        create: {
+          args: Prisma.NarrationAssetCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationAssetPayload>
+        }
+        createMany: {
+          args: Prisma.NarrationAssetCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.NarrationAssetCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationAssetPayload>[]
+        }
+        delete: {
+          args: Prisma.NarrationAssetDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationAssetPayload>
+        }
+        update: {
+          args: Prisma.NarrationAssetUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationAssetPayload>
+        }
+        deleteMany: {
+          args: Prisma.NarrationAssetDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.NarrationAssetUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.NarrationAssetUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationAssetPayload>[]
+        }
+        upsert: {
+          args: Prisma.NarrationAssetUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationAssetPayload>
+        }
+        aggregate: {
+          args: Prisma.NarrationAssetAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateNarrationAsset>
+        }
+        groupBy: {
+          args: Prisma.NarrationAssetGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.NarrationAssetGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.NarrationAssetCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.NarrationAssetCountAggregateOutputType> | number
+        }
+      }
+    }
+    NarrationReviewItem: {
+      payload: Prisma.$NarrationReviewItemPayload<ExtArgs>
+      fields: Prisma.NarrationReviewItemFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.NarrationReviewItemFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationReviewItemPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.NarrationReviewItemFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationReviewItemPayload>
+        }
+        findFirst: {
+          args: Prisma.NarrationReviewItemFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationReviewItemPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.NarrationReviewItemFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationReviewItemPayload>
+        }
+        findMany: {
+          args: Prisma.NarrationReviewItemFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationReviewItemPayload>[]
+        }
+        create: {
+          args: Prisma.NarrationReviewItemCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationReviewItemPayload>
+        }
+        createMany: {
+          args: Prisma.NarrationReviewItemCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.NarrationReviewItemCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationReviewItemPayload>[]
+        }
+        delete: {
+          args: Prisma.NarrationReviewItemDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationReviewItemPayload>
+        }
+        update: {
+          args: Prisma.NarrationReviewItemUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationReviewItemPayload>
+        }
+        deleteMany: {
+          args: Prisma.NarrationReviewItemDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.NarrationReviewItemUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.NarrationReviewItemUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationReviewItemPayload>[]
+        }
+        upsert: {
+          args: Prisma.NarrationReviewItemUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationReviewItemPayload>
+        }
+        aggregate: {
+          args: Prisma.NarrationReviewItemAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateNarrationReviewItem>
+        }
+        groupBy: {
+          args: Prisma.NarrationReviewItemGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.NarrationReviewItemGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.NarrationReviewItemCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.NarrationReviewItemCountAggregateOutputType> | number
+        }
+      }
+    }
+    NarrationReviewReport: {
+      payload: Prisma.$NarrationReviewReportPayload<ExtArgs>
+      fields: Prisma.NarrationReviewReportFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.NarrationReviewReportFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationReviewReportPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.NarrationReviewReportFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationReviewReportPayload>
+        }
+        findFirst: {
+          args: Prisma.NarrationReviewReportFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationReviewReportPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.NarrationReviewReportFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationReviewReportPayload>
+        }
+        findMany: {
+          args: Prisma.NarrationReviewReportFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationReviewReportPayload>[]
+        }
+        create: {
+          args: Prisma.NarrationReviewReportCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationReviewReportPayload>
+        }
+        createMany: {
+          args: Prisma.NarrationReviewReportCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.NarrationReviewReportCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationReviewReportPayload>[]
+        }
+        delete: {
+          args: Prisma.NarrationReviewReportDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationReviewReportPayload>
+        }
+        update: {
+          args: Prisma.NarrationReviewReportUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationReviewReportPayload>
+        }
+        deleteMany: {
+          args: Prisma.NarrationReviewReportDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.NarrationReviewReportUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.NarrationReviewReportUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationReviewReportPayload>[]
+        }
+        upsert: {
+          args: Prisma.NarrationReviewReportUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationReviewReportPayload>
+        }
+        aggregate: {
+          args: Prisma.NarrationReviewReportAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateNarrationReviewReport>
+        }
+        groupBy: {
+          args: Prisma.NarrationReviewReportGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.NarrationReviewReportGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.NarrationReviewReportCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.NarrationReviewReportCountAggregateOutputType> | number
+        }
+      }
+    }
     ReadingStats: {
       payload: Prisma.$ReadingStatsPayload<ExtArgs>
       fields: Prisma.ReadingStatsFieldRefs
@@ -1091,6 +1316,14 @@ export const StoryScalarFieldEnum = {
   posterUrl: 'posterUrl',
   audioFilename: 'audioFilename',
   audioUrl: 'audioUrl',
+  audioModelId: 'audioModelId',
+  audioVoiceId: 'audioVoiceId',
+  audioVoiceSettings: 'audioVoiceSettings',
+  audioLanguage: 'audioLanguage',
+  audioDictionaryVersion: 'audioDictionaryVersion',
+  audioConfigVersion: 'audioConfigVersion',
+  audioConfigId: 'audioConfigId',
+  audioCacheKey: 'audioCacheKey',
   dailyAutomated: 'dailyAutomated',
   createdAt: 'createdAt'
 } as const
@@ -1147,6 +1380,64 @@ export const StoryCharacterScalarFieldEnum = {
 export type StoryCharacterScalarFieldEnum = (typeof StoryCharacterScalarFieldEnum)[keyof typeof StoryCharacterScalarFieldEnum]
 
 
+export const NarrationAssetScalarFieldEnum = {
+  id: 'id',
+  storyId: 'storyId',
+  sectionIndex: 'sectionIndex',
+  sectionCount: 'sectionCount',
+  status: 'status',
+  modelId: 'modelId',
+  voiceId: 'voiceId',
+  voiceSettings: 'voiceSettings',
+  language: 'language',
+  dictionaryVersion: 'dictionaryVersion',
+  configVersion: 'configVersion',
+  configId: 'configId',
+  cacheKey: 'cacheKey',
+  narrationScript: 'narrationScript',
+  filename: 'filename',
+  url: 'url',
+  durationMs: 'durationMs',
+  validityStatus: 'validityStatus',
+  validityNotes: 'validityNotes',
+  transcriptStatus: 'transcriptStatus',
+  transcriptNotes: 'transcriptNotes',
+  attempt: 'attempt',
+  baselineFlag: 'baselineFlag',
+  source: 'source',
+  createdAt: 'createdAt'
+} as const
+
+export type NarrationAssetScalarFieldEnum = (typeof NarrationAssetScalarFieldEnum)[keyof typeof NarrationAssetScalarFieldEnum]
+
+
+export const NarrationReviewItemScalarFieldEnum = {
+  id: 'id',
+  assetId: 'assetId',
+  source: 'source',
+  word: 'word',
+  timestampMs: 'timestampMs',
+  category: 'category',
+  status: 'status',
+  notes: 'notes',
+  payload: 'payload',
+  createdAt: 'createdAt'
+} as const
+
+export type NarrationReviewItemScalarFieldEnum = (typeof NarrationReviewItemScalarFieldEnum)[keyof typeof NarrationReviewItemScalarFieldEnum]
+
+
+export const NarrationReviewReportScalarFieldEnum = {
+  id: 'id',
+  weekKey: 'weekKey',
+  status: 'status',
+  summary: 'summary',
+  createdAt: 'createdAt'
+} as const
+
+export type NarrationReviewReportScalarFieldEnum = (typeof NarrationReviewReportScalarFieldEnum)[keyof typeof NarrationReviewReportScalarFieldEnum]
+
+
 export const ReadingStatsScalarFieldEnum = {
   userId: 'userId',
   todayKey: 'todayKey',
@@ -1170,6 +1461,21 @@ export const SortOrder = {
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
+
+
 export const QueryMode = {
   default: 'default',
   insensitive: 'insensitive'
@@ -1184,6 +1490,15 @@ export const NullsOrder = {
 } as const
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 
 
 
@@ -1231,6 +1546,20 @@ export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'In
  * Reference to a field of type 'Int[]'
  */
 export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
+    
+
+
+/**
+ * Reference to a field of type 'Json'
+ */
+export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
+    
+
+
+/**
+ * Reference to a field of type 'QueryMode'
+ */
+export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
     
 
 
@@ -1356,6 +1685,9 @@ export type GlobalOmitConfig = {
   voice?: Prisma.VoiceOmit
   kidProfile?: Prisma.KidProfileOmit
   storyCharacter?: Prisma.StoryCharacterOmit
+  narrationAsset?: Prisma.NarrationAssetOmit
+  narrationReviewItem?: Prisma.NarrationReviewItemOmit
+  narrationReviewReport?: Prisma.NarrationReviewReportOmit
   readingStats?: Prisma.ReadingStatsOmit
 }
 

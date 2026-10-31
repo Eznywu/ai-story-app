@@ -15,10 +15,11 @@ import { createStoryPoster, downloadPosterPng } from "@/lib/posters/poster";
 import type { PosterCreateOutcome } from "@/lib/posters/poster";
 import { getErrorMessage } from "@/lib/errors";
 import { redirectIfUnsigned } from "@/lib/auth/redirectIfUnsigned";
-import { TTS_SPEED_DEFAULT } from "@/lib/tts/ttsLimits";
+import { PLAYBACK_RATES } from "@/lib/tts/ttsLimits";
+import { activeNarrationSpeed, activeTtsConfig } from "@/lib/tts/config";
+import { savedAudioIdentityStatus } from "@/lib/tts/audioIdentity";
 import { useReadingStats } from "@/app/hooks/useReadingStats";
-
-const PLAYBACK_RATES = [0.75, 1, 1.25, 1.5] as const;
+import dictionaryFile from "@/data/pronunciation/dictionary.json";
 
 type StoryRecord = {
   id: string;
@@ -31,6 +32,13 @@ type StoryRecord = {
   mainCharacterName: string | null;
   posterUrl: string | null;
   audioUrl: string | null;
+  audioCacheKey?: string | null;
+  audioVoiceId?: string | null;
+  audioModelId?: string | null;
+  audioConfigVersion?: string | null;
+  audioDictionaryVersion?: string | null;
+  audioLanguage?: string | null;
+  audioVoiceSettings?: { speed?: number } | null;
 };
 
 type PosterState =
@@ -129,8 +137,7 @@ export function StoryReader({ storyId }: { storyId: string }) {
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [narrationSpeed, setNarrationSpeed] = useState(TTS_SPEED_DEFAULT);
-  const [emotion, setEmotion] = useState(40);
+  const [narrationSpeed, setNarrationSpeed] = useState(() => activeNarrationSpeed());
   const [audioError, setAudioError] = useState("");
   const [savedAudioUrl, setSavedAudioUrl] = useState<string | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -240,16 +247,58 @@ export function StoryReader({ storyId }: { storyId: string }) {
     void generatePoster();
   }, [generatePoster, poster.status, story]);
 
+  const audioIdentity = savedAudioIdentityStatus(
+    story
+      ? {
+          audioUrl: savedAudioUrl,
+          audioCacheKey: story.audioCacheKey,
+          audioVoiceId: story.audioVoiceId,
+          audioModelId: story.audioModelId,
+          audioConfigVersion: story.audioConfigVersion,
+          audioDictionaryVersion: story.audioDictionaryVersion,
+          audioLanguage: story.audioLanguage,
+          audioSpeed: story.audioVoiceSettings?.speed ?? null,
+        }
+      : null,
+    { voiceId: selectedVoiceId, speed: narrationSpeed, language },
+    {
+      configVersion: activeTtsConfig().version,
+      dictionaryVersion: dictionaryFile.version,
+      modelId: activeTtsConfig().modelId,
+    }
+  );
+
+  function rememberNarration(result: Awaited<ReturnType<typeof makeMp3>>) {
+    if (!result.savedAudioUrl) return;
+    setSavedAudioUrl(result.savedAudioUrl);
+    setStory((current) =>
+      current
+        ? {
+            ...current,
+            audioUrl: result.savedAudioUrl,
+            audioCacheKey: result.audioCacheKey,
+            audioConfigVersion: result.audioConfigVersion,
+            audioDictionaryVersion: result.audioDictionaryVersion,
+            audioModelId: result.audioModelId,
+            audioVoiceId: result.audioVoiceId,
+            audioLanguage: language,
+            audioVoiceSettings: { speed: result.audioSpeed ?? narrationSpeed },
+          }
+        : current
+    );
+  }
+
   async function ensureAudio() {
     if (!story?.text.trim()) throw new Error("This story has no script yet.");
-    if (savedAudioUrl) return savedAudioUrl;
+    if (savedAudioUrl && (audioIdentity === "fresh" || audioIdentity === "stale" || audioIdentity === "unknown")) {
+      return savedAudioUrl;
+    }
     setAudioError("");
-    const result = await makeMp3(story.text, narrationSpeed, emotion, language, story.id);
+    const result = await makeMp3(story.text, narrationSpeed, language, story.id, false);
     if (!result.savedAudioUrl) {
       throw new Error("Narration played, but it could not be saved on this story.");
     }
-    setSavedAudioUrl(result.savedAudioUrl);
-    setStory((current) => (current ? { ...current, audioUrl: result.savedAudioUrl } : current));
+    rememberNarration(result);
     return result.savedAudioUrl;
   }
 
@@ -288,12 +337,11 @@ export function StoryReader({ storyId }: { storyId: string }) {
     setPlaying(false);
     audioRef.current?.pause();
     try {
-      const result = await makeMp3(story.text, narrationSpeed, emotion, language, story.id);
+      const result = await makeMp3(story.text, narrationSpeed, language, story.id, true);
       if (!result.savedAudioUrl) {
         throw new Error("Narration played, but it could not be saved on this story.");
       }
-      setSavedAudioUrl(result.savedAudioUrl);
-      setStory((current) => (current ? { ...current, audioUrl: result.savedAudioUrl } : current));
+      rememberNarration(result);
       setPlaying(true);
     } catch (error: unknown) {
       setAudioError(playbackErrorMessage(error));
@@ -365,6 +413,7 @@ export function StoryReader({ storyId }: { storyId: string }) {
   let statusText = "";
   if (isMakingMp3) statusText = "Preparing narration";
   else if (playing) statusText = "Playing";
+  else if (audioIdentity === "stale") statusText = "Older recording. Regenerate narration to use the current voice setup.";
   else if (story && !loadError) statusText = "Ready to play";
 
   return (
@@ -652,12 +701,7 @@ export function StoryReader({ storyId }: { storyId: string }) {
               </button>
             ) : null}
           </label>
-          <TtsControls
-            speed={narrationSpeed}
-            emotion={emotion}
-            onSpeedChange={setNarrationSpeed}
-            onEmotionChange={setEmotion}
-          />
+          <TtsControls speed={narrationSpeed} onSpeedChange={setNarrationSpeed} />
           <button
             type="button"
             className="sheetAction sheetAction--last"
@@ -666,7 +710,9 @@ export function StoryReader({ storyId }: { storyId: string }) {
           >
             {isMakingMp3 ? "Regenerating narration…" : "Regenerate narration"}
           </button>
-          <p className="listenHint">Regenerate replaces the saved narration for this story. Playback speed does not.</p>
+          <p className="listenHint">
+            Regenerate makes a new recording with this voice and narration speed. The old recording stays until the new one passes its checks. Playback speed does not call the voice service.
+          </p>
         </QuietSheet>
       ) : null}
     </main>

@@ -67,9 +67,19 @@ model Story {
   audioFilename  String?
   /** Playback URL: a Vercel Blob URL, or `/api/audio/…` when Blob is not configured. */
   audioUrl String?
+  /** Narration identity. Null on rows saved before this was recorded. */
+  audioModelId           String?
+  audioVoiceId           String?
+  audioVoiceSettings     Json?
+  audioLanguage          String?
+  audioDictionaryVersion String?
+  audioConfigVersion     String?
+  audioConfigId          String?
+  audioCacheKey          String?
   /** True when created by the daily cron (`lib/stories/dailyAutomatedStories.ts`). */
   dailyAutomated Boolean  @default(false)
   createdAt DateTime @default(now())
+  narrationAssets NarrationAsset[]
 
   @@index([userId, createdAt])
 }
@@ -122,6 +132,73 @@ model StoryCharacter {
   updatedAt     DateTime @updatedAt
 
   @@index([userId])
+}
+
+/// One generated narration section. Older stories have no rows here.
+model NarrationAsset {
+  id                String   @id @default(cuid())
+  storyId           String?
+  story             Story?   @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  sectionIndex      Int      @default(0)
+  sectionCount      Int      @default(1)
+  /// active, or failed when a check stopped the save
+  status            String   @default("active")
+  modelId           String
+  voiceId           String
+  voiceSettings     Json
+  language          String
+  dictionaryVersion String
+  configVersion     String
+  configId          String
+  cacheKey          String
+  narrationScript   String
+  filename          String?
+  url               String?
+  durationMs        Int?
+  validityStatus    String   @default("unchecked")
+  validityNotes     String?
+  /// matched, mismatch, uncertain, unchecked, skipped_budget, or mock
+  transcriptStatus  String   @default("unchecked")
+  transcriptNotes   String?
+  attempt           Int      @default(1)
+  baselineFlag      Boolean  @default(false)
+  /// story, benchmark, or weekly
+  source            String   @default("story")
+  createdAt         DateTime @default(now())
+
+  @@index([storyId, createdAt])
+  @@index([cacheKey])
+  @@index([createdAt])
+  @@index([baselineFlag])
+}
+
+/// A listening flag, a reported mispronunciation, or a baseline reminder.
+model NarrationReviewItem {
+  id          String   @id @default(cuid())
+  assetId     String?
+  source      String
+  word        String?
+  timestampMs Int?
+  category    String?
+  /// pending until a person has listened
+  status      String   @default("pending")
+  notes       String?
+  payload     Json?
+  createdAt   DateTime @default(now())
+
+  @@index([status, createdAt])
+  @@index([source])
+}
+
+/// One Monday review. The job writes this. It does not create audio.
+model NarrationReviewReport {
+  id        String   @id @default(cuid())
+  weekKey   String
+  status    String
+  summary   Json
+  createdAt DateTime @default(now())
+
+  @@index([weekKey])
 }
 
 model ReadingStats {

@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/daily-stories",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/narration-review",
+      "schedule": "0 2 * * 1"
     }
   ]
 }

@@ -161,10 +161,19 @@ export function useTts(language: string, externalAudioRef?: RefObject<HTMLAudioE
   async function makeMp3(
     text: string,
     speed: number,
-    emotion: number,
     lang: string,
-    storyId?: string
-  ): Promise<{ savedAudioUrl: string | null }> {
+    storyId?: string,
+    force = false
+  ): Promise<{
+    savedAudioUrl: string | null;
+    audioCacheKey: string | null;
+    audioConfigVersion: string | null;
+    audioDictionaryVersion: string | null;
+    audioModelId: string | null;
+    audioVoiceId: string | null;
+    audioSpeed: number | null;
+    transcriptStatus: string | null;
+  }> {
     setIsMakingMp3(true);
     try {
       if (!text.trim()) throw new Error("Generate a story first.");
@@ -175,10 +184,10 @@ export function useTts(language: string, externalAudioRef?: RefObject<HTMLAudioE
         body: JSON.stringify({
           text,
           speed,
-          emotion,
           language: lang,
           voiceId: selectedVoiceId || undefined,
           storyId: storyId?.trim() || undefined,
+          force,
         }),
       });
 
@@ -203,9 +212,19 @@ export function useTts(language: string, externalAudioRef?: RefObject<HTMLAudioE
       const objectUrl = URL.createObjectURL(blob);
       const savedHeader = res.headers.get("X-Audio-Url")?.trim() || "";
       const savedAudioUrl = savedAudioUrlFromHeader(savedHeader);
+      const speedHeader = Number(res.headers.get("X-Audio-Speed"));
       replaceAudioUrl(savedAudioUrl || objectUrl);
       playCurrentAudio();
-      return { savedAudioUrl };
+      return {
+        savedAudioUrl,
+        audioCacheKey: res.headers.get("X-Audio-Cache-Key"),
+        audioConfigVersion: res.headers.get("X-Audio-Config-Version"),
+        audioDictionaryVersion: res.headers.get("X-Audio-Dictionary-Version"),
+        audioModelId: res.headers.get("X-Audio-Model"),
+        audioVoiceId: res.headers.get("X-Audio-Voice-Id"),
+        audioSpeed: Number.isFinite(speedHeader) ? speedHeader : speed,
+        transcriptStatus: res.headers.get("X-Audio-Transcript"),
+      };
     } finally {
       setIsMakingMp3(false);
     }
