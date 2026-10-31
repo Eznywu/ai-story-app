@@ -1,48 +1,38 @@
 "use client";
 
-import React from "react";
+import { clampTtsSpeed, TTS_SPEED_MAX, TTS_SPEED_MIN, TTS_SPEED_STEP } from "@/lib/tts/ttsLimits";
 
 type Props = {
   speed: number;
-  emotion: number;
   onSpeedChange: (value: number) => void;
-  onEmotionChange: (value: number) => void;
 };
 
-function clamp(n: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, n));
-}
-
-export function TtsControls({ speed, emotion, onSpeedChange, onEmotionChange }: Props) {
+export function TtsControls({ speed, onSpeedChange }: Props) {
   return (
     <section className="panel">
       <div className="controlsRow">
         <div className="controlBlock">
-          <div className="label">Speed</div>
+          <div className="label">Narration speed</div>
           <div className="stepper">
-            <button type="button" className="button" onClick={() => onSpeedChange(Number(clamp(speed - 0.05, 0.6, 1.3).toFixed(2)))}>
+            <button
+              type="button"
+              className="button"
+              onClick={() => onSpeedChange(clampTtsSpeed(speed - TTS_SPEED_STEP))}
+            >
               -
             </button>
             <span className="stepperValue">{speed.toFixed(2)}x</span>
-            <button type="button" className="button" onClick={() => onSpeedChange(Number(clamp(speed + 0.05, 0.6, 1.3).toFixed(2)))}>
+            <button
+              type="button"
+              className="button"
+              onClick={() => onSpeedChange(clampTtsSpeed(speed + TTS_SPEED_STEP))}
+            >
               +
             </button>
           </div>
-          <p className="hint">Tip: 0.85-1.00 feels like a calm bedtime pace.</p>
-        </div>
-
-        <div className="controlBlock">
-          <div className="label">Emotion</div>
-          <div className="stepper">
-            <button type="button" className="button" onClick={() => onEmotionChange(clamp(emotion - 5, 0, 100))}>
-              -
-            </button>
-            <span className="stepperValue">Warm {emotion}%</span>
-            <button type="button" className="button" onClick={() => onEmotionChange(clamp(emotion + 5, 0, 100))}>
-              +
-            </button>
-          </div>
-          <p className="hint">Higher values are more expressive. 30-55 is usually bedtime-safe.</p>
+          <p className="hint">
+            Recording pace, {TTS_SPEED_MIN.toFixed(2)}–{TTS_SPEED_MAX.toFixed(2)}. This is separate from the playback speed on the story page. A calmer bedtime preset stays off until someone has listened and approved it.
+          </p>
         </div>
       </div>
     </section>

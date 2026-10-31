@@ -1,18 +1,11 @@
-import { NextResponse } from "next/server";
-import { getSessionFromRequest } from "@/lib/authSession";
-import { getDefaultStoryText, getDefaultStoryTitle } from "@/lib/defaultStory";
+import { authEnabled } from "@/lib/auth/config";
+import { jsonNoStore } from "@/lib/auth/requireUser";
+import { getCurrentUser } from "@/lib/auth/session";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-export async function GET(req: Request) {
-  const s = getSessionFromRequest(req);
-  return NextResponse.json({
-    loggedIn: Boolean(s),
-    member: Boolean(s && s.m === 1),
-    email: s?.sub ?? null,
-    defaultStory: {
-      title: getDefaultStoryTitle(),
-      text: getDefaultStoryText(),
-    },
-  });
+export async function GET() {
+  const user = await getCurrentUser();
+  return jsonNoStore({ user, authEnabled: authEnabled() });
 }

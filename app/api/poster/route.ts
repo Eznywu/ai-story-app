@@ -1,15 +1,23 @@
 import { NextResponse } from "next/server";
-import { getErrorMessage, getErrorStatus } from "@/lib/errors";
+import { getErrorMessage } from "@/lib/errors";
 import { captureException } from "@/lib/monitoring";
-import { generatePosterPngBuffer } from "@/lib/posterImage";
-import { isMemberRequest } from "@/lib/memberGate";
+import { saveStoryPosterFile } from "@/lib/audio/storyMediaFiles";
+import { posterRoutePublicError } from "@/lib/posters/posterDiagnostics";
+import { generatePosterPngBuffer } from "@/lib/posters/posterImage";
+import { findOwnedStory } from "@/lib/auth/ownedStory";
+import { requireUser } from "@/lib/auth/requireUser";
+import { isSafeStoryId } from "@/lib/stories/storyIds";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+// Literal required: Next.js segment config must be statically analyzable.
+export const maxDuration = 300;
 
 type Body = {
   title?: string;
   story?: string;
   genre?: string;
+  storyId?: string;
 };
 
 function bufferLooksLikePng(buf: Buffer): boolean {
@@ -27,17 +35,14 @@ function bufferLooksLikePng(buf: Buffer): boolean {
 }
 
 export async function POST(req: Request) {
+  const auth = await requireUser();
+  if (auth.response) return auth.response;
   try {
-    if (!isMemberRequest(req)) {
-      return NextResponse.json(
-        { error: "Sign in and join membership to create posters." },
-        { status: 403 }
-      );
-    }
     const body = (await req.json().catch(() => ({}))) as Body;
     const title = typeof body.title === "string" ? body.title : "";
     const story = typeof body.story === "string" ? body.story : "";
     const genre = typeof body.genre === "string" ? body.genre : undefined;
+    const storyId = typeof body.storyId === "string" ? body.storyId.trim() : "";
 
     if (!story.trim()) {
       return NextResponse.json({ error: "Story text is required for a poster." }, { status: 400 });
@@ -60,29 +65,38 @@ export async function POST(req: Request) {
       });
     }
 
+    const headers = new Headers({
+      "Content-Type": "image/png",
+      "Cache-Control": "no-store",
+    });
+
+    if (storyId && isSafeStoryId(storyId)) {
+      const owned = await findOwnedStory(auth.user.id, storyId);
+      if (owned) {
+        try {
+          const posterUrl = await saveStoryPosterFile(storyId, buffer);
+          headers.set("X-Poster-Url", posterUrl);
+        } catch (err: unknown) {
+          console.error("[/api/poster] save failed", getErrorMessage(err, "save failed"));
+          headers.set("X-Poster-Save-Error", "Poster image could not be saved on the story.");
+        }
+      }
+    }
+
     return new NextResponse(new Uint8Array(buffer), {
       status: 200,
-      headers: {
-        "Content-Type": "image/png",
-        "Cache-Control": "no-store",
-      },
+      headers,
     });
   } catch (err: unknown) {
     captureException(err, { route: "/api/poster" });
-    const message = getErrorMessage(err, "Poster image failed.");
+    const detail = getErrorMessage(err, "Poster image failed.");
+    const { status, error, logReason } = posterRoutePublicError(err);
     console.error("[/api/poster] failed", {
-      message,
-      err: err instanceof Error ? err.stack ?? err.message : String(err),
+      logReason,
+      httpStatus: status,
+      publicError: error,
+      detail: detail.slice(0, 400),
     });
-    const status = getErrorStatus(
-      err,
-      message.includes("OPENAI_API_KEY") ||
-        message.includes("Gemini API key") ||
-        message.includes("GEMINI_API_KEY") ||
-        message.includes("POSTER_IMAGE_PROVIDER")
-        ? 500
-        : 502
-    );
-    return NextResponse.json({ error: message }, { status });
+    return NextResponse.json({ error }, { status });
   }
 }

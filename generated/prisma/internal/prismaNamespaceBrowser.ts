@@ -17,8 +17,8 @@
 
 import * as runtime from "@prisma/client/runtime/index-browser"
 
-export type * from '../models'
-export type * from './prismaNamespace'
+export type * from '../models.ts'
+export type * from './prismaNamespace.ts'
 
 export const Decimal = runtime.Decimal
 
@@ -51,8 +51,17 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
+  User: 'User',
+  Session: 'Session',
+  LoginCode: 'LoginCode',
   Story: 'Story',
-  Voice: 'Voice'
+  Voice: 'Voice',
+  KidProfile: 'KidProfile',
+  StoryCharacter: 'StoryCharacter',
+  NarrationAsset: 'NarrationAsset',
+  NarrationReviewItem: 'NarrationReviewItem',
+  NarrationReviewReport: 'NarrationReviewReport',
+  ReadingStats: 'ReadingStats'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -62,14 +71,52 @@ export type ModelName = (typeof ModelName)[keyof typeof ModelName]
  */
 
 export const TransactionIsolationLevel = runtime.makeStrictEnum({
+  ReadUncommitted: 'ReadUncommitted',
+  ReadCommitted: 'ReadCommitted',
+  RepeatableRead: 'RepeatableRead',
   Serializable: 'Serializable'
 } as const)
 
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
 
+export const UserScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  createdAt: 'createdAt'
+} as const
+
+export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const SessionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  tokenHash: 'tokenHash',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt'
+} as const
+
+export type SessionScalarFieldEnum = (typeof SessionScalarFieldEnum)[keyof typeof SessionScalarFieldEnum]
+
+
+export const LoginCodeScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  codeHash: 'codeHash',
+  expiresAt: 'expiresAt',
+  attempts: 'attempts',
+  consumedAt: 'consumedAt',
+  ip: 'ip',
+  createdAt: 'createdAt'
+} as const
+
+export type LoginCodeScalarFieldEnum = (typeof LoginCodeScalarFieldEnum)[keyof typeof LoginCodeScalarFieldEnum]
+
+
 export const StoryScalarFieldEnum = {
   id: 'id',
+  userId: 'userId',
   title: 'title',
   genre: 'genre',
   length: 'length',
@@ -79,6 +126,18 @@ export const StoryScalarFieldEnum = {
   mainCharacterName: 'mainCharacterName',
   childGender: 'childGender',
   posterFilename: 'posterFilename',
+  posterUrl: 'posterUrl',
+  audioFilename: 'audioFilename',
+  audioUrl: 'audioUrl',
+  audioModelId: 'audioModelId',
+  audioVoiceId: 'audioVoiceId',
+  audioVoiceSettings: 'audioVoiceSettings',
+  audioLanguage: 'audioLanguage',
+  audioDictionaryVersion: 'audioDictionaryVersion',
+  audioConfigVersion: 'audioConfigVersion',
+  audioConfigId: 'audioConfigId',
+  audioCacheKey: 'audioCacheKey',
+  dailyAutomated: 'dailyAutomated',
   createdAt: 'createdAt'
 } as const
 
@@ -87,13 +146,124 @@ export type StoryScalarFieldEnum = (typeof StoryScalarFieldEnum)[keyof typeof St
 
 export const VoiceScalarFieldEnum = {
   id: 'id',
+  userId: 'userId',
   displayName: 'displayName',
   provider: 'provider',
   voiceId: 'voiceId',
+  language: 'language',
   createdAt: 'createdAt'
 } as const
 
 export type VoiceScalarFieldEnum = (typeof VoiceScalarFieldEnum)[keyof typeof VoiceScalarFieldEnum]
+
+
+export const KidProfileScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  name: 'name',
+  age: 'age',
+  gender: 'gender',
+  interests: 'interests',
+  personality: 'personality',
+  readingLevel: 'readingLevel',
+  favoriteThemes: 'favoriteThemes',
+  bedtimeLength: 'bedtimeLength',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type KidProfileScalarFieldEnum = (typeof KidProfileScalarFieldEnum)[keyof typeof KidProfileScalarFieldEnum]
+
+
+export const StoryCharacterScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  name: 'name',
+  ageRange: 'ageRange',
+  gender: 'gender',
+  characterType: 'characterType',
+  personality: 'personality',
+  skills: 'skills',
+  themes: 'themes',
+  visualStyle: 'visualStyle',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type StoryCharacterScalarFieldEnum = (typeof StoryCharacterScalarFieldEnum)[keyof typeof StoryCharacterScalarFieldEnum]
+
+
+export const NarrationAssetScalarFieldEnum = {
+  id: 'id',
+  storyId: 'storyId',
+  sectionIndex: 'sectionIndex',
+  sectionCount: 'sectionCount',
+  status: 'status',
+  modelId: 'modelId',
+  voiceId: 'voiceId',
+  voiceSettings: 'voiceSettings',
+  language: 'language',
+  dictionaryVersion: 'dictionaryVersion',
+  configVersion: 'configVersion',
+  configId: 'configId',
+  cacheKey: 'cacheKey',
+  narrationScript: 'narrationScript',
+  filename: 'filename',
+  url: 'url',
+  durationMs: 'durationMs',
+  validityStatus: 'validityStatus',
+  validityNotes: 'validityNotes',
+  transcriptStatus: 'transcriptStatus',
+  transcriptNotes: 'transcriptNotes',
+  attempt: 'attempt',
+  baselineFlag: 'baselineFlag',
+  source: 'source',
+  createdAt: 'createdAt'
+} as const
+
+export type NarrationAssetScalarFieldEnum = (typeof NarrationAssetScalarFieldEnum)[keyof typeof NarrationAssetScalarFieldEnum]
+
+
+export const NarrationReviewItemScalarFieldEnum = {
+  id: 'id',
+  assetId: 'assetId',
+  source: 'source',
+  word: 'word',
+  timestampMs: 'timestampMs',
+  category: 'category',
+  status: 'status',
+  notes: 'notes',
+  payload: 'payload',
+  createdAt: 'createdAt'
+} as const
+
+export type NarrationReviewItemScalarFieldEnum = (typeof NarrationReviewItemScalarFieldEnum)[keyof typeof NarrationReviewItemScalarFieldEnum]
+
+
+export const NarrationReviewReportScalarFieldEnum = {
+  id: 'id',
+  weekKey: 'weekKey',
+  status: 'status',
+  summary: 'summary',
+  createdAt: 'createdAt'
+} as const
+
+export type NarrationReviewReportScalarFieldEnum = (typeof NarrationReviewReportScalarFieldEnum)[keyof typeof NarrationReviewReportScalarFieldEnum]
+
+
+export const ReadingStatsScalarFieldEnum = {
+  userId: 'userId',
+  todayKey: 'todayKey',
+  storiesReadToday: 'storiesReadToday',
+  streakDays: 'streakDays',
+  lastReadDayKey: 'lastReadDayKey',
+  lastStoryId: 'lastStoryId',
+  lastStoryTitle: 'lastStoryTitle',
+  draftSummary: 'draftSummary',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ReadingStatsScalarFieldEnum = (typeof ReadingStatsScalarFieldEnum)[keyof typeof ReadingStatsScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -104,10 +274,42 @@ export const SortOrder = {
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
+
+
+export const QueryMode = {
+  default: 'default',
+  insensitive: 'insensitive'
+} as const
+
+export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
+
+
 export const NullsOrder = {
   first: 'first',
   last: 'last'
 } as const
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 

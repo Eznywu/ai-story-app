@@ -9,8 +9,8 @@
  * 🟢 You can import this file directly.
  */
 import type * as runtime from "@prisma/client/runtime/client"
-import type * as $Enums from "../enums"
-import type * as Prisma from "../internal/prismaNamespace"
+import type * as $Enums from "../enums.ts"
+import type * as Prisma from "../internal/prismaNamespace.ts"
 
 /**
  * Model Voice
@@ -26,25 +26,31 @@ export type AggregateVoice = {
 
 export type VoiceMinAggregateOutputType = {
   id: string | null
+  userId: string | null
   displayName: string | null
   provider: string | null
   voiceId: string | null
+  language: string | null
   createdAt: Date | null
 }
 
 export type VoiceMaxAggregateOutputType = {
   id: string | null
+  userId: string | null
   displayName: string | null
   provider: string | null
   voiceId: string | null
+  language: string | null
   createdAt: Date | null
 }
 
 export type VoiceCountAggregateOutputType = {
   id: number
+  userId: number
   displayName: number
   provider: number
   voiceId: number
+  language: number
   createdAt: number
   _all: number
 }
@@ -52,25 +58,31 @@ export type VoiceCountAggregateOutputType = {
 
 export type VoiceMinAggregateInputType = {
   id?: true
+  userId?: true
   displayName?: true
   provider?: true
   voiceId?: true
+  language?: true
   createdAt?: true
 }
 
 export type VoiceMaxAggregateInputType = {
   id?: true
+  userId?: true
   displayName?: true
   provider?: true
   voiceId?: true
+  language?: true
   createdAt?: true
 }
 
 export type VoiceCountAggregateInputType = {
   id?: true
+  userId?: true
   displayName?: true
   provider?: true
   voiceId?: true
+  language?: true
   createdAt?: true
   _all?: true
 }
@@ -149,9 +161,11 @@ export type VoiceGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
 
 export type VoiceGroupByOutputType = {
   id: string
+  userId: string | null
   displayName: string
   provider: string
   voiceId: string
+  language: string
   createdAt: Date
   _count: VoiceCountAggregateOutputType | null
   _min: VoiceMinAggregateOutputType | null
@@ -178,36 +192,48 @@ export type VoiceWhereInput = {
   OR?: Prisma.VoiceWhereInput[]
   NOT?: Prisma.VoiceWhereInput | Prisma.VoiceWhereInput[]
   id?: Prisma.StringFilter<"Voice"> | string
+  userId?: Prisma.StringNullableFilter<"Voice"> | string | null
   displayName?: Prisma.StringFilter<"Voice"> | string
   provider?: Prisma.StringFilter<"Voice"> | string
   voiceId?: Prisma.StringFilter<"Voice"> | string
+  language?: Prisma.StringFilter<"Voice"> | string
   createdAt?: Prisma.DateTimeFilter<"Voice"> | Date | string
+  user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
 }
 
 export type VoiceOrderByWithRelationInput = {
   id?: Prisma.SortOrder
+  userId?: Prisma.SortOrderInput | Prisma.SortOrder
   displayName?: Prisma.SortOrder
   provider?: Prisma.SortOrder
   voiceId?: Prisma.SortOrder
+  language?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  user?: Prisma.UserOrderByWithRelationInput
 }
 
 export type VoiceWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  userId_voiceId?: Prisma.VoiceUserIdVoiceIdCompoundUniqueInput
   AND?: Prisma.VoiceWhereInput | Prisma.VoiceWhereInput[]
   OR?: Prisma.VoiceWhereInput[]
   NOT?: Prisma.VoiceWhereInput | Prisma.VoiceWhereInput[]
+  userId?: Prisma.StringNullableFilter<"Voice"> | string | null
   displayName?: Prisma.StringFilter<"Voice"> | string
   provider?: Prisma.StringFilter<"Voice"> | string
   voiceId?: Prisma.StringFilter<"Voice"> | string
+  language?: Prisma.StringFilter<"Voice"> | string
   createdAt?: Prisma.DateTimeFilter<"Voice"> | Date | string
-}, "id">
+  user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
+}, "id" | "userId_voiceId">
 
 export type VoiceOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
+  userId?: Prisma.SortOrderInput | Prisma.SortOrder
   displayName?: Prisma.SortOrder
   provider?: Prisma.SortOrder
   voiceId?: Prisma.SortOrder
+  language?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.VoiceCountOrderByAggregateInput
   _max?: Prisma.VoiceMaxOrderByAggregateInput
@@ -219,9 +245,11 @@ export type VoiceScalarWhereWithAggregatesInput = {
   OR?: Prisma.VoiceScalarWhereWithAggregatesInput[]
   NOT?: Prisma.VoiceScalarWhereWithAggregatesInput | Prisma.VoiceScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Voice"> | string
+  userId?: Prisma.StringNullableWithAggregatesFilter<"Voice"> | string | null
   displayName?: Prisma.StringWithAggregatesFilter<"Voice"> | string
   provider?: Prisma.StringWithAggregatesFilter<"Voice"> | string
   voiceId?: Prisma.StringWithAggregatesFilter<"Voice"> | string
+  language?: Prisma.StringWithAggregatesFilter<"Voice"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Voice"> | Date | string
 }
 
@@ -230,14 +258,18 @@ export type VoiceCreateInput = {
   displayName: string
   provider?: string
   voiceId: string
+  language?: string
   createdAt?: Date | string
+  user?: Prisma.UserCreateNestedOneWithoutVoicesInput
 }
 
 export type VoiceUncheckedCreateInput = {
   id?: string
+  userId?: string | null
   displayName: string
   provider?: string
   voiceId: string
+  language?: string
   createdAt?: Date | string
 }
 
@@ -246,22 +278,28 @@ export type VoiceUpdateInput = {
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   voiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  language?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneWithoutVoicesNestedInput
 }
 
 export type VoiceUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   voiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  language?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type VoiceCreateManyInput = {
   id?: string
+  userId?: string | null
   displayName: string
   provider?: string
   voiceId: string
+  language?: string
   createdAt?: Date | string
 }
 
@@ -270,85 +308,268 @@ export type VoiceUpdateManyMutationInput = {
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   voiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  language?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type VoiceUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   voiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  language?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type VoiceListRelationFilter = {
+  every?: Prisma.VoiceWhereInput
+  some?: Prisma.VoiceWhereInput
+  none?: Prisma.VoiceWhereInput
+}
+
+export type VoiceOrderByRelationAggregateInput = {
+  _count?: Prisma.SortOrder
+}
+
+export type VoiceUserIdVoiceIdCompoundUniqueInput = {
+  userId: string
+  voiceId: string
 }
 
 export type VoiceCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  userId?: Prisma.SortOrder
   displayName?: Prisma.SortOrder
   provider?: Prisma.SortOrder
   voiceId?: Prisma.SortOrder
+  language?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
 export type VoiceMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  userId?: Prisma.SortOrder
   displayName?: Prisma.SortOrder
   provider?: Prisma.SortOrder
   voiceId?: Prisma.SortOrder
+  language?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
 export type VoiceMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  userId?: Prisma.SortOrder
   displayName?: Prisma.SortOrder
   provider?: Prisma.SortOrder
   voiceId?: Prisma.SortOrder
+  language?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+}
+
+export type VoiceCreateNestedManyWithoutUserInput = {
+  create?: Prisma.XOR<Prisma.VoiceCreateWithoutUserInput, Prisma.VoiceUncheckedCreateWithoutUserInput> | Prisma.VoiceCreateWithoutUserInput[] | Prisma.VoiceUncheckedCreateWithoutUserInput[]
+  connectOrCreate?: Prisma.VoiceCreateOrConnectWithoutUserInput | Prisma.VoiceCreateOrConnectWithoutUserInput[]
+  createMany?: Prisma.VoiceCreateManyUserInputEnvelope
+  connect?: Prisma.VoiceWhereUniqueInput | Prisma.VoiceWhereUniqueInput[]
+}
+
+export type VoiceUncheckedCreateNestedManyWithoutUserInput = {
+  create?: Prisma.XOR<Prisma.VoiceCreateWithoutUserInput, Prisma.VoiceUncheckedCreateWithoutUserInput> | Prisma.VoiceCreateWithoutUserInput[] | Prisma.VoiceUncheckedCreateWithoutUserInput[]
+  connectOrCreate?: Prisma.VoiceCreateOrConnectWithoutUserInput | Prisma.VoiceCreateOrConnectWithoutUserInput[]
+  createMany?: Prisma.VoiceCreateManyUserInputEnvelope
+  connect?: Prisma.VoiceWhereUniqueInput | Prisma.VoiceWhereUniqueInput[]
+}
+
+export type VoiceUpdateManyWithoutUserNestedInput = {
+  create?: Prisma.XOR<Prisma.VoiceCreateWithoutUserInput, Prisma.VoiceUncheckedCreateWithoutUserInput> | Prisma.VoiceCreateWithoutUserInput[] | Prisma.VoiceUncheckedCreateWithoutUserInput[]
+  connectOrCreate?: Prisma.VoiceCreateOrConnectWithoutUserInput | Prisma.VoiceCreateOrConnectWithoutUserInput[]
+  upsert?: Prisma.VoiceUpsertWithWhereUniqueWithoutUserInput | Prisma.VoiceUpsertWithWhereUniqueWithoutUserInput[]
+  createMany?: Prisma.VoiceCreateManyUserInputEnvelope
+  set?: Prisma.VoiceWhereUniqueInput | Prisma.VoiceWhereUniqueInput[]
+  disconnect?: Prisma.VoiceWhereUniqueInput | Prisma.VoiceWhereUniqueInput[]
+  delete?: Prisma.VoiceWhereUniqueInput | Prisma.VoiceWhereUniqueInput[]
+  connect?: Prisma.VoiceWhereUniqueInput | Prisma.VoiceWhereUniqueInput[]
+  update?: Prisma.VoiceUpdateWithWhereUniqueWithoutUserInput | Prisma.VoiceUpdateWithWhereUniqueWithoutUserInput[]
+  updateMany?: Prisma.VoiceUpdateManyWithWhereWithoutUserInput | Prisma.VoiceUpdateManyWithWhereWithoutUserInput[]
+  deleteMany?: Prisma.VoiceScalarWhereInput | Prisma.VoiceScalarWhereInput[]
+}
+
+export type VoiceUncheckedUpdateManyWithoutUserNestedInput = {
+  create?: Prisma.XOR<Prisma.VoiceCreateWithoutUserInput, Prisma.VoiceUncheckedCreateWithoutUserInput> | Prisma.VoiceCreateWithoutUserInput[] | Prisma.VoiceUncheckedCreateWithoutUserInput[]
+  connectOrCreate?: Prisma.VoiceCreateOrConnectWithoutUserInput | Prisma.VoiceCreateOrConnectWithoutUserInput[]
+  upsert?: Prisma.VoiceUpsertWithWhereUniqueWithoutUserInput | Prisma.VoiceUpsertWithWhereUniqueWithoutUserInput[]
+  createMany?: Prisma.VoiceCreateManyUserInputEnvelope
+  set?: Prisma.VoiceWhereUniqueInput | Prisma.VoiceWhereUniqueInput[]
+  disconnect?: Prisma.VoiceWhereUniqueInput | Prisma.VoiceWhereUniqueInput[]
+  delete?: Prisma.VoiceWhereUniqueInput | Prisma.VoiceWhereUniqueInput[]
+  connect?: Prisma.VoiceWhereUniqueInput | Prisma.VoiceWhereUniqueInput[]
+  update?: Prisma.VoiceUpdateWithWhereUniqueWithoutUserInput | Prisma.VoiceUpdateWithWhereUniqueWithoutUserInput[]
+  updateMany?: Prisma.VoiceUpdateManyWithWhereWithoutUserInput | Prisma.VoiceUpdateManyWithWhereWithoutUserInput[]
+  deleteMany?: Prisma.VoiceScalarWhereInput | Prisma.VoiceScalarWhereInput[]
+}
+
+export type VoiceCreateWithoutUserInput = {
+  id?: string
+  displayName: string
+  provider?: string
+  voiceId: string
+  language?: string
+  createdAt?: Date | string
+}
+
+export type VoiceUncheckedCreateWithoutUserInput = {
+  id?: string
+  displayName: string
+  provider?: string
+  voiceId: string
+  language?: string
+  createdAt?: Date | string
+}
+
+export type VoiceCreateOrConnectWithoutUserInput = {
+  where: Prisma.VoiceWhereUniqueInput
+  create: Prisma.XOR<Prisma.VoiceCreateWithoutUserInput, Prisma.VoiceUncheckedCreateWithoutUserInput>
+}
+
+export type VoiceCreateManyUserInputEnvelope = {
+  data: Prisma.VoiceCreateManyUserInput | Prisma.VoiceCreateManyUserInput[]
+  skipDuplicates?: boolean
+}
+
+export type VoiceUpsertWithWhereUniqueWithoutUserInput = {
+  where: Prisma.VoiceWhereUniqueInput
+  update: Prisma.XOR<Prisma.VoiceUpdateWithoutUserInput, Prisma.VoiceUncheckedUpdateWithoutUserInput>
+  create: Prisma.XOR<Prisma.VoiceCreateWithoutUserInput, Prisma.VoiceUncheckedCreateWithoutUserInput>
+}
+
+export type VoiceUpdateWithWhereUniqueWithoutUserInput = {
+  where: Prisma.VoiceWhereUniqueInput
+  data: Prisma.XOR<Prisma.VoiceUpdateWithoutUserInput, Prisma.VoiceUncheckedUpdateWithoutUserInput>
+}
+
+export type VoiceUpdateManyWithWhereWithoutUserInput = {
+  where: Prisma.VoiceScalarWhereInput
+  data: Prisma.XOR<Prisma.VoiceUpdateManyMutationInput, Prisma.VoiceUncheckedUpdateManyWithoutUserInput>
+}
+
+export type VoiceScalarWhereInput = {
+  AND?: Prisma.VoiceScalarWhereInput | Prisma.VoiceScalarWhereInput[]
+  OR?: Prisma.VoiceScalarWhereInput[]
+  NOT?: Prisma.VoiceScalarWhereInput | Prisma.VoiceScalarWhereInput[]
+  id?: Prisma.StringFilter<"Voice"> | string
+  userId?: Prisma.StringNullableFilter<"Voice"> | string | null
+  displayName?: Prisma.StringFilter<"Voice"> | string
+  provider?: Prisma.StringFilter<"Voice"> | string
+  voiceId?: Prisma.StringFilter<"Voice"> | string
+  language?: Prisma.StringFilter<"Voice"> | string
+  createdAt?: Prisma.DateTimeFilter<"Voice"> | Date | string
+}
+
+export type VoiceCreateManyUserInput = {
+  id?: string
+  displayName: string
+  provider?: string
+  voiceId: string
+  language?: string
+  createdAt?: Date | string
+}
+
+export type VoiceUpdateWithoutUserInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  provider?: Prisma.StringFieldUpdateOperationsInput | string
+  voiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  language?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type VoiceUncheckedUpdateWithoutUserInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  provider?: Prisma.StringFieldUpdateOperationsInput | string
+  voiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  language?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type VoiceUncheckedUpdateManyWithoutUserInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  provider?: Prisma.StringFieldUpdateOperationsInput | string
+  voiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  language?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 
 
 export type VoiceSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  userId?: boolean
   displayName?: boolean
   provider?: boolean
   voiceId?: boolean
+  language?: boolean
   createdAt?: boolean
+  user?: boolean | Prisma.Voice$userArgs<ExtArgs>
 }, ExtArgs["result"]["voice"]>
 
 export type VoiceSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  userId?: boolean
   displayName?: boolean
   provider?: boolean
   voiceId?: boolean
+  language?: boolean
   createdAt?: boolean
+  user?: boolean | Prisma.Voice$userArgs<ExtArgs>
 }, ExtArgs["result"]["voice"]>
 
 export type VoiceSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  userId?: boolean
   displayName?: boolean
   provider?: boolean
   voiceId?: boolean
+  language?: boolean
   createdAt?: boolean
+  user?: boolean | Prisma.Voice$userArgs<ExtArgs>
 }, ExtArgs["result"]["voice"]>
 
 export type VoiceSelectScalar = {
   id?: boolean
+  userId?: boolean
   displayName?: boolean
   provider?: boolean
   voiceId?: boolean
+  language?: boolean
   createdAt?: boolean
 }
 
-export type VoiceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "displayName" | "provider" | "voiceId" | "createdAt", ExtArgs["result"]["voice"]>
+export type VoiceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "displayName" | "provider" | "voiceId" | "language" | "createdAt", ExtArgs["result"]["voice"]>
+export type VoiceInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  user?: boolean | Prisma.Voice$userArgs<ExtArgs>
+}
+export type VoiceIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  user?: boolean | Prisma.Voice$userArgs<ExtArgs>
+}
+export type VoiceIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  user?: boolean | Prisma.Voice$userArgs<ExtArgs>
+}
 
 export type $VoicePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Voice"
-  objects: {}
+  objects: {
+    user: Prisma.$UserPayload<ExtArgs> | null
+  }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
+    userId: string | null
     displayName: string
     provider: string
     voiceId: string
+    language: string
     createdAt: Date
   }, ExtArgs["result"]["voice"]>
   composites: {}
@@ -744,6 +965,7 @@ readonly fields: VoiceFieldRefs;
  */
 export interface Prisma__VoiceClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  user<T extends Prisma.Voice$userArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Voice$userArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -774,9 +996,11 @@ export interface Prisma__VoiceClient<T, Null = never, ExtArgs extends runtime.Ty
  */
 export interface VoiceFieldRefs {
   readonly id: Prisma.FieldRef<"Voice", 'String'>
+  readonly userId: Prisma.FieldRef<"Voice", 'String'>
   readonly displayName: Prisma.FieldRef<"Voice", 'String'>
   readonly provider: Prisma.FieldRef<"Voice", 'String'>
   readonly voiceId: Prisma.FieldRef<"Voice", 'String'>
+  readonly language: Prisma.FieldRef<"Voice", 'String'>
   readonly createdAt: Prisma.FieldRef<"Voice", 'DateTime'>
 }
     
@@ -794,6 +1018,10 @@ export type VoiceFindUniqueArgs<ExtArgs extends runtime.Types.Extensions.Interna
    * Omit specific fields from the Voice
    */
   omit?: Prisma.VoiceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.VoiceInclude<ExtArgs> | null
   /**
    * Filter, which Voice to fetch.
    */
@@ -813,6 +1041,10 @@ export type VoiceFindUniqueOrThrowArgs<ExtArgs extends runtime.Types.Extensions.
    */
   omit?: Prisma.VoiceOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.VoiceInclude<ExtArgs> | null
+  /**
    * Filter, which Voice to fetch.
    */
   where: Prisma.VoiceWhereUniqueInput
@@ -830,6 +1062,10 @@ export type VoiceFindFirstArgs<ExtArgs extends runtime.Types.Extensions.Internal
    * Omit specific fields from the Voice
    */
   omit?: Prisma.VoiceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.VoiceInclude<ExtArgs> | null
   /**
    * Filter, which Voice to fetch.
    */
@@ -879,6 +1115,10 @@ export type VoiceFindFirstOrThrowArgs<ExtArgs extends runtime.Types.Extensions.I
    */
   omit?: Prisma.VoiceOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.VoiceInclude<ExtArgs> | null
+  /**
    * Filter, which Voice to fetch.
    */
   where?: Prisma.VoiceWhereInput
@@ -927,6 +1167,10 @@ export type VoiceFindManyArgs<ExtArgs extends runtime.Types.Extensions.InternalA
    */
   omit?: Prisma.VoiceOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.VoiceInclude<ExtArgs> | null
+  /**
    * Filter, which Voices to fetch.
    */
   where?: Prisma.VoiceWhereInput
@@ -970,6 +1214,10 @@ export type VoiceCreateArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
    */
   omit?: Prisma.VoiceOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.VoiceInclude<ExtArgs> | null
+  /**
    * The data needed to create a Voice.
    */
   data: Prisma.XOR<Prisma.VoiceCreateInput, Prisma.VoiceUncheckedCreateInput>
@@ -983,6 +1231,7 @@ export type VoiceCreateManyArgs<ExtArgs extends runtime.Types.Extensions.Interna
    * The data used to create many Voices.
    */
   data: Prisma.VoiceCreateManyInput | Prisma.VoiceCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1001,6 +1250,11 @@ export type VoiceCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extension
    * The data used to create many Voices.
    */
   data: Prisma.VoiceCreateManyInput | Prisma.VoiceCreateManyInput[]
+  skipDuplicates?: boolean
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.VoiceIncludeCreateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1015,6 +1269,10 @@ export type VoiceUpdateArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
    * Omit specific fields from the Voice
    */
   omit?: Prisma.VoiceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.VoiceInclude<ExtArgs> | null
   /**
    * The data needed to update a Voice.
    */
@@ -1067,6 +1325,10 @@ export type VoiceUpdateManyAndReturnArgs<ExtArgs extends runtime.Types.Extension
    * Limit how many Voices to update.
    */
   limit?: number
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.VoiceIncludeUpdateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1081,6 +1343,10 @@ export type VoiceUpsertArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
    * Omit specific fields from the Voice
    */
   omit?: Prisma.VoiceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.VoiceInclude<ExtArgs> | null
   /**
    * The filter to search for the Voice to update in case it exists.
    */
@@ -1108,6 +1374,10 @@ export type VoiceDeleteArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
    */
   omit?: Prisma.VoiceOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.VoiceInclude<ExtArgs> | null
+  /**
    * Filter which Voice to delete.
    */
   where: Prisma.VoiceWhereUniqueInput
@@ -1128,6 +1398,25 @@ export type VoiceDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Interna
 }
 
 /**
+ * Voice.user
+ */
+export type Voice$userArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the User
+   */
+  select?: Prisma.UserSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the User
+   */
+  omit?: Prisma.UserOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
+  where?: Prisma.UserWhereInput
+}
+
+/**
  * Voice without action
  */
 export type VoiceDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1139,4 +1428,8 @@ export type VoiceDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
    * Omit specific fields from the Voice
    */
   omit?: Prisma.VoiceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.VoiceInclude<ExtArgs> | null
 }

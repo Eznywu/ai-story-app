@@ -1,72 +1,63 @@
 import { ElevenLabsClient, ElevenLabsError } from "@elevenlabs/elevenlabs-js";
 import type { TextToSpeechRequest } from "@elevenlabs/elevenlabs-js/api/resources/textToSpeech/client/requests/TextToSpeechRequest";
-import { resolveVoiceById } from "@/lib/voices";
+import { resolveVoiceById } from "@/lib/voices/voices";
 import { createError } from "@/lib/errors";
 import { captureMessage } from "@/lib/monitoring";
+import { mockNarrationMp3Buffer, mockProvidersEnabled } from "@/lib/providers/mockProviders";
+import { checkNarrationAudio, type AudioValidity } from "@/lib/tts/audioValidity";
+import { buildElevenSpeechRequest, type ElevenSpeechRequest } from "@/lib/tts/elevenRequest";
+import { getPronunciationDictionary } from "@/lib/tts/dictionaryFile";
+import { planNarration, type NarrationPlan } from "@/lib/tts/planNarration";
+import { renderSectionsWithRetry, retryBudgetUsd, sttBudgetUsd, usdForCharacters } from "@/lib/tts/retry";
+import { createMockSpeechToText, screenTranscript, transcriptQueueDecision, type TranscriptScreen } from "@/lib/tts/stt";
+import { V3_USD_PER_THOUSAND_CHARS } from "@/lib/tts/pricing";
 
 export type ElevenTtsInput = {
   text: string;
   speed?: number;
-  emotion?: number;
   voiceId?: string;
   language?: string;
+  /** Ignored. The warmth slider is gone. Everyday recordings use the frozen baseline until a preset is promoted. */
+  emotion?: number;
 };
 
-export function prepareElevenText(text: string, language: string) {
-  const isZh = String(language).toLowerCase().startsWith("zh");
-  let cleaned = String(text)
-    .replace(/\r\n/g, "\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .replace(/([，。！？；：、])\s*/g, "$1")
-    .replace(/([,.!?;:])\s*/g, "$1 ")
-    .replace(/[ \t]{2,}/g, " ")
-    .trim();
+export type NarrationSuccess = {
+  ok: true;
+  audio: Buffer;
+  plan: NarrationPlan;
+  attempts: number[];
+  validity: AudioValidity;
+  transcriptStatus: "mock" | "skipped_budget" | "unchecked" | "matched" | "mismatch" | "uncertain";
+  transcriptNotes: string;
+  screen: TranscriptScreen | null;
+  retrySpentUsd: number;
+  mock: boolean;
+};
 
-  if (isZh) {
-    const zhFixMap: Array<[RegExp, string]> = [];
-    for (const [re, rep] of zhFixMap) cleaned = cleaned.replace(re, rep);
+export type NarrationFailure = {
+  ok: false;
+  message: string;
+  keptPrevious: boolean;
+  plan: NarrationPlan;
+  attempts: number[];
+  retrySpentUsd: number;
+  mock: boolean;
+};
+
+function friendlyElevenMessage(body: string, fallback: string) {
+  const raw = body.trim();
+  if (!raw) return fallback;
+  try {
+    const parsed = JSON.parse(raw) as { detail?: { message?: string; status?: string } | string };
+    const detail = parsed.detail;
+    if (typeof detail === "string" && detail.trim()) return detail.trim();
+    if (detail && typeof detail === "object" && typeof detail.message === "string" && detail.message.trim()) {
+      return detail.message.trim();
+    }
+  } catch {
+    /* not JSON */
   }
-
-  return cleaned;
-}
-
-export function buildElevenTtsRequest(
-  text: string,
-  speed: number,
-  emotion: number,
-  language: string,
-  modelId: string
-): TextToSpeechRequest {
-  const isZh = String(language).toLowerCase().startsWith("zh");
-  const normalizedSpeed = Math.max(0.78, Math.min(1.08, Number(speed)));
-  const emotionNum = Number.isFinite(Number(emotion)) ? Number(emotion) : 40;
-  const emotion01 = Math.max(0, Math.min(1, emotionNum > 1 ? emotionNum / 100 : emotionNum));
-
-  const stability = isZh ? 0.72 - emotion01 * 0.27 : 0.65 - emotion01 * 0.45;
-  const style = isZh ? 0.1 + emotion01 * 0.35 : 0.15 + emotion01 * 0.8;
-  const similarityBoost = isZh ? 0.78 : 0.85;
-
-  const base: TextToSpeechRequest = {
-    text,
-    modelId,
-    voiceSettings: {
-      stability,
-      similarityBoost,
-      style,
-      useSpeakerBoost: true,
-      speed: normalizedSpeed,
-    },
-  };
-
-  // eleven_v3 does not accept previousText / next_text (API returns unsupported_model).
-  const isElevenV3 = modelId === "eleven_v3";
-  if (!isElevenV3) {
-    base.previousText = text.slice(0, 120);
-    base.nextText = text.slice(-120);
-    base.seed = 42;
-  }
-
-  return base;
+  return raw.length > 280 ? `${raw.slice(0, 280)}…` : raw;
 }
 
 async function readableStreamToBuffer(stream: ReadableStream<Uint8Array>): Promise<Buffer> {
@@ -80,69 +71,187 @@ async function readableStreamToBuffer(stream: ReadableStream<Uint8Array>): Promi
   return Buffer.concat(chunks);
 }
 
-export async function speakWithEleven(input: ElevenTtsInput) {
-  const apiKey = process.env.ELEVENLABS_API_KEY;
-  const fallbackVoiceId = process.env.ELEVENLABS_VOICE_ID;
+export function resolveNarrationVoice(voiceId: string | undefined, language: string) {
+  const fallbackVoiceId = process.env.ELEVENLABS_VOICE_ID?.trim();
+  const resolved = resolveVoiceById(voiceId, language);
+  const elevenVoiceId = resolved?.elevenId ?? fallbackVoiceId;
+  if (!elevenVoiceId || !resolved) {
+    throw createError("No narration voice is selected. Pick a voice, or set ELEVENLABS_VOICE_ID.", 500);
+  }
+  return { appVoiceId: resolved.id, elevenVoiceId };
+}
+
+export async function speakWithElevenRequest(elevenVoiceId: string, request: ElevenSpeechRequest): Promise<Buffer> {
+  if (mockProvidersEnabled()) {
+    console.info("[eleven-tts] mock", {
+      modelId: request.modelId,
+      voiceId: elevenVoiceId,
+      speed: request.voiceSettings.speed,
+      chars: request.text.length,
+      sections: 1,
+    });
+    return mockNarrationMp3Buffer();
+  }
+  const apiKey = process.env.ELEVENLABS_API_KEY?.trim();
   if (!apiKey) {
-    throw createError("Missing ELEVENLABS_API_KEY", 500);
+    throw createError("Narration needs an ElevenLabs API key. Set ELEVENLABS_API_KEY and try again.", 500);
   }
-
-  const language = String(input.language ?? "zh-Hant");
-  const text = String(input.text ?? "").trim();
-  if (!text) {
-    throw createError("Missing text", 400);
-  }
-
-  const resolved = resolveVoiceById(input.voiceId, language);
-  const resolvedElevenVoiceId = resolved?.elevenId ?? fallbackVoiceId;
-  if (!resolvedElevenVoiceId) {
-    throw createError("Missing ELEVENLABS_VOICE_ID", 500);
-  }
-
-  const modelId =
-    String(process.env.ELEVENLABS_TTS_MODEL ?? "").trim() || "eleven_v3";
-
-  const cleanedText = prepareElevenText(text, language);
-  const ttsRequest: TextToSpeechRequest = {
-    ...buildElevenTtsRequest(
-      cleanedText,
-      Number(input.speed ?? 0.95),
-      Number(input.emotion ?? 40),
-      language,
-      modelId
-    ),
-    outputFormat: "mp3_44100_128",
-  };
-
   const client = new ElevenLabsClient({ apiKey });
+  const sdkRequest = {
+    text: request.text,
+    modelId: request.modelId,
+    voiceSettings: {
+      stability: request.voiceSettings.stability,
+      similarityBoost: request.voiceSettings.similarityBoost,
+      style: request.voiceSettings.style,
+      useSpeakerBoost: request.voiceSettings.useSpeakerBoost,
+      speed: request.voiceSettings.speed,
+    },
+    outputFormat: request.outputFormat,
+    ...(request.languageCode ? { languageCode: request.languageCode } : {}),
+    ...(request.previousText ? { previousText: request.previousText } : {}),
+    ...(request.nextText ? { nextText: request.nextText } : {}),
+  } as TextToSpeechRequest;
 
   try {
-    const { data: stream, rawResponse } = await client.textToSpeech
-      .convert(resolvedElevenVoiceId, ttsRequest)
-      .withRawResponse();
-
+    const { data: stream, rawResponse } = await client.textToSpeech.convert(elevenVoiceId, sdkRequest).withRawResponse();
     if (process.env.NODE_ENV === "development") {
       const charCount = rawResponse.headers?.get?.("x-character-count");
       const requestId = rawResponse.headers?.get?.("request-id");
       if (charCount != null || requestId != null) {
-        captureMessage("ElevenLabs TTS generation", {
-          characterCount: charCount,
-          requestId,
-        });
+        captureMessage("ElevenLabs TTS generation", { characterCount: charCount, requestId });
       }
     }
-
     return readableStreamToBuffer(stream);
   } catch (err) {
     if (err instanceof ElevenLabsError) {
-      const body =
-        typeof err.body === "string"
-          ? err.body
-          : err.body != null
-            ? JSON.stringify(err.body)
-            : "";
-      throw createError(body || err.message || "ElevenLabs request failed", err.statusCode ?? 502);
+      const body = typeof err.body === "string" ? err.body : err.body != null ? JSON.stringify(err.body) : "";
+      throw createError(friendlyElevenMessage(body, err.message || "ElevenLabs request failed"), err.statusCode ?? 502);
     }
     throw err;
   }
+}
+
+export async function narrateWithEleven(input: ElevenTtsInput & { hadPreviousAudio?: boolean }): Promise<NarrationSuccess | NarrationFailure> {
+  const language = String(input.language ?? "zh-Hant");
+  const text = String(input.text ?? "");
+  if (!text.trim()) throw createError("Add story text before making narration.", 400);
+
+  const usingMock = mockProvidersEnabled();
+  if (!process.env.ELEVENLABS_API_KEY?.trim() && !usingMock) {
+    throw createError("Narration needs an ElevenLabs API key. Set ELEVENLABS_API_KEY and try again.", 500);
+  }
+  const voice = resolveNarrationVoice(input.voiceId, language);
+  const dictionary = getPronunciationDictionary();
+  const plan = planNarration({
+    text,
+    language,
+    voiceId: voice.appVoiceId,
+    dictionary,
+    speed: input.speed,
+  });
+  const rendered = await renderSectionsWithRetry({
+    sections: plan.sections.map((section) => ({ index: section.index, text: section.text })),
+    hadPreviousAudio: Boolean(input.hadPreviousAudio),
+    budgetUsd: retryBudgetUsd(),
+    maxRegenerations: 2,
+    costUsd: (sectionText) => usdForCharacters(sectionText.length, V3_USD_PER_THOUSAND_CHARS),
+    synthesize: async (section) => {
+      const planned = plan.sections.find((item) => item.index === section.index) ?? plan.sections[0];
+      const request = buildElevenSpeechRequest({
+        text: planned.text,
+        modelId: plan.modelId,
+        language: plan.language,
+        voiceSettings: plan.voiceSettings,
+        previousText: planned.previousText,
+        nextText: planned.nextText,
+      });
+      return speakWithElevenRequest(voice.elevenVoiceId, request);
+    },
+    validate: (audio, sectionText) => {
+      const validity = checkNarrationAudio({
+        audio,
+        script: sectionText,
+        language: plan.language,
+        speed: plan.voiceSettings.speed ?? 1,
+        mock: usingMock,
+      });
+      return { ok: validity.ok, notes: validity.notes };
+    },
+  });
+
+  const attempts = rendered.sections.map((section) => section.attempts);
+  if (!rendered.ok || !rendered.audio) {
+    const detail = rendered.sections.find((section) => !section.ok)?.notes;
+    return {
+      ok: false,
+      message: detail || "One part of the narration did not pass the audio check. The previous recording was kept.",
+      keptPrevious: rendered.keptPreviousAudio,
+      plan,
+      attempts,
+      retrySpentUsd: rendered.retrySpentUsd,
+      mock: usingMock,
+    };
+  }
+
+  const validity = checkNarrationAudio({
+    audio: rendered.audio,
+    script: plan.script.script,
+    language: plan.language,
+    speed: plan.voiceSettings.speed ?? 1,
+    mock: usingMock,
+  });
+  if (!validity.ok) {
+    return {
+      ok: false,
+      message: validity.notes,
+      keptPrevious: Boolean(input.hadPreviousAudio),
+      plan,
+      attempts,
+      retrySpentUsd: rendered.retrySpentUsd,
+      mock: usingMock,
+    };
+  }
+
+  const queue = transcriptQueueDecision({
+    mock: usingMock,
+    budgetUsd: sttBudgetUsd(),
+    estimatedUsd: usdForCharacters(plan.script.script.length, V3_USD_PER_THOUSAND_CHARS) > 0
+      ? (validity.durationMs / 1000 / 60) * 0.22
+      : 0,
+  });
+  let screen: TranscriptScreen | null = null;
+  let transcriptStatus: NarrationSuccess["transcriptStatus"] = queue.status;
+  let transcriptNotes = queue.note;
+  if (queue.status === "mock") {
+    const stt = createMockSpeechToText("echo");
+    const heard = await stt.transcribe({
+      audio: rendered.audio,
+      language: plan.language,
+      expectedScript: plan.script.script,
+    });
+    screen = screenTranscript(plan.script.script, heard.text, plan.language, "mock");
+    transcriptStatus = screen.status === "matched" ? "matched" : screen.status === "uncertain" ? "uncertain" : "mismatch";
+    transcriptNotes = `${queue.note} Mock comparison: ${screen.status}.`;
+  }
+
+  return {
+    ok: true,
+    audio: rendered.audio,
+    plan,
+    attempts,
+    validity,
+    transcriptStatus,
+    transcriptNotes,
+    screen,
+    retrySpentUsd: rendered.retrySpentUsd,
+    mock: usingMock,
+  };
+}
+
+/** One-shot helper kept for older callers. New story audio goes through narrateWithEleven. */
+export async function speakWithEleven(input: ElevenTtsInput): Promise<Buffer> {
+  const result = await narrateWithEleven(input);
+  if (!result.ok) throw createError(result.message, 502);
+  return result.audio;
 }

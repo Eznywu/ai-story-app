@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -51,3 +52,12 @@ ios/App/Pods
 ios/App/build
 ios/**/*.xcuserstate
 ios/**/xcuserdata
+
+# Local database, scratch files, and recordings. Historical blobs may still exist on older commits.
+/dev.db
+/tmp/
+/headers.txt
+/el_test.mp3
+/test.mp3
+/uploads/audio/
+/uploads/*.webm

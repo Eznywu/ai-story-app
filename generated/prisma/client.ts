@@ -16,12 +16,12 @@ import { fileURLToPath } from 'node:url'
 globalThis['__dirname'] = path.dirname(fileURLToPath(import.meta.url))
 
 import * as runtime from "@prisma/client/runtime/client"
-import * as $Enums from "./enums"
-import * as $Class from "./internal/class"
-import * as Prisma from "./internal/prismaNamespace"
+import * as $Enums from "./enums.ts"
+import * as $Class from "./internal/class.ts"
+import * as Prisma from "./internal/prismaNamespace.ts"
 
-export * as $Enums from './enums'
-export * from "./enums"
+export * as $Enums from './enums.ts'
+export * from "./enums.ts"
 /**
  * ## Prisma Client
  * 
@@ -29,8 +29,8 @@ export * from "./enums"
  * @example
  * ```
  * const prisma = new PrismaClient()
- * // Fetch zero or more Stories
- * const stories = await prisma.story.findMany()
+ * // Fetch zero or more Users
+ * const users = await prisma.user.findMany()
  * ```
  * 
  * Read more in our [docs](https://pris.ly/d/client).
@@ -39,6 +39,21 @@ export const PrismaClient = $Class.getPrismaClientClass()
 export type PrismaClient<LogOpts extends Prisma.LogLevel = never, OmitOpts extends Prisma.PrismaClientOptions["omit"] = Prisma.PrismaClientOptions["omit"], ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = $Class.PrismaClient<LogOpts, OmitOpts, ExtArgs>
 export { Prisma }
 
+/**
+ * Model User
+ * A parent account. One email is one family library.
+ */
+export type User = Prisma.UserModel
+/**
+ * Model Session
+ * Opaque session token is stored only as a hash. The cookie lasts about 400 days.
+ */
+export type Session = Prisma.SessionModel
+/**
+ * Model LoginCode
+ * Email one-time code. `codeHash` is scrypt; the plaintext code is never stored.
+ */
+export type LoginCode = Prisma.LoginCodeModel
 /**
  * Model Story
  * 
@@ -49,3 +64,33 @@ export type Story = Prisma.StoryModel
  * 
  */
 export type Voice = Prisma.VoiceModel
+/**
+ * Model KidProfile
+ * 
+ */
+export type KidProfile = Prisma.KidProfileModel
+/**
+ * Model StoryCharacter
+ * 
+ */
+export type StoryCharacter = Prisma.StoryCharacterModel
+/**
+ * Model NarrationAsset
+ * One generated narration section. Older stories have no rows here.
+ */
+export type NarrationAsset = Prisma.NarrationAssetModel
+/**
+ * Model NarrationReviewItem
+ * A listening flag, a reported mispronunciation, or a baseline reminder.
+ */
+export type NarrationReviewItem = Prisma.NarrationReviewItemModel
+/**
+ * Model NarrationReviewReport
+ * One Monday review. The job writes this. It does not create audio.
+ */
+export type NarrationReviewReport = Prisma.NarrationReviewReportModel
+/**
+ * Model ReadingStats
+ * 
+ */
+export type ReadingStats = Prisma.ReadingStatsModel

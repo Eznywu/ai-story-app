@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { ElevenLabsClient, ElevenLabsError } from "@elevenlabs/elevenlabs-js";
 import { getErrorMessage, getErrorStatus } from "@/lib/errors";
-import { isMemberRequest } from "@/lib/memberGate";
+import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/auth/requireUser";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function readableElevenLabsCloneError(body: string): string | null {
   try {
@@ -45,16 +47,18 @@ function errorBodyFromElevenLabsError(err: ElevenLabsError): string {
 }
 
 export async function POST(req: Request) {
+  const auth = await requireUser();
+  if (auth.response) return auth.response;
   try {
-    if (!isMemberRequest(req)) {
-      return NextResponse.json(
-        { error: "Voice cloning requires membership." },
-        { status: 403 }
-      );
-    }
     const apiKey = process.env.ELEVENLABS_API_KEY;
     if (!apiKey) {
-      return NextResponse.json({ error: "Missing ELEVENLABS_API_KEY" }, { status: 500 });
+      return NextResponse.json(
+        {
+          error:
+            "Voice cloning needs an ElevenLabs API key with instant voice cloning enabled. Set ELEVENLABS_API_KEY and try again.",
+        },
+        { status: 500 }
+      );
     }
 
     const formData = await req.formData();
@@ -91,6 +95,17 @@ export async function POST(req: Request) {
         name: voiceName,
         files: [file],
         ...(labels ? { labels } : {}),
+      });
+
+      const language =
+        typeof languageHint === "string" && languageHint.toLowerCase().startsWith("zh") ? "zh-Hant" : "en";
+      await prisma.voice.create({
+        data: {
+          userId: auth.user.id,
+          displayName: voiceName.slice(0, 80),
+          voiceId: result.voiceId,
+          language,
+        },
       });
 
       return NextResponse.json({

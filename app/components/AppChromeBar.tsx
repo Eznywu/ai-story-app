@@ -3,24 +3,83 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+function IconSettings({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function IconSpark({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M12 4.5l1.7 3.8 3.8 1.7-3.8 1.7-1.7 3.8-1.7-3.8-3.8-1.7 3.8-1.7L12 4.5z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      <path d="M18.5 3v2M17.5 4h2M6 15.5v2M5 16.5h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+type Props = {
+  /** Create uses the app name on the left and a sparkle on the right. */
+  variant?: "default" | "create";
+};
+
 /**
- * Top-left chrome on main app and standalone pages: Settings + Play.
+ * Top chrome. Settings and Play stay reachable. No credit count is shown:
+ * the app does not have a verified balance to display.
  */
-export function AppChromeBar() {
+export function AppChromeBar({ variant = "default" }: Props) {
   const pathname = usePathname();
   const settingsActive = pathname === "/settings";
   const playActive = pathname === "/play";
+
+  if (variant === "create") {
+    return (
+      <div className="appChromeBar appChromeBar--create">
+        <div className="appChromeBar__brand appChromeBar__brand--start">Emrsy Story</div>
+        <Link href="/play" className="appChromeBar__spark" aria-label="Play">
+          <IconSpark className="appChromeBar__walletSpark" />
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="appChromeBar">
       <Link
         href="/settings"
         className={`appChromeBar__link${settingsActive ? " appChromeBar__link--active" : ""}`}
+        aria-label="Settings"
+        title="Settings"
       >
-        Settings
+        <IconSettings className="appChromeBar__icon" />
       </Link>
-      <Link href="/play" className={`appChromeBar__link${playActive ? " appChromeBar__link--active" : ""}`}>
-        Play
+      <div className="appChromeBar__brand" aria-hidden>
+        Emrsy Story
+      </div>
+      <Link
+        href="/play"
+        className={`appChromeBar__spark${playActive ? " appChromeBar__spark--active" : ""}`}
+        aria-label="Play"
+        title="Play"
+      >
+        <IconSpark className="appChromeBar__walletSpark" />
       </Link>
     </div>
   );

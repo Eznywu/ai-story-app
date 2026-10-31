@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { StoryDTO } from "@/lib/types";
 import { getErrorMessage } from "@/lib/errors";
+import { redirectIfUnsigned } from "@/lib/auth/redirectIfUnsigned";
 
 export type StoryLibraryItem = StoryDTO & {
   story: string;
@@ -25,7 +26,10 @@ function toLibraryItem(raw: Record<string, unknown>): StoryLibraryItem {
     mainCharacterName: raw?.mainCharacterName ? String(raw.mainCharacterName) : null,
     childGender: raw?.childGender ? String(raw.childGender) : null,
     createdAt: String(raw?.createdAt ?? ""),
+    dailyAutomated: Boolean(raw?.dailyAutomated),
     posterUrl,
+    audioUrl:
+      raw?.audioUrl != null && String(raw.audioUrl).trim() !== "" ? String(raw.audioUrl) : null,
   };
 }
 
@@ -54,6 +58,9 @@ export function useStoryLibrary() {
     try {
       const res = await fetch("/api/stories", { method: "GET" });
       const data = await res.json().catch(() => ({}));
+      if (redirectIfUnsigned(res.status)) {
+        throw new Error(data?.error || "Sign in to continue.");
+      }
       if (!res.ok) {
         throw new Error(data?.error || `Could not load library (${res.status})`);
       }
@@ -81,6 +88,7 @@ export function useStoryLibrary() {
     length: string;
     title: string;
     story: string;
+    id?: string | null;
   }) {
     setIsSaving(true);
     try {
@@ -96,6 +104,7 @@ export function useStoryLibrary() {
           length: input.length,
           title: input.title,
           text: input.story,
+          ...(input.id ? { id: input.id } : {}),
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -124,6 +133,17 @@ export function useStoryLibrary() {
     return { posterUrl: String(data?.posterUrl ?? "") };
   }
 
+  async function deleteStory(storyId: string) {
+    const res = await fetch(`/api/stories?id=${encodeURIComponent(storyId)}`, {
+      method: "DELETE",
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data?.error || `Delete failed (${res.status})`);
+    }
+    await refreshLibrary();
+  }
+
   return {
     library,
     loadingLibrary,
@@ -133,5 +153,6 @@ export function useStoryLibrary() {
     refreshLibrary,
     saveStory,
     savePosterForStory,
+    deleteStory,
   };
 }

@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
-import fs from "fs/promises";
-import path from "path";
-import { prisma } from "@/lib/prisma";
 import { getErrorMessage, getErrorStatus } from "@/lib/errors";
 import { captureException } from "@/lib/monitoring";
-import { isMemberRequest } from "@/lib/memberGate";
+import { saveStoryPosterFile } from "@/lib/audio/storyMediaFiles";
+import { isSafeStoryId } from "@/lib/stories/storyIds";
+import { findOwnedStory } from "@/lib/auth/ownedStory";
+import { requireUser } from "@/lib/auth/requireUser";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 const MAX_POSTER_BYTES = 12 * 1024 * 1024;
 
@@ -29,18 +31,10 @@ function bufferLooksLikePng(buf: Buffer): boolean {
   );
 }
 
-function safeStoryId(id: string): boolean {
-  return /^[a-z0-9]+$/i.test(id) && id.length >= 16 && id.length <= 64;
-}
-
 export async function POST(req: Request) {
+  const auth = await requireUser();
+  if (auth.response) return auth.response;
   try {
-    if (!isMemberRequest(req)) {
-      return NextResponse.json(
-        { error: "Sign in and join membership to save posters." },
-        { status: 403 }
-      );
-    }
     const body = (await req.json().catch(() => ({}))) as {
       storyId?: string;
       imageBase64?: string;
@@ -49,7 +43,7 @@ export async function POST(req: Request) {
     const storyId = typeof body.storyId === "string" ? body.storyId.trim() : "";
     const b64Raw = typeof body.imageBase64 === "string" ? body.imageBase64 : "";
 
-    if (!storyId || !safeStoryId(storyId)) {
+    if (!storyId || !isSafeStoryId(storyId)) {
       return NextResponse.json({ error: "Valid storyId is required." }, { status: 400 });
     }
 
@@ -76,27 +70,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Uploaded file is not a PNG." }, { status: 400 });
     }
 
-    const exists = await prisma.story.findUnique({ where: { id: storyId }, select: { id: true } });
+    const exists = await findOwnedStory(auth.user.id, storyId);
     if (!exists) {
       return NextResponse.json({ error: "Story not found." }, { status: 404 });
     }
 
-    const filename = `poster_${storyId}.png`;
+    const posterUrl = await saveStoryPosterFile(storyId, buffer);
+    const filename = decodeURIComponent(posterUrl.split("/").pop()?.split("?")[0] || "");
+    console.info("[/api/posters/save] wrote", { storyId, posterUrl, bytes: buffer.length });
 
-    const dir = path.join(process.cwd(), "uploads", "posters");
-    await fs.mkdir(dir, { recursive: true });
-    const filePath = path.join(dir, filename);
-    await fs.writeFile(filePath, buffer);
-
-    await prisma.story.update({
-      where: { id: storyId },
-      data: { posterFilename: filename },
+    return NextResponse.json({
+      ok: true,
+      filename,
+      posterUrl,
+      size: buffer.length,
     });
-
-    const posterUrl = `/api/posters/${encodeURIComponent(filename)}`;
-    console.info("[/api/posters/save] wrote", { storyId, filename, bytes: buffer.length });
-
-    return NextResponse.json({ ok: true, filename, posterUrl, size: buffer.length });
   } catch (err: unknown) {
     captureException(err, { route: "/api/posters/save" });
     const message = getErrorMessage(err, "Poster save failed.");

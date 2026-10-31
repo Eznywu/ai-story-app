@@ -1,0 +1,56 @@
+{
+  "label": "mock",
+  "note": "No audio was requested from ElevenLabs. The shared mock file is not a recording of this sentence.",
+  "fixture": "lib/providers/fixtures/mock-narration.mp3",
+  "text": "Bramble counted 3 slow breaths, then said goodnight to Xylophina.",
+  "rows": [
+    {
+      "configId": "legacy-emotion",
+      "configVersion": "2026-10-27.1+legacy-emotion",
+      "promotionStatus": "baseline",
+      "modelId": "eleven_v3",
+      "voiceSettings": {
+        "stability": 0.47,
+        "similarityBoost": 0.85,
+        "style": 0.47,
+        "useSpeakerBoost": true,
+        "speed": 0.95
+      },
+      "script": "Bramble counted three slow breaths, then said goodnight to Zye-loff-ee-nah.",
+      "cacheKey": "8590e4e320ae4b516c6c4d69dc80fdca8d7fdfb8868ae14c81d5f776c279bf04",
+      "audioLabel": "mock"
+    },
+    {
+      "configId": "bedtime-v3-a",
+      "configVersion": "2026-10-27.1+bedtime-v3-a",
+      "promotionStatus": "proposed",
+      "modelId": "eleven_v3",
+      "voiceSettings": {
+        "stability": 0.5,
+        "similarityBoost": 0.75,
+        "style": 0,
+        "useSpeakerBoost": true,
+        "speed": 0.9
+      },
+      "script": "Bramble counted three slow breaths, then said goodnight to Zye-loff-ee-nah.",
+      "cacheKey": "e83b2f6745edb7357bfb8e3d425fe4b025ce3a3bc46d50c550c75ad14739edfa",
+      "audioLabel": "mock"
+    },
+    {
+      "configId": "bedtime-v3-b",
+      "configVersion": "2026-10-27.1+bedtime-v3-b",
+      "promotionStatus": "proposed",
+      "modelId": "eleven_v3",
+      "voiceSettings": {
+        "stability": 0.7,
+        "similarityBoost": 0.75,
+        "style": 0,
+        "useSpeakerBoost": true,
+        "speed": 0.85
+      },
+      "script": "Bramble counted three slow breaths, then said goodnight to Zye-loff-ee-nah.",
+      "cacheKey": "07c7608471056183bc7bb334a4abeac426b02a8e3c4615af463b65769d4404ae",
+      "audioLabel": "mock"
+    }
+  ]
+}

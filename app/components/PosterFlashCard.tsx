@@ -1,14 +1,16 @@
 "use client";
 
 import React from "react";
-import type { PosterCreateOutcome } from "@/lib/poster";
-import { downloadPosterPng } from "@/lib/poster";
+import type { PosterCreateOutcome } from "@/lib/posters/poster";
+import { downloadPosterPng } from "@/lib/posters/poster";
 
 type Props = {
   imageUrl: string;
   title: string;
   outcome: PosterCreateOutcome;
   blob: Blob;
+  /** Shown when `outcome` is `text_fallback` (why genre artwork was used). */
+  fallbackHint?: string;
   onDismiss: () => void;
 };
 
@@ -16,7 +18,7 @@ export function PosterFlashCard(props: Props) {
   const label =
     props.outcome === "illustrated"
       ? "Story poster (AI illustration)"
-      : "Story poster (genre artwork — AI unavailable)";
+      : "Story poster (simple genre artwork)";
 
   function handleDownload() {
     downloadPosterPng(props.blob, props.title.trim() || "Bedtime Story");
@@ -41,7 +43,12 @@ export function PosterFlashCard(props: Props) {
             </button>
           </div>
           <p className="posterFlashHint">{label}</p>
+          {props.outcome === "text_fallback" && props.fallbackHint ? (
+            <p className="posterFlashFallbackReason">{props.fallbackHint}</p>
+          ) : null}
           <div className="posterFlashImageWrap">
+            {/* Generated blob/data URL; next/image does not apply */}
+            {/* eslint-disable-next-line @next/next/no-img-element -- preview uses object URLs */}
             <img className="posterFlashImage" src={props.imageUrl} alt="" width={360} height={450} />
           </div>
           <div className="posterFlashActions">

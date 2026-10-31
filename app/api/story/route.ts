@@ -1,29 +1,28 @@
 import { NextResponse } from "next/server";
 import { getErrorMessage, getErrorStatus } from "@/lib/errors";
 import { captureException } from "@/lib/monitoring";
-import { generateStoryWithRetry } from "@/lib/storyGenerator";
-import { isMemberRequest } from "@/lib/memberGate";
+import { generateStoryWithRetry } from "@/lib/stories/storyGenerator";
 import type { StoryGenerationInput } from "@/lib/types";
+import { requireUser } from "@/lib/auth/requireUser";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+// Literal required: Next.js segment config must be statically analyzable.
+export const maxDuration = 300;
 
 export async function POST(req: Request) {
+  const auth = await requireUser();
+  if (auth.response) return auth.response;
   try {
-    if (!isMemberRequest(req)) {
-      return NextResponse.json(
-        { error: "Sign in and join membership to generate stories." },
-        { status: 403 }
-      );
-    }
     const body = (await req.json().catch(() => ({}))) as StoryGenerationInput;
-    const story = await generateStoryWithRetry(body, { retries: 1 });
+    const story = await generateStoryWithRetry(body, { retries: 1, userId: auth.user.id });
     return NextResponse.json({ story });
   } catch (err: unknown) {
     captureException(err, { route: "/api/story" });
     const message = getErrorMessage(err, "Unknown error");
     const status = getErrorStatus(
       err,
-      message.includes("Missing OPENAI_API_KEY") ? 500 : 502
+      message.includes("OPENAI_API_KEY") ? 500 : 502
     );
     return NextResponse.json(
       { error: message },

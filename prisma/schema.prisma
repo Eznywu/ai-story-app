@@ -4,11 +4,54 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
+}
+
+/// A parent account. One email is one family library.
+model User {
+  id            String           @id @default(cuid())
+  email         String           @unique
+  createdAt     DateTime         @default(now())
+  sessions      Session[]
+  stories       Story[]
+  voices        Voice[]
+  kids          KidProfile[]
+  characters    StoryCharacter[]
+  readingStats  ReadingStats?
+}
+
+/// Opaque session token is stored only as a hash. The cookie lasts about 400 days.
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+/// Email one-time code. `codeHash` is scrypt; the plaintext code is never stored.
+model LoginCode {
+  id         String    @id @default(cuid())
+  email      String
+  codeHash   String
+  expiresAt  DateTime
+  attempts   Int       @default(0)
+  consumedAt DateTime?
+  ip         String?
+  createdAt  DateTime  @default(now())
+
+  @@index([email, createdAt])
+  @@index([ip, createdAt])
 }
 
 model Story {
   id        String   @id @default(cuid())
+  /// Null means the row has no family (legacy library or the daily cron). Those rows stay in the database and are hidden from every account.
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   title     String
   genre     String
   length    String
@@ -18,13 +61,155 @@ model Story {
   mainCharacterName String?
   childGender String?
   posterFilename String?
+  /** Playback URL: a Vercel Blob URL, or `/api/posters/…` when Blob is not configured. */
+  posterUrl String?
+  /** ElevenLabs (or mock) MP3 filename. Local disk only; Blob rows still keep this key for lookup. */
+  audioFilename  String?
+  /** Playback URL: a Vercel Blob URL, or `/api/audio/…` when Blob is not configured. */
+  audioUrl String?
+  /** Narration identity. Null on rows saved before this was recorded. */
+  audioModelId           String?
+  audioVoiceId           String?
+  audioVoiceSettings     Json?
+  audioLanguage          String?
+  audioDictionaryVersion String?
+  audioConfigVersion     String?
+  audioConfigId          String?
+  audioCacheKey          String?
+  /** True when created by the daily cron (`lib/stories/dailyAutomatedStories.ts`). */
+  dailyAutomated Boolean  @default(false)
   createdAt DateTime @default(now())
+  narrationAssets NarrationAsset[]
+
+  @@index([userId, createdAt])
 }
 
 model Voice {
   id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   displayName String
   provider    String   @default("elevenlabs")
   voiceId     String
+  language    String   @default("en")
   createdAt   DateTime @default(now())
+
+  @@unique([userId, voiceId])
+  @@index([userId])
+}
+
+model KidProfile {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name           String
+  age            String
+  gender         String
+  interests      String[] @default([])
+  personality    String?
+  readingLevel   String?
+  favoriteThemes String?
+  bedtimeLength  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model StoryCharacter {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  ageRange      String   @default("")
+  gender        String   @default("")
+  characterType String   @default("")
+  personality   String   @default("")
+  skills        String   @default("")
+  themes        String[] @default([])
+  visualStyle   String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+}
+
+/// One generated narration section. Older stories have no rows here.
+model NarrationAsset {
+  id                String   @id @default(cuid())
+  storyId           String?
+  story             Story?   @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  sectionIndex      Int      @default(0)
+  sectionCount      Int      @default(1)
+  /// active, or failed when a check stopped the save
+  status            String   @default("active")
+  modelId           String
+  voiceId           String
+  voiceSettings     Json
+  language          String
+  dictionaryVersion String
+  configVersion     String
+  configId          String
+  cacheKey          String
+  narrationScript   String
+  filename          String?
+  url               String?
+  durationMs        Int?
+  validityStatus    String   @default("unchecked")
+  validityNotes     String?
+  /// matched, mismatch, uncertain, unchecked, skipped_budget, or mock
+  transcriptStatus  String   @default("unchecked")
+  transcriptNotes   String?
+  attempt           Int      @default(1)
+  baselineFlag      Boolean  @default(false)
+  /// story, benchmark, or weekly
+  source            String   @default("story")
+  createdAt         DateTime @default(now())
+
+  @@index([storyId, createdAt])
+  @@index([cacheKey])
+  @@index([createdAt])
+  @@index([baselineFlag])
+}
+
+/// A listening flag, a reported mispronunciation, or a baseline reminder.
+model NarrationReviewItem {
+  id          String   @id @default(cuid())
+  assetId     String?
+  source      String
+  word        String?
+  timestampMs Int?
+  category    String?
+  /// pending until a person has listened
+  status      String   @default("pending")
+  notes       String?
+  payload     Json?
+  createdAt   DateTime @default(now())
+
+  @@index([status, createdAt])
+  @@index([source])
+}
+
+/// One Monday review. The job writes this. It does not create audio.
+model NarrationReviewReport {
+  id        String   @id @default(cuid())
+  weekKey   String
+  status    String
+  summary   Json
+  createdAt DateTime @default(now())
+
+  @@index([weekKey])
+}
+
+model ReadingStats {
+  userId           String   @id
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  todayKey         String
+  storiesReadToday Int      @default(0)
+  streakDays       Int      @default(0)
+  lastReadDayKey   String?
+  lastStoryId      String?
+  lastStoryTitle   String?
+  draftSummary     String?
+  updatedAt        DateTime @updatedAt
 }

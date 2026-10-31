@@ -76,7 +76,7 @@ function IconProfile({ className }: { className?: string }) {
 const TABS: { id: HomeTabId; label: string; Icon: React.FC<{ className?: string }> }[] = [
   { id: "home", label: "Home", Icon: IconHome },
   { id: "create", label: "Create", Icon: IconCreate },
-  { id: "library", label: "Library", Icon: IconLibrary },
+  { id: "library", label: "My Stories", Icon: IconLibrary },
   { id: "profile", label: "Profile", Icon: IconProfile },
 ];
 

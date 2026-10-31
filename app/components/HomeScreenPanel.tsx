@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useMemo } from "react";
-import Image from "next/image";
 import type { StoryLibraryItem } from "@/app/hooks/useStoryLibrary";
-import type { ReadingStatsState } from "@/lib/profilesTypes";
+import type { ReadingStatsState } from "@/lib/profiles/profilesTypes";
 
 type Props = {
   library: StoryLibraryItem[];
@@ -17,9 +16,6 @@ type Props = {
   onQuickCreate: () => void;
   onAddKid: () => void;
   onAddCharacter: () => void;
-  member: boolean;
-  onPlaySampleStory: () => void;
-  onGoToMembership: () => void;
 };
 
 function byCreatedDesc(a: StoryLibraryItem, b: StoryLibraryItem): number {
@@ -28,12 +24,45 @@ function byCreatedDesc(a: StoryLibraryItem, b: StoryLibraryItem): number {
   return tb - ta;
 }
 
-function coverGradient(genre: string): string {
+function formatDateLabel(createdAt: string): string {
+  const ts = Date.parse(createdAt || "");
+  if (!Number.isFinite(ts)) return "Recent";
+  const days = Math.max(0, Math.floor((Date.now() - ts) / (1000 * 60 * 60 * 24)));
+  if (days <= 0) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days} days ago`;
+  return "Last week";
+}
+
+function genreGlyph(genre: string): string {
   const g = genre.toLowerCase();
-  if (g.includes("animal")) return "linear-gradient(160deg, #5c4a3d 0%, #8b6f52 45%, #3d2f28 100%)";
-  if (g.includes("fantasy") || g.includes("magic")) return "linear-gradient(160deg, #3d2d52 0%, #6b5090 50%, #241830 100%)";
-  if (g.includes("ocean") || g.includes("sea")) return "linear-gradient(160deg, #1e3a4a 0%, #3d7a9c 50%, #0f2430 100%)";
-  return "linear-gradient(155deg, var(--logo-purple-mid) 0%, var(--logo-purple) 50%, var(--logo-purple-deep) 100%)";
+  if (g.includes("bed") || g.includes("sleep")) return "🌙";
+  if (g.includes("magic") || g.includes("fantasy")) return "✨";
+  if (g.includes("friend")) return "❤";
+  if (g.includes("adventure")) return "★";
+  return "📖";
+}
+
+function BrandSparkIcon() {
+  return (
+    <svg className="homeHero__brandIcon" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M12 3.8l2 4.6 4.6 2-4.6 2-2 4.6-2-4.6-4.6-2 4.6-2 2-4.6z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <path d="M18.8 3.2v2M17.8 4.2h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function PlayIcon() {
+  return (
+    <svg className="figmaHome__playIcon" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M9 7v10l8-5-8-5z" />
+    </svg>
+  );
 }
 
 export function HomeScreenPanel({
@@ -46,162 +75,75 @@ export function HomeScreenPanel({
   onContinueReading,
   canContinueReading,
   onQuickCreate,
-  onAddKid,
-  onAddCharacter,
-  member,
-  onPlaySampleStory,
-  onGoToMembership,
 }: Props) {
   const sorted = useMemo(() => [...library].sort(byCreatedDesc), [library]);
-  const newReleases = sorted.slice(0, 8);
-  const topTen = sorted.slice(0, 10);
-
+  const recentStories = sorted.slice(0, 4);
   const readsToday = stats?.storiesReadToday ?? 0;
-  const streak = stats?.streakDays ?? 0;
-  const draft = stats?.draftSummary;
 
   return (
-    <section className="homeScreen" aria-labelledby="home-screen-title">
-      <h1 id="home-screen-title" className="homeScreen__titleStandalone">
-        Home
-      </h1>
-
-      <div className="homeScreen__journey cardLift">
-        <h2 className="homeScreen__journeyTitle">User journey</h2>
-        <div className="homeScreen__journeyGrid">
-          <div className="homeScreen__stat">
-            <span className="homeScreen__statValue">{readsToday}</span>
-            <span className="homeScreen__statLabel">Stories read today</span>
-          </div>
-          <div className="homeScreen__stat">
-            <span className="homeScreen__statValue">{streak}</span>
-            <span className="homeScreen__statLabel">Day streak</span>
-          </div>
+    <section className="homeScreen homeHero" aria-labelledby="home-screen-title">
+      <header className="homeHero__header">
+        <div className="homeHero__brand">
+          <BrandSparkIcon />
+          <span>DREAMWEAVER</span>
         </div>
-        <p className="homeScreen__journeyLine">
-          <strong>Continue:</strong>{" "}
-          {canContinueReading ? "Pick up your last story below." : "Save a story to unlock Continue Reading."}
-        </p>
-        {draft ? (
-          <p className="homeScreen__journeyLine">
-            <strong>Creation:</strong> {draft}
-          </p>
-        ) : (
-          <p className="homeScreen__journeyLine">
-            <strong>Creation:</strong> No draft in progress — start from Create.
-          </p>
-        )}
-      </div>
+        <h1 id="home-screen-title" className="homeHero__title">
+          Every night,
+          <br />a new adventure
+        </h1>
+        <p className="homeHero__subtitle">Personalized bedtime stories that bring magic to sleep</p>
+      </header>
 
-      <div className="homeScreen__quick">
-        <h2 className="homeScreen__sectionHeading">Quick actions</h2>
-        <div className="homeScreen__quickGrid">
-          {member ? (
-            <button type="button" className="homeScreen__qa button buttonPrimary" onClick={onQuickCreate}>
-              Create New Story
-            </button>
-          ) : (
-            <>
-              <button type="button" className="homeScreen__qa button buttonPrimary" onClick={onPlaySampleStory}>
-                Play sample story
-              </button>
-              <button type="button" className="homeScreen__qa button" onClick={onGoToMembership}>
-                Log in / join membership
-              </button>
-            </>
-          )}
-          <button type="button" className="homeScreen__qa button" onClick={onAddKid}>
-            Add Kid Profile
-          </button>
-          <button type="button" className="homeScreen__qa button" onClick={onAddCharacter}>
-            Add Character
-          </button>
-          <button type="button" className="homeScreen__qa button" onClick={onContinueReading} disabled={!canContinueReading}>
-            Continue Reading
+      <button type="button" className="homeHero__cta" onClick={onQuickCreate}>
+        Create Tonight&apos;s Story
+      </button>
+
+      <section className="homeJourney" aria-labelledby="recent-stories-heading">
+        <div className="homeJourney__head">
+          <h2 id="recent-stories-heading" className="homeJourney__title">
+            Continue Your Journey
+          </h2>
+          <button type="button" className="homeJourney__linkBtn" onClick={onContinueReading} disabled={!canContinueReading}>
+            View All
           </button>
         </div>
-      </div>
-
-      <div className="esStoryHome__section">
-        <h2 className="esStoryHome__sectionHeading">New Release</h2>
-        <div className="esStoryHome__rule" aria-hidden />
-        {loadingLibrary ? (
-          <p className="esStoryHome__muted">Loading…</p>
-        ) : newReleases.length === 0 ? (
-          <p className="esStoryHome__muted">No saved stories yet — create one from the Create tab.</p>
-        ) : (
-          <div className="esStoryHome__scroll">
-            {newReleases.map((item) => (
-              <article key={item.id} className="esStoryHome__releaseCard">
-                <button
-                  type="button"
-                  className="esStoryHome__releaseCover"
-                  onClick={() => onOpenStory(item)}
-                  aria-label={`Open ${item.title?.trim() || "story"}`}
-                >
-                  {item.posterUrl ? (
-                    <Image
-                      src={item.posterUrl}
-                      alt=""
-                      width={160}
-                      height={200}
-                      className="esStoryHome__releaseImg"
-                      sizes="160px"
-                    />
-                  ) : (
-                    <div
-                      className="esStoryHome__releaseFallback"
-                      style={{ background: coverGradient(item.genre ?? "") }}
-                      aria-hidden
-                    />
-                  )}
-                </button>
-                <p className="esStoryHome__releaseTitle">
-                  {item.title?.trim() ? item.title : "Untitled"}
-                </p>
-                <button
-                  type="button"
-                  className="button buttonPrimary esStoryHome__playBtn"
-                  disabled={playBusy || !item.story.trim()}
-                  onClick={() => onPlayStory(item)}
-                >
-                  {playBusy ? "…" : "Play"}
-                </button>
-              </article>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="esStoryHome__section">
-        <h2 className="esStoryHome__sectionHeading">This Week Top 10</h2>
-        <div className="esStoryHome__rule" aria-hidden />
-        {loadingLibrary ? (
-          <p className="esStoryHome__muted">Loading…</p>
-        ) : topTen.length === 0 ? (
-          <p className="esStoryHome__muted">Your top stories will show here after you save a few.</p>
-        ) : (
-          <ol className="esStoryHome__topList">
-            {topTen.map((item, index) => (
-              <li key={item.id} className="esStoryHome__topRow">
-                <span className="esStoryHome__topRank">{index + 1}</span>
-                <button type="button" className="esStoryHome__topTitleBtn" onClick={() => onOpenStory(item)}>
-                  {item.title?.trim() ? item.title : "Untitled"}
-                </button>
-                <button
-                  type="button"
-                  className="button esStoryHome__topPlay"
-                  disabled={playBusy || !item.story.trim()}
-                  onClick={() => onPlayStory(item)}
-                  aria-label={`Play ${item.title?.trim() || "story"}`}
-                >
-                  {playBusy ? "…" : "▶"}
-                </button>
-              </li>
-            ))}
-          </ol>
-        )}
-      </div>
+        <p className="figmaHome__muted">{readsToday} stories read today</p>
+        {loadingLibrary ? <p className="figmaHome__muted">Loading stories…</p> : null}
+        {!loadingLibrary && recentStories.length === 0 ? (
+          <p className="figmaHome__muted">No stories yet. Start by creating your first story.</p>
+        ) : null}
+        <div className="figmaHome__list">
+          {recentStories.map((story) => (
+            <article key={story.id} className="figmaHome__storyCard">
+              <button
+                type="button"
+                className="figmaHome__storyMain"
+                onClick={() => onOpenStory(story)}
+                aria-label={`Open ${story.title?.trim() || "story"}`}
+              >
+                <span className="figmaHome__glyph" aria-hidden>
+                  {genreGlyph(story.genre ?? "")}
+                </span>
+                <span className="figmaHome__storyText">
+                  <span className="figmaHome__storyTitle">{story.title?.trim() || "Untitled Story"}</span>
+                  <span className="figmaHome__storyMeta">
+                    {story.mainCharacterName?.trim() || "Child"} · {formatDateLabel(story.createdAt || "")}
+                  </span>
+                </span>
+              </button>
+              <button
+                type="button"
+                className="figmaHome__storyPlay"
+                disabled={playBusy || !story.story.trim()}
+                onClick={() => onPlayStory(story)}
+                aria-label={`Play ${story.title?.trim() || "story"}`}
+              >
+                <PlayIcon />
+              </button>
+            </article>
+          ))}
+        </div>
+      </section>
     </section>
   );
 }

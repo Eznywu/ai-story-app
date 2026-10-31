@@ -1,0 +1,230 @@
+import type { KidProfile, ReadingStatsState, StoryCharacterProfile } from "@/lib/profiles/profilesTypes";
+
+const KIDS_KEY = "emrsy.kidProfiles.v1";
+const CHARS_KEY = "emrsy.storyCharacters.v1";
+const READS_KEY = "emrsy.readingStats.v1";
+const ONBOARDING_KEY = "emrsy.onboarding.v1";
+
+export type OnboardingIntent =
+  | "create_story"
+  | "build_kid_profile"
+  | "create_character"
+  | "continue_reading"
+  | "explore_library";
+
+export type OnboardingState = {
+  completed: boolean;
+  skippedCreateKid: boolean;
+  selectedIntent: OnboardingIntent | null;
+  consentedToVoice: boolean;
+};
+
+export function todayKey(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+}
+
+function dayDiff(a: string, b: string): number | null {
+  const da = parseTodayKey(a);
+  const db = parseTodayKey(b);
+  if (!da || !db) return null;
+  return Math.round((db.getTime() - da.getTime()) / (24 * 60 * 60 * 1000));
+}
+
+function parseTodayKey(key: string): Date | null {
+  const m = /^(\d+)-(\d+)-(\d+)$/.exec(key);
+  if (!m) return null;
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+}
+
+export function loadKidProfiles(): KidProfile[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(KIDS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? (parsed as KidProfile[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveKidProfiles(profiles: KidProfile[]): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(KIDS_KEY, JSON.stringify(profiles));
+}
+
+export function clearLocalKidProfiles(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(KIDS_KEY);
+}
+
+export function loadStoryCharacters(): StoryCharacterProfile[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(CHARS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? (parsed as StoryCharacterProfile[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveStoryCharacters(chars: StoryCharacterProfile[]): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(CHARS_KEY, JSON.stringify(chars));
+}
+
+export function clearLocalStoryCharacters(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(CHARS_KEY);
+}
+
+export function defaultReadingStats(): ReadingStatsState {
+  return {
+    todayKey: todayKey(),
+    storiesReadToday: 0,
+    streakDays: 0,
+    lastReadDayKey: null,
+    lastStoryId: null,
+    lastStoryTitle: null,
+    draftSummary: null,
+  };
+}
+
+export function loadReadingStats(): ReadingStatsState {
+  if (typeof window === "undefined") return defaultReadingStats();
+  try {
+    const raw = localStorage.getItem(READS_KEY);
+    if (!raw) return defaultReadingStats();
+    const o = JSON.parse(raw) as Partial<ReadingStatsState>;
+    return {
+      ...defaultReadingStats(),
+      ...o,
+      todayKey: typeof o.todayKey === "string" ? o.todayKey : todayKey(),
+    };
+  } catch {
+    return defaultReadingStats();
+  }
+}
+
+/** Resets daily read count when the calendar day changes. */
+export function hydrateReadingStats(): ReadingStatsState {
+  const tk = todayKey();
+  let s = loadReadingStats();
+  if (s.todayKey !== tk) {
+    s = { ...s, todayKey: tk, storiesReadToday: 0 };
+    saveReadingStats(s);
+  }
+  return s;
+}
+
+export function saveReadingStats(s: ReadingStatsState): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(READS_KEY, JSON.stringify(s));
+}
+
+export function peekStoredReadingStats(): ReadingStatsState | null {
+  if (typeof window === "undefined") return null;
+  if (!localStorage.getItem(READS_KEY)) return null;
+  return loadReadingStats();
+}
+
+export function clearLocalReadingStats(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(READS_KEY);
+}
+
+/** Pure update used by the account-backed reading stats hook. */
+export function applyStoryRead(current: ReadingStatsState, storyId: string, title: string): ReadingStatsState {
+  const tk = todayKey();
+  const s: ReadingStatsState = {
+    ...current,
+    todayKey: current.todayKey === tk ? current.todayKey : tk,
+    storiesReadToday: current.todayKey === tk ? current.storiesReadToday : 0,
+  };
+
+  s.storiesReadToday += 1;
+  s.lastStoryId = storyId;
+  s.lastStoryTitle = title.trim() || null;
+
+  const prev = s.lastReadDayKey;
+  if (!prev) {
+    s.streakDays = 1;
+  } else if (prev !== tk) {
+    const diff = dayDiff(prev, tk);
+    s.streakDays = diff === 1 ? s.streakDays + 1 : 1;
+  }
+  s.lastReadDayKey = tk;
+  return s;
+}
+
+/** Call when user plays audio for a story. */
+export function recordStoryRead(storyId: string, title: string): ReadingStatsState {
+  const next = applyStoryRead(loadReadingStats(), storyId, title);
+  saveReadingStats(next);
+  return next;
+}
+
+export function setDraftSummary(summary: string | null): void {
+  const s = loadReadingStats();
+  saveReadingStats({ ...s, draftSummary: summary && summary.trim() ? summary.trim() : null });
+}
+
+function defaultOnboardingState(): OnboardingState {
+  return {
+    completed: false,
+    skippedCreateKid: false,
+    selectedIntent: null,
+    consentedToVoice: false,
+  };
+}
+
+function parseOnboarding(raw: string): OnboardingState {
+  const parsed = JSON.parse(raw) as Partial<OnboardingState>;
+  return {
+    ...defaultOnboardingState(),
+    ...parsed,
+    selectedIntent:
+      parsed.selectedIntent &&
+      [
+        "create_story",
+        "build_kid_profile",
+        "create_character",
+        "continue_reading",
+        "explore_library",
+      ].includes(parsed.selectedIntent)
+        ? parsed.selectedIntent
+        : null,
+  };
+}
+
+function onboardingKey(userId?: string): string {
+  return userId ? `${ONBOARDING_KEY}.${userId}` : ONBOARDING_KEY;
+}
+
+export function loadOnboardingState(userId?: string): OnboardingState {
+  if (typeof window === "undefined") return defaultOnboardingState();
+  try {
+    const key = onboardingKey(userId);
+    const scoped = localStorage.getItem(key);
+    if (scoped) return parseOnboarding(scoped);
+    if (userId) {
+      const legacy = localStorage.getItem(ONBOARDING_KEY);
+      if (legacy) {
+        localStorage.setItem(key, legacy);
+        localStorage.removeItem(ONBOARDING_KEY);
+        return parseOnboarding(legacy);
+      }
+    }
+    return defaultOnboardingState();
+  } catch {
+    return defaultOnboardingState();
+  }
+}
+
+export function saveOnboardingState(state: OnboardingState, userId?: string): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(onboardingKey(userId), JSON.stringify(state));
+}

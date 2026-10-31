@@ -1,0 +1,23 @@
+{
+  "name": "story-poster-cli",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Story-to-poster pipeline: OpenAI + Gemini illustrated posters",
+  "type": "module",
+  "scripts": {
+    "poster": "tsx src/cli.ts",
+    "build": "tsc -p tsconfig.json --noEmit"
+  },
+  "keywords": ["poster", "gemini", "openai", "illustration"],
+  "license": "MIT",
+  "dependencies": {
+    "@google/genai": "^1.48.0",
+    "dotenv": "^17.4.1",
+    "openai": "^6.33.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.2",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2"
+  }
+}
