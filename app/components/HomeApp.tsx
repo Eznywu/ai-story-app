@@ -34,16 +34,16 @@ import { useAuthUser } from "@/app/components/RequireAuth";
 
 export type HomeUiMode = "responsive" | "mobile" | "desktop";
 
-function bannerSourceLabel(source: AppBannerSource): string {
+function warmBanner(source: AppBannerSource): string {
   switch (source) {
     case "story":
-      return "Story";
+      return "We couldn't write the story. Your choices are still here.";
     case "save":
-      return "Save";
+      return "We couldn't save the story. Your choices are still here.";
     case "tts":
-      return "Audio";
+      return "We couldn't prepare the narration. You can try again.";
     case "poster":
-      return "Cover";
+      return "We couldn't make the cover. The story is still here.";
   }
 }
 
@@ -83,6 +83,11 @@ type CreateDraft = {
   genre: string;
   length: string;
   storyInput: string;
+  theme: string;
+  mood: string;
+  seriesMode: "one_shot" | "series";
+  educationalGoal: string;
+  moralLesson: string;
   selectedVoiceId: string;
 };
 
@@ -101,6 +106,11 @@ function loadCreateDraft(): CreateDraft | null {
       genre: String(parsed.genre || ""),
       length: String(parsed.length || ""),
       storyInput: String(parsed.storyInput || ""),
+      theme: String(parsed.theme || ""),
+      mood: String(parsed.mood || ""),
+      seriesMode: parsed.seriesMode === "series" ? "series" : "one_shot",
+      educationalGoal: String(parsed.educationalGoal || ""),
+      moralLesson: String(parsed.moralLesson || ""),
       selectedVoiceId: String(parsed.selectedVoiceId || ""),
     };
   } catch {
@@ -190,6 +200,11 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
       if (draft.genre) setGenre(draft.genre);
       if (draft.length) setLength(draft.length);
       if (typeof draft.storyInput === "string") setStoryInput(draft.storyInput);
+      if (typeof draft.theme === "string") setTheme(draft.theme);
+      if (typeof draft.mood === "string") setMood(draft.mood);
+      if (draft.seriesMode === "series" || draft.seriesMode === "one_shot") setSeriesMode(draft.seriesMode);
+      if (typeof draft.educationalGoal === "string") setEducationalGoal(draft.educationalGoal);
+      if (typeof draft.moralLesson === "string") setMoralLesson(draft.moralLesson);
       if (draft.selectedVoiceId) setSelectedVoiceId(draft.selectedVoiceId);
     }
     // A saved onboarding intent (for example "create a story") must not override
@@ -217,14 +232,34 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
       genre,
       length,
       storyInput,
+      theme,
+      mood,
+      seriesMode,
+      educationalGoal,
+      moralLesson,
       selectedVoiceId,
     });
-  }, [age, childGender, gateReady, genre, language, length, mainCharacterName, selectedVoiceId, storyInput]);
+  }, [
+    age,
+    childGender,
+    educationalGoal,
+    gateReady,
+    genre,
+    language,
+    length,
+    mainCharacterName,
+    mood,
+    moralLesson,
+    selectedVoiceId,
+    seriesMode,
+    storyInput,
+    theme,
+  ]);
 
   useEffect(() => {
     if (!gateReady || showWelcome || showOnboarding) return;
     const key = `happy-horse.scroll.${activeTab}`;
-    const scroller = document.querySelector(".cinematicDevice");
+    const scroller = document.querySelector(".overlay--withTabs");
     const deviceScrolls =
       scroller instanceof HTMLElement && scroller.scrollHeight > scroller.clientHeight + 8;
     const saved = Number(sessionStorage.getItem(key) || "0");
@@ -475,10 +510,7 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
 
             {banner ? (
               <div className="errorBox" role="alert">
-                <span className="errorText">
-                  <span className="errorSource">{bannerSourceLabel(banner.source)}: </span>
-                  {banner.message}
-                </span>
+                <p className="errorText">{warmBanner(banner.source)}</p>
                 <div className="errorActions">
                   <button
                     className="button errorRetry"

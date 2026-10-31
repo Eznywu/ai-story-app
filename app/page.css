@@ -3289,12 +3289,10 @@ textarea::placeholder {
 }
 
 .createScreen__action {
-  position: sticky;
-  bottom: calc(96px + env(safe-area-inset-bottom, 0px));
-  z-index: 6;
+  position: static;
   margin-top: 18px;
-  padding-top: 8px;
-  background: linear-gradient(180deg, rgba(14, 24, 56, 0), #11182b 28%);
+  padding-top: 0;
+  background: transparent;
 }
 
 .createScreen__submit {
@@ -4758,6 +4756,128 @@ select,
 @media (min-width: 800px) {
   .storyGrid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* The tab bar is a flex footer, not a fixed layer, so it cannot cover the form. */
+.cinematicRoot {
+  min-height: 100dvh;
+}
+
+.cinematicDevice {
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.cinematicDevice > .pageRoot,
+.pageRoot.pageRoot--tabs {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.pageRoot.pageRoot--tabs .overlay.overlay--withTabs,
+.pageRoot--uiMobile.pageRoot--tabs .overlay.overlay--withTabs {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+  max-height: none;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 1.75rem;
+}
+
+.pageRoot--tabs .homeTabBar,
+.pageRoot--uiMobile .homeTabBar,
+.homeTabBar {
+  position: static;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  width: 100%;
+  max-width: none;
+  transform: none;
+  flex: none;
+  z-index: 1;
+}
+
+.errorBox {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0.9rem 1rem;
+  background: #1b243b;
+  border: 1px solid #e6aaa5;
+  color: #e6aaa5;
+  font-weight: 500;
+}
+
+.errorText {
+  flex: none;
+  min-width: 0;
+  margin: 0;
+  line-height: 1.45;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.errorActions {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.errorActions .button {
+  flex: 1 1 8rem;
+  min-height: 44px;
+}
+
+.createScreen__action {
+  position: static;
+  bottom: auto;
+  z-index: auto;
+}
+
+@media (max-height: 720px) {
+  .pageRoot--calm .createScreen__title {
+    font-size: 1.6rem;
+  }
+
+  .pageRoot--calm .createScreen__label {
+    margin: 4px 0 2px;
+  }
+
+  .pageRoot--calm .createScreen__subtitle {
+    margin-top: 2px;
+  }
+
+  .pageRoot--calm .createTheme {
+    min-height: 52px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+
+  .pageRoot--calm .createRow {
+    min-height: 56px;
+  }
+
+  .errorBox {
+    gap: 0.5rem;
+    padding: 0.7rem 0.85rem;
   }
 }
 
