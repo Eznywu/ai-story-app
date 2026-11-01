@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { HappyHorseCheck } from "@/app/components/HappyHorseCheck";
 import { voiceCopy } from "@/lib/voices/uiCopy";
 import { preferredRecorderMime, recordingClipped, voicedDurationMs } from "@/lib/voices/recordingChecks";
 import { CONSENT_TEXT_VERSION } from "@/lib/voices/consent";
@@ -10,7 +11,16 @@ function newIdempotencyKey(): string {
   return `voice_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 }
 
-type Step = "consent" | "record" | "review" | "saving" | "name" | "done" | "blocked";
+type TestHook = { voicedMs?: number; clipped?: boolean; durationMs?: number };
+
+function readTestHook(): TestHook | null {
+  if (typeof document === "undefined") return null;
+  if (document.documentElement.dataset.hhVoiceMock !== "1") return null;
+  const hook = (window as unknown as { __HH_VOICE_TEST?: TestHook }).__HH_VOICE_TEST;
+  return hook ?? null;
+}
+
+type Step = "consent" | "permission" | "denied" | "record" | "review" | "saving" | "preview" | "name" | "done" | "error" | "blocked";
 
 type Props = {
   language: string;
@@ -59,10 +69,11 @@ export function AddMyVoiceFlow(props: Props) {
     };
   }, []);
 
-  async function startRecording() {
+  async function askMicrophone() {
     setError("");
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
       setError(copy.failed);
+      setStep("denied");
       return;
     }
     try {
@@ -84,22 +95,21 @@ export function AddMyVoiceFlow(props: Props) {
       };
       recorder.onstop = () => {
         const elapsed = Date.now() - started.current;
+        const hook = readTestHook();
         const recorded = new Blob(chunks.current, { type: recorder.mimeType || "audio/webm" });
-        const voiced = voicedDurationMs(levels.current, elapsed);
-        const hot = recordingClipped(peaks.current);
+        const voiced = hook?.voicedMs ?? voicedDurationMs(levels.current, elapsed);
+        const hot = hook?.clipped ?? recordingClipped(peaks.current);
+        const shownSeconds = Math.round((hook?.durationMs ?? elapsed) / 1000);
         setTakeUrl((current) => {
           if (current) URL.revokeObjectURL(current);
           return URL.createObjectURL(recorded);
         });
-        setSeconds(Math.round(elapsed / 1000));
+        setSeconds(shownSeconds);
         setVoicedMs(voiced);
         setClipped(hot);
         setBlob(recorded);
         releaseMic();
-        if (voiced < 8000) setError(copy.tooQuiet);
-        else if (hot) setError(copy.clipped);
-        else if (elapsed < 60000) setError(copy.short);
-        else setError("");
+        setError("");
         setStep("review");
       };
       const audioContext = new AudioContext();
@@ -108,7 +118,6 @@ export function AddMyVoiceFlow(props: Props) {
       analyser.fftSize = 2048;
       source.connect(analyser);
       const data = new Uint8Array(analyser.fftSize);
-      let frame = 0;
       const watch = () => {
         if (recorder.state !== "recording") {
           void audioContext.close().catch(() => {});
@@ -124,22 +133,22 @@ export function AddMyVoiceFlow(props: Props) {
         }
         levels.current.push(Math.sqrt(sum / data.length));
         peaks.current.push(peak);
-        frame = window.requestAnimationFrame(watch);
+        window.requestAnimationFrame(watch);
       };
       recorderRef.current = recorder;
       started.current = Date.now();
       setSeconds(0);
       recorder.start(250);
-      frame = window.requestAnimationFrame(watch);
+      window.requestAnimationFrame(watch);
       setStep("record");
       const tick = window.setInterval(() => {
         setSeconds(Math.round((Date.now() - started.current) / 1000));
         if (recorder.state !== "recording") window.clearInterval(tick);
       }, 500);
-      void frame;
     } catch {
       releaseMic();
       setError(copy.micDenied);
+      setStep("denied");
     }
   }
 
@@ -155,7 +164,7 @@ export function AddMyVoiceFlow(props: Props) {
     });
     setBlob(null);
     setError("");
-    setStep("consent");
+    setStep("permission");
     idempotency.current = newIdempotencyKey();
   }
 
@@ -168,7 +177,7 @@ export function AddMyVoiceFlow(props: Props) {
     form.set("file", new File([blob], `recording.${extension}`, { type: mime || "audio/webm" }));
     form.set("name", name);
     form.set("language", copy.lang);
-    form.set("durationMs", String(seconds * 1000));
+    form.set("durationMs", String(Math.max(seconds, 1) * 1000));
     form.set("voicedMs", String(voicedMs));
     form.set("clipped", clipped ? "true" : "false");
     form.set("consent", "true");
@@ -182,20 +191,19 @@ export function AddMyVoiceFlow(props: Props) {
       });
       const data = (await response.json().catch(() => ({}))) as {
         error?: string;
-        voice?: { id?: string; selectable?: boolean; status?: string };
+        voice?: { id?: string; selectable?: boolean };
       };
       if (!response.ok || !data.voice?.id) {
-        setError(data.error || copy.failed);
-        setStep("review");
+        setError(data.error || copy.providerRetry);
+        setStep("error");
         return;
       }
       setVoiceId(data.voice.id);
       setSelectable(Boolean(data.voice.selectable));
-      setStep(data.voice.selectable ? "name" : "done");
-      if (!data.voice.selectable) setError(copy.verification);
+      setStep(data.voice.selectable ? "preview" : "done");
     } catch {
-      setError(copy.failed);
-      setStep("review");
+      setError(copy.providerRetry);
+      setStep("error");
     }
   }
 
@@ -216,6 +224,8 @@ export function AddMyVoiceFlow(props: Props) {
   }
 
   const progress = Math.min(100, Math.round((seconds / 90) * 100));
+  const tooShort = seconds > 0 && seconds < 60;
+  const tooQuiet = voicedMs < 8000;
 
   return (
     <div className="voiceFlow">
@@ -232,12 +242,26 @@ export function AddMyVoiceFlow(props: Props) {
         <>
           <h3 className="voiceFlow__title">{copy.consentTitle}</h3>
           <p>{copy.consent}</p>
-          <label className="voiceFlow__check">
-            <input type="checkbox" checked={agreed} onChange={(event) => setAgreed(event.target.checked)} />
-            <span>{copy.agree}</span>
-          </label>
-          <button type="button" className="createScreen__submit" disabled={!agreed} onClick={() => void startRecording()}>
+          <HappyHorseCheck checked={agreed} label={copy.agree} onChange={setAgreed} />
+          <button type="button" className="createScreen__submit" disabled={!agreed} onClick={() => setStep("permission")}>
             {copy.record}
+          </button>
+        </>
+      ) : null}
+      {step === "permission" ? (
+        <>
+          <h3 className="voiceFlow__title">{copy.permissionTitle}</h3>
+          <p>{copy.permissionBody}</p>
+          <button type="button" className="createScreen__submit" onClick={() => void askMicrophone()}>
+            {copy.allowMic}
+          </button>
+        </>
+      ) : null}
+      {step === "denied" ? (
+        <>
+          <p role="alert">{error || copy.micDenied}</p>
+          <button type="button" className="createScreen__submit" onClick={() => void askMicrophone()}>
+            {copy.tryAgain}
           </button>
         </>
       ) : null}
@@ -259,17 +283,42 @@ export function AddMyVoiceFlow(props: Props) {
       {step === "review" || step === "saving" ? (
         <>
           {takeUrl ? <audio ref={previewRef} controls src={takeUrl} /> : null}
+          {tooQuiet ? <p role="alert">{copy.tooQuiet}</p> : null}
+          {clipped ? <p role="alert">{copy.clipped}</p> : null}
+          {tooShort ? <p role="alert">{copy.short}</p> : null}
           <div className="voiceFlow__actions">
             <button type="button" onClick={resetTake}>
               {copy.discard}
             </button>
-            <button type="button" onClick={() => void startRecording()}>
+            <button type="button" onClick={() => void askMicrophone()}>
               {copy.again}
             </button>
-            <button type="button" className="createScreen__submit" disabled={!blob || clipped || voicedMs < 8000 || step === "saving"} onClick={() => void createVoice()}>
-              {step === "saving" ? "…" : copy.useTake}
+            <button type="button" className="createScreen__submit" disabled={!blob || clipped || tooQuiet || step === "saving"} onClick={() => void createVoice()}>
+              {step === "saving" ? copy.creating : copy.useTake}
             </button>
           </div>
+        </>
+      ) : null}
+      {step === "preview" ? (
+        <>
+          <h3 className="voiceFlow__title">{copy.previewTitle}</h3>
+          <p>{copy.previewBody}</p>
+          <button
+            type="button"
+            className="createScreen__submit"
+            onClick={() => {
+              const audio = previewRef.current;
+              if (!audio) return;
+              audio.src = `/api/voice-preview?voiceId=${encodeURIComponent(voiceId)}&language=${encodeURIComponent(copy.lang)}`;
+              void audio.play().catch(() => {});
+            }}
+          >
+            {copy.hearPreview}
+          </button>
+          <audio ref={previewRef} controls />
+          <button type="button" onClick={() => setStep("name")}>
+            {copy.continueName}
+          </button>
         </>
       ) : null}
       {step === "name" ? (
@@ -283,11 +332,14 @@ export function AddMyVoiceFlow(props: Props) {
           </button>
         </>
       ) : null}
-      {step === "done" ? <p>{copy.verification}</p> : null}
-      {error ? (
-        <p className="fieldErrorText" role="alert">
-          {error}
-        </p>
+      {step === "done" ? <p role="status">{copy.verification}</p> : null}
+      {step === "error" ? (
+        <>
+          <p role="alert">{error || copy.providerRetry}</p>
+          <button type="button" className="createScreen__submit" onClick={() => void createVoice()}>
+            {copy.tryAgain}
+          </button>
+        </>
       ) : null}
     </div>
   );

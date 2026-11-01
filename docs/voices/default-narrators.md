@@ -1,27 +1,24 @@
 # Default narrators (AB-14)
 
-Fetched 2026-11-01 from `GET /v1/shared-voices/{voice_id}` with no paid call and no API key. These are Voice Library voices, not the ElevenLabs Default premade voices that expire on 2026-12-31, and not the founder or family clones.
+Fetched 2026-11-01 from the public Voice Library. Provider names stay here. Parents see the friendly display name.
 
-Listening audition for every row is **pending**. A listing and a preview URL are not a quality claim. `verified_languages` on these listings did not include `eleven_v3`. The app still uses the configured model.
+Listening is still **pending** for every voice. A listing is not a quality claim. `eleven_v3` was not in these verified-language lists.
 
-Commercial note, same for every row: category and `free_users_allowed` are on the listing; `rate` is 1 and `fiat_rate` is null (no custom surcharge shown). ElevenLabs states Voice Library voices are cleared for broad commercial use on paid plans, subject to the Terms of Use (join.elevenlabs.io/voice-library, checked 2026-11-01). Adding a library voice does not use a custom voice slot. The workspace still has to be able to call the voice id.
+Voices built for the other language stay in the list as **pending audition** and are not selectable. That is the non-native risk.
 
-| App id | Name | Archetype | Provider id | Source | en | zh-Hant | Audition |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| story-spuds | Spuds | Gentle and reassuring | NOpBlnGInO9m6vDvFkFC | Voice Library, high_quality, narrative_story, American grandpa | yes | no | pending |
-| story-mark | Mark | Warm and conversational | UgBBYS2sOqTuMpoF3BR0 | Voice Library, high_quality, conversational, American | yes | yes | pending |
-| story-david | David | Calm with a lower voice | cCYjmrGZaI86GUJ7F2Nn | Voice Library, high_quality, narrative_story, deep American | yes | yes | pending |
-| story-aaron | Aaron | Bright and expressive | PCa5QtqUKnVu4yH3HxLp | Voice Library, professional, narrative_story, Californian | yes | no | pending |
-| story-pastie | Pastie | Classic storyteller | y47FZICqt6oFf4Z89DXT | Voice Library, professional, narrative_story, Nigerian | yes | no | pending |
-| story-tuntun | Tun Tun | Gentle and reassuring | SIdddo4tIfBnOJY8JYjx | Voice Library, professional, narrative_story, Taiwan Mandarin | no | yes | pending |
-| story-chun | Chun | Warm and conversational | ZhxuUPFU7Hvp3p8qIPQP | Voice Library, professional, narrative_story, Taiwan Mandarin | no | yes | pending |
-| story-jason | Jason | Calm with a lower voice | DowyQ68vDpgFYdWVGjc3 | Voice Library, high_quality, Beijing Mandarin, deep and calm | no | yes | pending |
-| story-anna | Anna | Bright and expressive | 9lHjugDhwqoxA5MhX0az | Voice Library, high_quality, Taiwan Mandarin | yes | yes | pending |
-| story-james | James | Classic storyteller | 4VZIsMPtgggwNg7OXbPY | Voice Library, high_quality, narrative_story, Mandarin | yes | yes | pending |
+| Friendly name | Provider name | Provider id | Primary | en ready | zh ready | Non-native risk |
+| --- | --- | --- | --- | --- | --- | --- |
+| Grandpa / 爺爺 | Spuds Oxley - Grandpa | NOpBlnGInO9m6vDvFkFC | en | yes | pending audition | zh |
+| Sunny / 桑尼 | Mark - Natural Conversations | UgBBYS2sOqTuMpoF3BR0 | en | yes | pending audition | zh |
+| Cedar / 杉杉 | David - Audiobook & Documentary | cCYjmrGZaI86GUJ7F2Nn | en | yes | pending audition | zh |
+| Leo / 里歐 | Aaron Gerard - Expressive | PCa5QtqUKnVu4yH3HxLp | en | yes | no | |
+| Nia / 妮雅 | Pastie - Warm Nigerian Storyteller | y47FZICqt6oFf4Z89DXT | en | yes | no | |
+| Nuan / 暖暖 | Tun Tun - Relaxed | SIdddo4tIfBnOJY8JYjx | zh, Taiwan | pending audition | yes | en |
+| A-chun / 阿春 | Chun - Natural Taiwanese Mandarin | ZhxuUPFU7Hvp3p8qIPQP | zh, Taiwan | pending audition | yes | en |
+| Xiao Yu / 小宇 | Yu - Youthful, Energetic and Engaging | fQj4gJSexpu8RDE2Ii5m | zh, Taiwan | pending audition | yes | en |
+| Anna / 安娜 | Anna Su - Casual, Friendly and Bright | 9lHjugDhwqoxA5MhX0az | zh, Taiwan | pending audition | yes | en |
+| Coco / 可可 | KK - Natural, friendly female | Y2kfOuWTL6V4UWWmDF0s | zh, Taiwan | pending audition | yes | en |
+| An / 安安 | Jason Chen - Deep, Magnetic and Calm | DowyQ68vDpgFYdWVGjc3 | zh, Beijing | pending audition | yes, after Taiwan voices | en |
+| A-jie / 阿杰 | James Gao - Calm, Friendly and Warm | 4VZIsMPtgggwNg7OXbPY | zh, standard | pending audition | yes, after Taiwan voices | en |
 
-English story voices in the picker: Spuds, Mark, David, Aaron, Pastie, Anna, James (7).
-Traditional Chinese story voices in the picker: Mark, David, Tun Tun, Chun, Jason, Anna, James (7).
-
-`Eason_EN`, `Eason_CN`, and `Neva_CN` stay in `LEGACY_VOICES` so older saved audio can still be identified. They are not listed and cannot be used to make a new recording. Saved files still play.
-
-Rights details and preview URLs live in `lib/voices/libraryNarrators.json` and `lib/voices/registry.ts`.
+Rights: Voice Library, paid-plan commercial use under ElevenLabs terms, rate 1, no custom surcharge on the listing, not an expiring Default premade, not a family clone. Audition pending.

@@ -17,6 +17,7 @@ export type VoiceItem = {
   status?: string;
   selectable?: boolean;
   isDefault?: boolean;
+  nonNativeRisk?: boolean;
 };
 
 type VoiceApiItem = {
@@ -30,6 +31,7 @@ type VoiceApiItem = {
   status?: unknown;
   selectable?: unknown;
   isDefault?: unknown;
+  nonNativeRisk?: unknown;
 };
 
 export type PersonalVoiceAccess = "available" | "sign-in-required";
@@ -90,6 +92,7 @@ export function useTts(language: string, externalAudioRef?: RefObject<HTMLAudioE
         status: typeof v.status === "string" ? v.status : undefined,
         selectable: v.selectable !== false,
         isDefault: Boolean(v.isDefault),
+        nonNativeRisk: v.nonNativeRisk === true,
       }));
       setPersonalVoices(data.personalVoices === "available" ? "available" : "sign-in-required");
       setVoices(normalized);

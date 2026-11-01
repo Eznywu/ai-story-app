@@ -7,7 +7,11 @@ export type LibraryVoice = (typeof library.voices)[number];
 
 export type DefaultNarrator = {
   id: string;
+  /** Friendly name in English. Parents see `displayName` for the selected language. */
   name: string;
+  displayName: Record<AppLanguage, string>;
+  /** Language this voice was built for. Offering it for the other language is a non-native risk. */
+  primaryLanguage: AppLanguage;
   archetype: NarratorArchetype;
   description: Record<AppLanguage, string>;
   providerVoiceId: string;
@@ -32,7 +36,7 @@ const COPY: Record<
 > = {
   NOpBlnGInO9m6vDvFkFC: {
     id: "story-spuds",
-    name: "Spuds",
+    name: "Grandpa",
     archetype: "gentle",
     isDefault: true,
     description: {
@@ -42,7 +46,7 @@ const COPY: Record<
   },
   UgBBYS2sOqTuMpoF3BR0: {
     id: "story-mark",
-    name: "Mark",
+    name: "Sunny",
     archetype: "warm",
     description: {
       en: "Warm and conversational. A natural voice, as if someone is sitting nearby.",
@@ -51,7 +55,7 @@ const COPY: Record<
   },
   cCYjmrGZaI86GUJ7F2Nn: {
     id: "story-david",
-    name: "David",
+    name: "Cedar",
     archetype: "calm",
     description: {
       en: "Calm with a lower voice. Deep and smooth for a bedtime listen.",
@@ -60,7 +64,7 @@ const COPY: Record<
   },
   PCa5QtqUKnVu4yH3HxLp: {
     id: "story-aaron",
-    name: "Aaron",
+    name: "Leo",
     archetype: "bright",
     description: {
       en: "Bright and expressive. Animated storytelling without turning into a cartoon.",
@@ -69,7 +73,7 @@ const COPY: Record<
   },
   y47FZICqt6oFf4Z89DXT: {
     id: "story-pastie",
-    name: "Pastie",
+    name: "Nia",
     archetype: "classic",
     description: {
       en: "Classic storyteller. A warm voice that carries a whole tale.",
@@ -78,7 +82,7 @@ const COPY: Record<
   },
   SIdddo4tIfBnOJY8JYjx: {
     id: "story-tuntun",
-    name: "Tun Tun",
+    name: "Nuan",
     archetype: "gentle",
     isDefault: true,
     description: {
@@ -88,7 +92,7 @@ const COPY: Record<
   },
   ZhxuUPFU7Hvp3p8qIPQP: {
     id: "story-chun",
-    name: "Chun",
+    name: "A-chun",
     archetype: "warm",
     description: {
       en: "Warm and conversational. Everyday Taiwanese Mandarin.",
@@ -97,7 +101,7 @@ const COPY: Record<
   },
   DowyQ68vDpgFYdWVGjc3: {
     id: "story-jason",
-    name: "Jason",
+    name: "An",
     archetype: "calm",
     description: {
       en: "Calm with a lower voice. Steady Mandarin for a quiet night.",
@@ -115,13 +119,46 @@ const COPY: Record<
   },
   "4VZIsMPtgggwNg7OXbPY": {
     id: "story-james",
-    name: "James",
+    name: "A-jie",
     archetype: "classic",
     description: {
       en: "Classic storyteller. A calm Mandarin voice for narrative.",
       "zh-Hant": "經典說書人。平穩的中文，適合把故事講完。",
     },
   },
+  fQj4gJSexpu8RDE2Ii5m: {
+    id: "story-yu",
+    name: "Xiao Yu",
+    archetype: "bright",
+    description: {
+      en: "Bright and expressive. A youthful Taiwanese Mandarin voice.",
+      "zh-Hant": "明亮、有精神。年輕的台灣國語。",
+    },
+  },
+  Y2kfOuWTL6V4UWWmDF0s: {
+    id: "story-kk",
+    name: "Coco",
+    archetype: "classic",
+    description: {
+      en: "Classic storyteller. A friendly Taiwanese Mandarin voice that is easy to follow.",
+      "zh-Hant": "經典說書人。友善的台灣國語，清楚好懂。",
+    },
+  },
+};
+
+const DISPLAY_NAME: Record<string, Record<AppLanguage, string>> = {
+  "story-spuds": { en: "Grandpa", "zh-Hant": "爺爺" },
+  "story-mark": { en: "Sunny", "zh-Hant": "桑尼" },
+  "story-david": { en: "Cedar", "zh-Hant": "杉杉" },
+  "story-aaron": { en: "Leo", "zh-Hant": "里歐" },
+  "story-pastie": { en: "Nia", "zh-Hant": "妮雅" },
+  "story-tuntun": { en: "Nuan", "zh-Hant": "暖暖" },
+  "story-chun": { en: "A-chun", "zh-Hant": "阿春" },
+  "story-jason": { en: "An", "zh-Hant": "安安" },
+  "story-anna": { en: "Anna", "zh-Hant": "安娜" },
+  "story-james": { en: "A-jie", "zh-Hant": "阿杰" },
+  "story-yu": { en: "Xiao Yu", "zh-Hant": "小宇" },
+  "story-kk": { en: "Coco", "zh-Hant": "可可" },
 };
 
 function rightsNote(voice: LibraryVoice): string {
@@ -150,8 +187,11 @@ export const DEFAULT_NARRATORS: DefaultNarrator[] = library.voices.map((voice) =
   const copy = COPY[voice.providerVoiceId];
   if (!copy) throw new Error(`Missing app copy for library voice ${voice.providerVoiceId}`);
   const languages = voice.verifiedAppLanguages.map((code) => (code === "zh" ? "zh-Hant" : "en")) as AppLanguage[];
+  const primaryLanguage: AppLanguage = voice.libraryLanguage === "zh" ? "zh-Hant" : "en";
   return {
     ...copy,
+    displayName: DISPLAY_NAME[copy.id],
+    primaryLanguage,
     providerVoiceId: voice.providerVoiceId,
     providerName: voice.providerName,
     source: `ElevenLabs Voice Library (${library.endpoint}, ${library.fetchedAt})`,
@@ -190,9 +230,22 @@ export function defaultNarratorById(voiceId: string): DefaultNarrator | null {
   return DEFAULT_NARRATORS.find((voice) => voice.id === voiceId) ?? null;
 }
 
+export function isNonNativeFor(voice: DefaultNarrator, language: unknown): boolean {
+  return voice.primaryLanguage !== normalizeAppLanguage(language);
+}
+
+/** Taiwan Mandarin first, then other voices built for that language, then cross-language listings. */
 export function defaultNarratorsFor(language: unknown): DefaultNarrator[] {
   const normalized = normalizeAppLanguage(language);
-  return DEFAULT_NARRATORS.filter((voice) => languagesMatch(voice.languages, normalized));
+  return DEFAULT_NARRATORS.filter((voice) => languagesMatch(voice.languages, normalized)).sort((a, b) => {
+    return offerRank(a, normalized) - offerRank(b, normalized);
+  });
+}
+
+function offerRank(voice: DefaultNarrator, language: AppLanguage): number {
+  if (voice.primaryLanguage !== language) return 30;
+  if (language === "zh-Hant" && voice.locale !== "cmn-TW") return 20;
+  return 10;
 }
 
 export function defaultNarratorFor(language: unknown): DefaultNarrator {

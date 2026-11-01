@@ -307,6 +307,64 @@
           "modelId": "eleven_multilingual_v2"
         }
       }
+    },
+    {
+      "providerVoiceId": "fQj4gJSexpu8RDE2Ii5m",
+      "providerName": "Yu - Youthful, Energetic and Engaging",
+      "publicOwnerId": "98502da27d31153bf16a3b7acc4708333deb810b421a78e356e09261f54706f0",
+      "category": "professional",
+      "useCase": "conversational",
+      "descriptive": "gentle",
+      "gender": "male",
+      "age": "young",
+      "accent": "taiwan mandarin",
+      "locale": "cmn-TW",
+      "libraryLanguage": "zh",
+      "freeUsersAllowed": true,
+      "rate": 1.0,
+      "fiatRate": null,
+      "noticePeriodDays": 730,
+      "description": "Yu is a vibrant, upbeat voice in Traditional Chinese with a youthful Taiwanese accent. It is characterized by its energetic tone and engaging delivery. Perfectly suited for tutorials, podcasts, calls, and classes, this voice ensures clarity and captures attention with a professional yet approachable vibe.",
+      "verifiedAppLanguages": [
+        "zh"
+      ],
+      "elevenV3InVerifiedList": false,
+      "preview": {
+        "en": null,
+        "zh": {
+          "url": "https://storage.googleapis.com/eleven-public-prod/database/workspace/c347177b192844f784b8442a31fd339e/voices/fQj4gJSexpu8RDE2Ii5m/xXnDtL0jvbLE622bVoEA.mp3",
+          "modelId": "eleven_multilingual_v2"
+        }
+      }
+    },
+    {
+      "providerVoiceId": "Y2kfOuWTL6V4UWWmDF0s",
+      "providerName": "KK - Natural, friendly female",
+      "publicOwnerId": "5f336c2156cd48a3add6865d90ce227f4f94a26af82bd858e733773cd1f9d9c1",
+      "category": "professional",
+      "useCase": "narrative_story",
+      "descriptive": "classy",
+      "gender": "female",
+      "age": "young",
+      "accent": "taiwan mandarin",
+      "locale": "cmn-TW",
+      "libraryLanguage": "zh",
+      "freeUsersAllowed": false,
+      "rate": 1.0,
+      "fiatRate": null,
+      "noticePeriodDays": 730,
+      "description": "Natural Taiwanese Mandarin ,natural, warm, and friendly, with clear articulation that makes information easy to follow. It’s well suited for educational videos, explainer content, podcasts, and conversational narration, helping your audience feel comfortable and engaged.",
+      "verifiedAppLanguages": [
+        "zh"
+      ],
+      "elevenV3InVerifiedList": false,
+      "preview": {
+        "en": null,
+        "zh": {
+          "url": "https://storage.googleapis.com/eleven-public-prod/database/workspace/115d8db2d6844507a545ca80b0fcdcf8/voices/Y2kfOuWTL6V4UWWmDF0s/SsKA6pC1IY5Eoo8U1KYD.mp3",
+          "modelId": "eleven_multilingual_v2"
+        }
+      }
     }
   ]
 }

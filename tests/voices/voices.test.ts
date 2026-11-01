@@ -169,7 +169,16 @@ test("a pending or deleting personal voice cannot be used, and a parent voice is
   });
   assert.equal(kept.voiceId, "v_mom");
   assert.equal(kept.replaced, false);
-  assert.match(kept.notice, /stays selected/i);
+  assert.equal(kept.notice, "");
+  assert.match(kept.personalNote, /還是選著/);
+  const same = selectionAfterLanguageChange({
+    previousId: personal.id,
+    previousKind: "default",
+    language: "en",
+    voices: [personal],
+  });
+  assert.equal(same.notice, "");
+  assert.equal(same.replaced, false);
 });
 
 test("guests cannot own voices, consent and quota are enforced", () => {
@@ -217,8 +226,8 @@ test("preview replay does not plan a paid request", () => {
     narrator,
     env: process.env,
   });
-  assert.equal(first.action === "library" || first.action === "mock", true);
-  assert.equal(first.action === "generate", false);
+  assert.equal(first.action, "mock");
+  assert.equal(first.paid, false);
   const again = planVoicePreview({
     voiceAppId: "v_mom",
     language: "en",
@@ -232,6 +241,25 @@ test("preview replay does not plan a paid request", () => {
   });
   assert.equal(again.action, "cache");
   assert.equal(again.paid, false);
+  const replay = planVoicePreview({
+    voiceAppId: narrator.id,
+    language: "en",
+    ownerId: null,
+    voiceVersion: 1,
+    providerVoiceId: narrator.providerVoiceId,
+    kind: "default",
+    selectable: true,
+    cached: true,
+    narrator,
+    env: process.env,
+  });
+  assert.equal(replay.action, "cache");
+  if (first.action === "mock" && replay.action === "cache") assert.equal(replay.cacheKey, first.cacheKey);
+  const store = new Map<string, string>();
+  assert.equal(store.has(first.cacheKey), false);
+  store.set(first.cacheKey, "mock-mp3");
+  assert.equal(store.get(replay.action === "cache" ? replay.cacheKey : ""), "mock-mp3");
+  assert.equal(store.size, 1);
 });
 
 test("weekly samples can name the voice, language, and whether it is personal", () => {

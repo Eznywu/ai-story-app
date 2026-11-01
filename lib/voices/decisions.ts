@@ -6,6 +6,7 @@ import {
   defaultNarratorFor,
   defaultNarratorsFor,
   isLegacyVoiceId,
+  isNonNativeFor,
   legacyVoice,
   looksLikeProviderVoiceId,
   type DefaultNarrator,
@@ -31,9 +32,10 @@ export type PublicVoice = {
   languages: AppLanguage[];
   group: "story" | "mine";
   kind: "default" | "personal";
-  status: VoiceStatus;
+  status: VoiceStatus | "pending_audition";
   selectable: boolean;
   isDefault?: boolean;
+  nonNativeRisk?: boolean;
 };
 
 export function personalVoicesAllowed(input: { authEnabled: boolean; email: string; guestEmail: string }): boolean {
@@ -43,17 +45,20 @@ export function personalVoicesAllowed(input: { authEnabled: boolean; email: stri
 
 export function toPublicDefault(voice: DefaultNarrator, language: unknown): PublicVoice {
   const appLanguage = normalizeAppLanguage(language);
+  const nonNativeRisk = isNonNativeFor(voice, appLanguage);
+  const speaks = languagesMatch(voice.languages, appLanguage);
   return {
     id: voice.id,
-    name: voice.name,
+    name: voice.displayName[appLanguage],
     description: voice.description[appLanguage],
-    language: voice.languages[0] ?? "en",
+    language: voice.primaryLanguage,
     languages: voice.languages,
     group: "story",
     kind: "default",
-    status: "ready",
-    selectable: languagesMatch(voice.languages, appLanguage),
-    isDefault: Boolean(voice.isDefault && languagesMatch(voice.languages, appLanguage)),
+    status: nonNativeRisk ? "pending_audition" : "ready",
+    selectable: speaks && !nonNativeRisk,
+    isDefault: Boolean(voice.isDefault && speaks && !nonNativeRisk),
+    nonNativeRisk,
   };
 }
 
@@ -247,12 +252,16 @@ export function consentAllowsCreate(input: { accepted: unknown; textVersion: unk
 export type SelectionResult = {
   voiceId: string;
   replaced: boolean;
+  /** Empty unless a story voice was just changed because it cannot read this language. */
   notice: string;
+  /** Set when a personal voice stays selected and the language does not match the recording. */
+  personalNote: string;
 };
 
 /**
- * A personal voice is never swapped for a default when the language changes.
- * An incompatible story voice is left in place with an explanation, so the change is visible.
+ * A personal voice is never swapped when the language changes.
+ * A story voice changes only when that voice cannot read the new language.
+ * The note names both voices. An empty previous choice does not invent a warning.
  */
 export function selectionAfterLanguageChange(input: {
   previousId: string;
@@ -261,25 +270,37 @@ export function selectionAfterLanguageChange(input: {
   voices: PublicVoice[];
 }): SelectionResult {
   const language = normalizeAppLanguage(input.language);
+  const languageName = language === "zh-Hant" ? "中文" : "English";
   const current = input.voices.find((voice) => voice.id === input.previousId);
-  const fallback = input.voices.find((voice) => voice.group === "story" && voice.selectable && voice.isDefault)
-    ?? input.voices.find((voice) => voice.group === "story" && voice.selectable);
+  const readyStory = input.voices.filter((voice) => voice.group === "story" && voice.selectable);
+  const fallback = readyStory.find((voice) => voice.isDefault) ?? readyStory[0];
+  const quiet = { replaced: false, notice: "", personalNote: "" };
   if (input.previousKind === "personal" || current?.kind === "personal") {
+    const matches = current ? languagesMatch(current.languages, language) : true;
+    const choices = readyStory.map((voice) => voice.name).slice(0, 5).join(", ");
     return {
       voiceId: input.previousId,
       replaced: false,
-      notice: current && languagesMatch(current.languages, language)
+      notice: "",
+      personalNote: matches
         ? ""
-        : "Your voice stays selected. It was recorded for another language. Story voices below can read this one.",
+        : language === "zh-Hant"
+          ? `${current?.name || "這個聲音"} 還是選著。它是用另一種語言錄的。這些故事聲音可以念中文：${choices}。`
+          : `${current?.name || "This voice"} stays selected. It was recorded in another language. These story voices can read English: ${choices}.`,
     };
   }
-  if (current && languagesMatch(current.languages, language) && current.selectable) {
-    return { voiceId: current.id, replaced: false, notice: "" };
+  if (!current) {
+    return { voiceId: fallback?.id || input.previousId, ...quiet };
   }
-  if (!fallback) return { voiceId: input.previousId, replaced: false, notice: "" };
-  return {
-    voiceId: fallback.id,
-    replaced: fallback.id !== input.previousId,
-    notice: "That story voice does not read this language. A voice that does is selected.",
-  };
+  if (languagesMatch(current.languages, language) && current.selectable) {
+    return { voiceId: current.id, ...quiet };
+  }
+  if (!fallback || fallback.id === current.id) {
+    return { voiceId: current.id, ...quiet };
+  }
+  const notice =
+    language === "zh-Hant"
+      ? `${current.name} 不會念中文。${fallback.name} 可以，所以改選 ${fallback.name}。`
+      : `${current.name} doesn't read ${languageName}. ${fallback.name} can, so ${fallback.name} is selected.`;
+  return { voiceId: fallback.id, replaced: true, notice, personalNote: "" };
 }

@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { normalizeAppLanguage, type AppLanguage } from "./language";
 import { previewSpendAllowed } from "./limits";
 import { PREVIEW_SCRIPT } from "./passages";
-import { defaultNarratorById, libraryPreviewUrl, type DefaultNarrator } from "./registry";
+import { type DefaultNarrator } from "./registry";
 import { V3_USD_PER_THOUSAND_CHARS } from "@/lib/tts/pricing";
 import { resolveTtsModelId } from "@/lib/tts/modelCapabilities";
 
@@ -65,11 +65,6 @@ export function planVoicePreview(input: {
     ownerId: input.ownerId,
   });
   if (input.cached) return { action: "cache", cacheKey, paid: false };
-  const narrator = input.narrator ?? (input.kind === "default" ? defaultNarratorById(input.voiceAppId) : null);
-  if (narrator) {
-    const url = libraryPreviewUrl(narrator, language);
-    if (url) return { action: "library", url, cacheKey, paid: false };
-  }
   const spend = previewSpendAllowed(input.env);
   const script = PREVIEW_SCRIPT[language];
   if (!spend.allow || !input.providerVoiceId) {
