@@ -75,6 +75,11 @@ test("MOCK local test parent records a voice and sees it under My voices", async
   await expect(page.getByRole("heading", { name: "Hear a short preview" })).toBeVisible({ timeout: 30_000 });
   await page.getByRole("button", { name: "Next, name it" }).click();
   await page.getByRole("button", { name: "Save and use" }).click();
+  const summary = page.getByRole("region", { name: /My voice/ });
+  await expect(summary).toBeVisible();
+  await expect(summary.getByText("Test voice")).toBeVisible();
+  await page.getByRole("button", { name: "Change" }).click();
+  await expect(page.getByRole("heading", { name: "My voices" })).toBeVisible();
   const mine = page.getByRole("option", { name: /My voice/ }).first();
   await expect(mine).toBeVisible();
   await expect(mine.getByText("Test voice")).toBeVisible();

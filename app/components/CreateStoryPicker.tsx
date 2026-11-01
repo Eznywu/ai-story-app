@@ -795,6 +795,7 @@ function MyVoiceCard(props: {
           <span className="myVoice__eyebrow">{copy.yourVoice}</span>
           <span id="my-voice-name" className="myVoice__name">
             {name}
+            {shown.testVoice ? <span className="voiceCard__test">{messages.localTest.voice}</span> : null}
           </span>
           <span className={`myVoice__status${ready ? " myVoice__status--ready" : ""}`}>
             <span className="myVoice__dot" aria-hidden />
