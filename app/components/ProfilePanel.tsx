@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
+import { useInterfaceLocale } from "@/app/components/LocaleProvider";
 import { QuietSheet } from "@/app/components/QuietSheet";
+import { fill } from "@/lib/i18n/locales";
 import type { KidProfile, ReadingStatsState, StoryCharacterProfile } from "@/lib/profiles/profilesTypes";
 
 type Props = {
@@ -25,24 +27,27 @@ export function ProfilePanel({
   onAddCharacter,
   onCreateStory,
 }: Props) {
+  const { messages, formatNumber } = useInterfaceLocale();
+  const copy = messages.profile;
   const [voiceOpen, setVoiceOpen] = useState(false);
+  const storyLanguageLabel = language.toLowerCase().startsWith("zh") ? messages.voice.chinese : messages.voice.english;
 
   return (
     <section className="profilePanel" aria-labelledby="profile-heading">
       <h1 id="profile-heading" className="profilePanel__title">
-        Profile
+        {copy.title}
       </h1>
-      <p className="profilePanel__lede">Children, characters, voices, and settings.</p>
-      {email ? <p className="profilePanel__muted">Signed in as {email}</p> : null}
+      <p className="profilePanel__lede">{copy.lede}</p>
+      {email ? <p className="profilePanel__muted">{fill(copy.signedIn, { email })}</p> : null}
 
       <section className="profileGroup" aria-labelledby="profile-children">
         <div className="profileGroup__head">
-          <h2 id="profile-children">Children</h2>
+          <h2 id="profile-children">{copy.children}</h2>
           <button type="button" className="profileGroup__add" onClick={onAddKid}>
-            Add
+            {copy.add}
           </button>
         </div>
-        {kids.length === 0 ? <p className="profilePanel__muted">No children yet.</p> : null}
+        {kids.length === 0 ? <p className="profilePanel__muted">{copy.noChildren}</p> : null}
         <ul className="profileRows">
           {kids.map((kid) => (
             <li key={kid.id}>
@@ -57,18 +62,18 @@ export function ProfilePanel({
 
       <section className="profileGroup" aria-labelledby="profile-characters">
         <div className="profileGroup__head">
-          <h2 id="profile-characters">Characters</h2>
+          <h2 id="profile-characters">{copy.characters}</h2>
           <button type="button" className="profileGroup__add" onClick={onAddCharacter}>
-            Add
+            {copy.add}
           </button>
         </div>
-        {characters.length === 0 ? <p className="profilePanel__muted">No characters yet.</p> : null}
+        {characters.length === 0 ? <p className="profilePanel__muted">{copy.noCharacters}</p> : null}
         <ul className="profileRows">
           {characters.map((character) => (
             <li key={character.id}>
               <button type="button" className="profileRow" onClick={onCreateStory}>
                 <span className="profileRow__title">{character.name}</span>
-                <span className="profileRow__meta">{character.characterType || "Story character"}</span>
+                <span className="profileRow__meta">{character.characterType || copy.storyCharacter}</span>
               </button>
             </li>
           ))}
@@ -77,23 +82,20 @@ export function ProfilePanel({
 
       <section className="profileGroup" aria-labelledby="profile-voices">
         <div className="profileGroup__head">
-          <h2 id="profile-voices">Voices</h2>
+          <h2 id="profile-voices">{copy.voices}</h2>
         </div>
-        <p className="profilePanel__muted">
-          Story voices are ready for every story. A personal voice is optional. Add it from Create, after you agree,
-          and only on a signed-in account.
-        </p>
+        <p className="profilePanel__muted">{copy.voicesBody}</p>
         <ul className="profileRows">
           <li>
             <button type="button" className="profileRow" onClick={() => setVoiceOpen(true)}>
-              <span className="profileRow__title">Add my voice</span>
-              <span className="profileRow__meta">Optional, on the create screen</span>
+              <span className="profileRow__title">{copy.addVoice}</span>
+              <span className="profileRow__meta">{copy.addVoiceMeta}</span>
             </button>
           </li>
           <li>
             <button type="button" className="profileRow" onClick={onCreateStory}>
-              <span className="profileRow__title">Choose a narrator</span>
-              <span className="profileRow__meta">On the create screen</span>
+              <span className="profileRow__title">{copy.chooseNarrator}</span>
+              <span className="profileRow__meta">{copy.chooseMeta}</span>
             </button>
           </li>
         </ul>
@@ -101,39 +103,39 @@ export function ProfilePanel({
 
       <section className="profileGroup" aria-labelledby="profile-settings">
         <div className="profileGroup__head">
-          <h2 id="profile-settings">Settings</h2>
+          <h2 id="profile-settings">{copy.settings}</h2>
         </div>
         {stats ? (
           <p className="profilePanel__muted">
-            Opened today: {stats.storiesReadToday ?? 0}. Last story: {stats.lastStoryTitle?.trim() || "None yet"}.
+            {fill(copy.opened, {
+              count: formatNumber(stats.storiesReadToday ?? 0),
+              title: stats.lastStoryTitle?.trim() || copy.noneYet,
+            })}
           </p>
         ) : null}
         <ul className="profileRows">
           <li>
             <a className="profileRow" href="/settings">
-              <span className="profileRow__title">Account and preferences</span>
-              <span className="profileRow__meta">Settings</span>
+              <span className="profileRow__title">{copy.account}</span>
+              <span className="profileRow__meta">{copy.settingsMeta}</span>
             </a>
           </li>
           <li>
             <a className="profileRow" href="/legal/privacy">
-              <span className="profileRow__title">Privacy</span>
+              <span className="profileRow__title">{copy.privacy}</span>
             </a>
           </li>
           <li>
             <a className="profileRow" href="/legal/terms">
-              <span className="profileRow__title">Terms</span>
+              <span className="profileRow__title">{copy.terms}</span>
             </a>
           </li>
         </ul>
       </section>
 
       {voiceOpen ? (
-        <QuietSheet title="Add my voice" onClose={() => setVoiceOpen(false)}>
-          <p className="profilePanel__muted">
-            Recording stays on the create screen so it is never part of onboarding. Story voices work without an
-            account. Your own voice needs sign-in. Current story language: {language}.
-          </p>
+        <QuietSheet title={copy.voiceSheetTitle} closeLabel={messages.common.close} onClose={() => setVoiceOpen(false)}>
+          <p className="profilePanel__muted">{fill(copy.voiceSheetBody, { language: storyLanguageLabel })}</p>
           <button
             type="button"
             className="createScreen__submit"
@@ -142,7 +144,7 @@ export function ProfilePanel({
               onCreateStory();
             }}
           >
-            Open create
+            {copy.openCreate}
           </button>
         </QuietSheet>
       ) : null}

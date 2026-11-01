@@ -16,6 +16,13 @@
   text-align: center;
 }
 
+.welcome__language {
+  position: absolute;
+  top: calc(0.5rem + env(safe-area-inset-top, 0px));
+  inset-inline-end: max(0.75rem, env(safe-area-inset-inline-end, 0px));
+  z-index: 2;
+}
+
 .welcome__markWrap {
   width: min(42vw, 168px);
   margin-bottom: 0.75rem;

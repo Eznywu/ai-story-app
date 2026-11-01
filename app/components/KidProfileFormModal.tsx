@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import type { KidProfile } from "@/lib/profiles/profilesTypes";
 import { AgeRangeSlider } from "@/app/components/AgeRangeSlider";
+import { useInterfaceLocale } from "@/app/components/LocaleProvider";
 const GENRE_OPTIONS = [
   "Animals",
   "Adventure",
@@ -27,6 +28,8 @@ type Props = {
 };
 
 export function KidProfileFormModal({ open, onClose, onSave }: Props) {
+  const { messages } = useInterfaceLocale();
+  const copy = messages.kid;
   const [name, setName] = useState("");
   const [age, setAge] = useState("6 months");
   const [gender, setGender] = useState<KidProfile["gender"]>("girl");
@@ -59,28 +62,28 @@ export function KidProfileFormModal({ open, onClose, onSave }: Props) {
       >
         <div className="profileModal__header">
           <h2 id="kid-form-title" className="profileModal__title">
-            Add kid profile
+            {copy.title}
           </h2>
-          <button type="button" className="profileModal__close" onClick={onClose} aria-label="Close">
+          <button type="button" className="profileModal__close" onClick={onClose} aria-label={messages.common.close}>
             ×
           </button>
         </div>
         <div className="fieldGrid">
           <label className="field">
-            <span className="label">Name</span>
+            <span className="label">{copy.name}</span>
             <input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
           </label>
           <div className="field ageField">
-            <AgeRangeSlider id="kid-profile-age-slider" label="Age" value={age} onChange={setAge} />
+            <AgeRangeSlider id="kid-profile-age-slider" label={copy.age} value={age} onChange={setAge} />
           </div>
           <div className="field">
-            <span className="label">Gender</span>
+            <span className="label">{copy.gender}</span>
             <div className="profileModal__segmented">
               {(
                 [
-                  ["boy", "Boy"],
-                  ["girl", "Girl"],
-                  ["other", "Other"],
+                  ["boy", copy.boy],
+                  ["girl", copy.girl],
+                  ["other", copy.other],
                 ] as const
               ).map(([v, lab]) => (
                 <button
@@ -95,10 +98,8 @@ export function KidProfileFormModal({ open, onClose, onSave }: Props) {
             </div>
           </div>
           <div className="field">
-            <span className="label">Interests (story themes)</span>
-            <p className="profileModal__fieldHint">
-              Choose what your child loves — it helps us craft warmer, more personal stories.
-            </p>
+            <span className="label">{copy.interests}</span>
+            <p className="profileModal__fieldHint">{copy.interestsHint}</p>
             <div className="profileModal__tags">
               {GENRE_OPTIONS.map((g) => (
                 <button
@@ -107,7 +108,7 @@ export function KidProfileFormModal({ open, onClose, onSave }: Props) {
                   className={`profileModal__tag${interests.includes(g) ? " profileModal__tag--on" : ""}`}
                   onClick={() => toggleInterest(g)}
                 >
-                  {g}
+                  {messages.voice.genres[g as keyof typeof messages.voice.genres] || g}
                 </button>
               ))}
             </div>
@@ -115,10 +116,10 @@ export function KidProfileFormModal({ open, onClose, onSave }: Props) {
         </div>
         <div className="profileModal__actions">
           <button type="button" className="button" onClick={onClose}>
-            Cancel
+            {copy.cancel}
           </button>
           <button type="button" className="button buttonPrimary" onClick={submit} disabled={!name.trim()}>
-            Save profile
+            {copy.save}
           </button>
         </div>
       </div>

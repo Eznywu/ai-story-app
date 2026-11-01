@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import "@/app/page.css";
+import { useInterfaceLocale } from "@/app/components/LocaleProvider";
 import { SignInScreen } from "@/app/components/SignInScreen";
 
 export type AuthUser = { id: string; email: string };
@@ -10,10 +11,12 @@ type AuthContextValue = {
   user: AuthUser;
   /** False while email sign-in is paused (`AUTH_ENABLED` off). */
   authEnabled: boolean;
+  /** True only for the local dev parent. Never a real signed-in account. */
+  localTestParent: boolean;
   signOut: () => Promise<void>;
 };
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+export const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function useAuthUser(): AuthContextValue {
   const value = useContext(AuthContext);
@@ -26,6 +29,7 @@ export function useAuthUser(): AuthContextValue {
 type SessionPayload = {
   user?: AuthUser | null;
   authEnabled?: boolean;
+  localTestParent?: boolean;
   error?: string;
 };
 
@@ -36,19 +40,22 @@ async function readSession(): Promise<{ ok: boolean; data: SessionPayload }> {
 }
 
 export function RequireAuth({ children }: { children: React.ReactNode }) {
+  const { messages } = useInterfaceLocale();
   const [status, setStatus] = useState<"loading" | "in" | "out" | "error">("loading");
   const [user, setUser] = useState<AuthUser | null>(null);
   const [authEnabled, setAuthEnabled] = useState(true);
+  const [localTestParent, setLocalTestParent] = useState(false);
   const [error, setError] = useState("");
 
   const commitSession = useCallback((ok: boolean, data: SessionPayload) => {
     if (!ok) {
       setUser(null);
-      setError(data.error || "We couldn't check your sign-in.");
+      setError(data.error || "");
       setStatus("error");
       return;
     }
     setAuthEnabled(data.authEnabled !== false);
+    setLocalTestParent(data.localTestParent === true);
     if (data.user?.id && data.user.email) {
       setUser({ id: data.user.id, email: data.user.email });
       setError("");
@@ -66,7 +73,7 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
       commitSession(ok, data);
     } catch {
       setUser(null);
-      setError("We couldn't check your sign-in.");
+      setError("");
       setStatus("error");
     }
   }, [commitSession]);
@@ -82,7 +89,7 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
       .catch(() => {
         if (cancelled) return;
         setUser(null);
-        setError("We couldn't check your sign-in.");
+        setError("");
         setStatus("error");
       });
     return () => {
@@ -100,7 +107,7 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
       <main className="pageRoot" aria-busy="true">
         <div className="overlay">
           <div className="container">
-            <p className="subtitle">Checking your sign-in…</p>
+            <p className="subtitle">{messages.auth.checkingSession}</p>
           </div>
         </div>
       </main>
@@ -112,12 +119,12 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
       <main className="pageRoot">
         <div className="overlay">
           <div className="container">
-            <h1 className="title">Sign in</h1>
+            <h1 className="title">{messages.auth.title}</h1>
             <div className="errorBox" role="alert">
-              <span className="errorText">{error}</span>
+              <span className="errorText">{error || messages.auth.sessionError}</span>
             </div>
             <button type="button" className="button buttonPrimary" onClick={() => void refresh()}>
-              Try again
+              {messages.common.tryAgain}
             </button>
           </div>
         </div>
@@ -129,5 +136,5 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
     return <SignInScreen onSignedIn={() => void refresh()} />;
   }
 
-  return <AuthContext.Provider value={{ user, authEnabled, signOut }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user, authEnabled, localTestParent, signOut }}>{children}</AuthContext.Provider>;
 }

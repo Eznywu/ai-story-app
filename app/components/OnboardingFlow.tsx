@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { BrandMark } from "@/app/components/BrandMark";
+import { useInterfaceLocale } from "@/app/components/LocaleProvider";
 import { STORY_AGE_OPTIONS } from "@/lib/stories/storyAgeOptions";
 import { BRAND_NAME } from "@/lib/brand";
 
@@ -20,6 +21,8 @@ type Props = {
 const INTERESTS = ["Animals", "Adventure", "Fantasy", "Friendship", "Magic", "Nature", "Space", "Bedtime"];
 
 export function OnboardingFlow({ mode, onFinish, onCreateKid }: Props) {
+  const { messages } = useInterfaceLocale();
+  const copy = messages.onboarding;
   const [step, setStep] = useState<"child" | "privacy">(mode === "returning" ? "privacy" : "child");
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
@@ -36,11 +39,11 @@ export function OnboardingFlow({ mode, onFinish, onCreateKid }: Props) {
     const trimmed = name.trim();
     let invalid = false;
     if (!trimmed) {
-      setNameError("Add a nickname to continue, or skip this step.");
+      setNameError(copy.nicknameError);
       invalid = true;
     } else setNameError("");
     if (!age) {
-      setAgeError("Choose an age. The unit is part of each choice.");
+      setAgeError(copy.ageError);
       invalid = true;
     } else setAgeError("");
     if (invalid) return;
@@ -55,18 +58,18 @@ export function OnboardingFlow({ mode, onFinish, onCreateKid }: Props) {
         <div className="onboardingCard">
           <BrandMark variant="onDark" className="onboardingMark" label={null} />
           <p className="onboardingEyebrow">{BRAND_NAME}</p>
-          <h1 className="onboardingTitle">Who is the story for?</h1>
-          <p className="onboardingBody">A nickname and age are enough. Interests can wait.</p>
+          <h1 className="onboardingTitle">{copy.who}</h1>
+          <p className="onboardingBody">{copy.whoBody}</p>
           <div className="fieldGrid">
             <label className="field">
-              <span className="label">Nickname</span>
+              <span className="label">{copy.nickname}</span>
               <input
                 value={name}
                 onChange={(event) => {
                   setName(event.target.value);
                   if (nameError) setNameError("");
                 }}
-                placeholder="e.g. Momo"
+                placeholder={copy.nicknamePlaceholder}
                 aria-invalid={nameError ? true : undefined}
                 aria-describedby={nameError ? "kid-name-error" : undefined}
                 autoComplete="nickname"
@@ -79,7 +82,7 @@ export function OnboardingFlow({ mode, onFinish, onCreateKid }: Props) {
             </label>
             <div className="field">
               <span className="label" id="kid-age-label">
-                Age
+                {copy.age}
               </span>
               <div className="profileModal__tags" role="listbox" aria-labelledby="kid-age-label">
                 {STORY_AGE_OPTIONS.map((option) => (
@@ -93,7 +96,7 @@ export function OnboardingFlow({ mode, onFinish, onCreateKid }: Props) {
                       if (ageError) setAgeError("");
                     }}
                   >
-                    {option}
+                    {messages.ages[option] || option}
                   </button>
                 ))}
               </div>
@@ -104,7 +107,7 @@ export function OnboardingFlow({ mode, onFinish, onCreateKid }: Props) {
               ) : null}
             </div>
             <div className="field">
-              <span className="label">Interests, if you want</span>
+              <span className="label">{copy.interests}</span>
               <div className="profileModal__tags">
                 {INTERESTS.map((item) => (
                   <button
@@ -114,7 +117,7 @@ export function OnboardingFlow({ mode, onFinish, onCreateKid }: Props) {
                     aria-pressed={interests.includes(item)}
                     onClick={() => toggleInterest(item)}
                   >
-                    {item}
+                    {item === "Bedtime" ? copy.bedtime : messages.voice.genres[item as keyof typeof messages.voice.genres] || item}
                   </button>
                 ))}
               </div>
@@ -122,7 +125,7 @@ export function OnboardingFlow({ mode, onFinish, onCreateKid }: Props) {
           </div>
           <div className="onboardingActions">
             <button className="button buttonPrimary" type="button" onClick={saveChild}>
-              Continue
+              {copy.continue}
             </button>
             <button
               className="button"
@@ -132,7 +135,7 @@ export function OnboardingFlow({ mode, onFinish, onCreateKid }: Props) {
                 setStep("privacy");
               }}
             >
-              Skip for now
+              {copy.skip}
             </button>
           </div>
         </div>
@@ -143,14 +146,14 @@ export function OnboardingFlow({ mode, onFinish, onCreateKid }: Props) {
   return (
     <div className="onboardingFlow">
       <div className="onboardingCard">
-        <p className="onboardingEyebrow">Before we begin</p>
-        <h1 className="onboardingTitle">You choose what to share.</h1>
-        <p className="onboardingBody">
-          Stories stay in this library. A personal voice is optional, and the microphone is requested only when you
-          decide to record. You can always use a narrator instead.
-        </p>
+        <p className="onboardingEyebrow">{copy.before}</p>
+        <h1 className="onboardingTitle">{copy.shareTitle}</h1>
+        <p className="onboardingBody">{copy.shareBody}</p>
         <p className="onboardingLegal">
-          By continuing, you agree to our <a href="/legal/privacy">Privacy Policy</a> and <a href="/legal/terms">Terms</a>.
+          {copy.legal}{" "}
+          <a href="/legal/privacy">{copy.privacyPolicy}</a>
+          {" · "}
+          <a href="/legal/terms">{copy.terms}</a>
         </p>
         <div className="onboardingActions">
           <button
@@ -163,7 +166,7 @@ export function OnboardingFlow({ mode, onFinish, onCreateKid }: Props) {
               })
             }
           >
-            I understand
+            {copy.understand}
           </button>
         </div>
       </div>

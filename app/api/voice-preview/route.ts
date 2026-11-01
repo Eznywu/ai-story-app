@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { localTestParentEnabled } from "@/lib/auth/config";
 import { requireUser } from "@/lib/auth/requireUser";
 import { accountCanOwnVoices, findOwnedVoice, listOwnedVoices } from "@/lib/voices/accountVoices";
 import { authorizeSynthesis } from "@/lib/voices/decisions";
@@ -78,7 +79,7 @@ export async function GET(req: Request) {
     const bytes = await readPrivateMedia({ folder: "voices", filename: existing.filename, storageUrl: existing.storageUrl });
     if (bytes) return audioResponse(bytes, existing.source, "hit");
   }
-  if (plan.action === "generate") {
+  if (plan.action === "generate" && !localTestParentEnabled()) {
     const modelId = resolveTtsModelId();
     const capability = getModelCapability(modelId);
     const settings = settingsForSelectedModel(capability, language, undefined, activeTtsConfig().id);

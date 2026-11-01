@@ -26,6 +26,8 @@ Open [http://localhost:3000](http://localhost:3000).
 
 Email sign-in is paused unless `AUTH_ENABLED=true`. With the flag unset, the app opens straight into a single local library (no sign-in screen). To turn codes back on, set `AUTH_ENABLED=true`, `RESEND_API_KEY`, and `AUTH_EMAIL_FROM` (see `.env.example`).
 
+To try the parent voice recorder without signing in, set `LOCAL_TEST_PARENT=1` and run `npm run dev` with `AUTH_ENABLED` unset. That uses a reserved local account (`local-test-parent@local.invalid`) instead of the shared guest, and voice cloning stays on the mock provider even if an ElevenLabs key is present. The header shows “Local test parent”. The flag does nothing when `VERCEL_ENV` is set or when `NODE_ENV` is `production`.
+
 To exercise story, narration, and poster **without provider keys**, set `MOCK_PROVIDERS=1` in `.env` (see `.env.example`). That path is for local testing and is ignored when `VERCEL_ENV=production`. Real narration still needs `ELEVENLABS_API_KEY`; real story text needs `OPENAI_API_KEY`; real posters need `OPENAI_API_KEY` or `GEMINI_API_KEY`.
 
 ## Deploy on Vercel

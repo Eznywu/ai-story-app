@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "@/app/page.css";
-import { AppChromeBar } from "@/app/components/AppChromeBar";
-import { BackButton } from "@/app/components/BackButton";
+import { LegalIntro } from "@/app/components/LegalIntro";
 
 export const metadata: Metadata = {
   title: "Privacy — Happy Horse",
@@ -9,23 +8,12 @@ export const metadata: Metadata = {
     "How Happy Horse handles accounts, membership, local profiles, AI providers, and optional voice features.",
 };
 
-const LAST_UPDATED = "April 2, 2026";
-
 export default function PrivacyPage() {
   return (
     <main className="pageRoot legalPage">
       <div className="overlay">
         <div className="container legalDoc">
-      <AppChromeBar />
-      <div className="legalDoc__back">
-        <BackButton className="button">← Back</BackButton>
-      </div>
-      <h1>
-        Privacy Policy
-      </h1>
-      <p className="legalDoc__meta">
-        Last updated: {LAST_UPDATED}
-      </p>
+      <LegalIntro kind="privacy" year={2026} month={4} day={2} />
 
       <p style={{ marginTop: "1.25rem" }}>
         This Privacy Policy explains how we collect, use, store, and share information when you use{" "}

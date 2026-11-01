@@ -1,6 +1,7 @@
 "use client";
 
 import { BrandMark } from "@/app/components/BrandMark";
+import { useInterfaceLocale } from "@/app/components/LocaleProvider";
 import { BRAND_NAME } from "@/lib/brand";
 
 type Props = {
@@ -30,6 +31,8 @@ export function StoryArtwork({
   large = false,
   onIllustrationError,
 }: Props) {
+  const { messages } = useInterfaceLocale();
+  const poster = messages.poster;
   const failed = status === "fallback" || status === "error";
   const pending = status === "generating" || status === "pending" || status === "idle";
 
@@ -50,9 +53,9 @@ export function StoryArtwork({
             onError={onIllustrationError}
           />
         ) : (
-          <div className="artworkFrame__fallback" role="img" aria-label={failed ? "Simple cover" : "Cover"}>
+          <div className="artworkFrame__fallback" role="img" aria-label={failed ? poster.simpleCover : poster.cover}>
             <BrandMark variant="onDark" className="artworkFrame__mark" label={null} />
-            <span>{pending ? "Painting the cover…" : "Simple cover"}</span>
+            <span>{pending ? poster.painting : poster.simpleCover}</span>
           </div>
         )}
       </div>

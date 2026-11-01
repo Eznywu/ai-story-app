@@ -1,21 +1,25 @@
 "use client";
 
 import { useState } from "react";
+import { useInterfaceLocale } from "@/app/components/LocaleProvider";
 import { useAuthUser } from "@/app/components/RequireAuth";
+import { fill } from "@/lib/i18n/locales";
 
 export function SettingsAccount() {
   const { user, authEnabled, signOut } = useAuthUser();
+  const { messages } = useInterfaceLocale();
+  const copy = messages.auth;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
   return (
     <div className="panel" style={{ marginTop: 14 }}>
       <p className="label" style={{ marginTop: 0 }}>
-        Account
+        {copy.account}
       </p>
       {authEnabled ? (
         <>
-          <p className="signInEmail">Signed in as {user.email}</p>
+          <p className="signInEmail">{fill(copy.signedIn, { email: user.email })}</p>
           {error ? (
             <div className="errorBox" role="alert">
               <span className="errorText">{error}</span>
@@ -31,17 +35,17 @@ export function SettingsAccount() {
                 setError("");
                 void signOut().catch(() => {
                   setBusy(false);
-                  setError("We couldn't sign out. Try again.");
+                  setError(copy.signOutError);
                 });
               }}
             >
-              {busy ? "Signing out…" : "Sign out"}
+              {busy ? copy.signingOut : copy.signOut}
             </button>
           </div>
         </>
       ) : (
         <p className="signInEmail">
-          Login is paused. Stories stay in this app’s library until email sign-in is turned back on.
+          {copy.paused}
         </p>
       )}
     </div>

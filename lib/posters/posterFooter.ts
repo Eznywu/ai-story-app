@@ -1,10 +1,12 @@
+import { getMessages } from "@/lib/i18n/catalog";
 import type { AgeBand } from "@/lib/posters/audienceAge";
 
 /** Used when a reference render has no listener stored on the story. */
 export const FIXTURE_CHILD_NAME = "Mia";
 
 export function savePosterLabel(language: string | null | undefined): string {
-  return (language ?? "").toLowerCase().includes("zh") ? "儲存我的海報" : "Save my poster";
+  const locale = (language ?? "").toLowerCase().includes("zh") ? "zh-Hant" : "en";
+  return getMessages(locale).poster.save;
 }
 
 export function isZhLanguage(language: string | null | undefined): boolean {

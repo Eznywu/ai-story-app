@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ClipPlayer } from "@/app/components/ClipPlayer";
 import { HappyHorseCheck } from "@/app/components/HappyHorseCheck";
+import { useInterfaceLocale } from "@/app/components/LocaleProvider";
 import { voiceCopy } from "@/lib/voices/uiCopy";
 import { preferredRecorderMime, recordingClipped, voicedDurationMs } from "@/lib/voices/recordingChecks";
 import { CONSENT_TEXT_VERSION } from "@/lib/voices/consent";
@@ -31,7 +32,15 @@ type Props = {
 };
 
 export function AddMyVoiceFlow(props: Props) {
-  const copy = voiceCopy(props.language);
+  const spoken = voiceCopy(props.language);
+  const { messages } = useInterfaceLocale();
+  const copy = {
+    ...messages.voice,
+    lang: spoken.lang,
+    consent: spoken.consent,
+    passage: spoken.passage,
+    consentVersion: spoken.consentVersion,
+  };
   const [step, setStep] = useState<Step>(props.personalVoices === "available" ? "consent" : "blocked");
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState("");
@@ -40,7 +49,7 @@ export function AddMyVoiceFlow(props: Props) {
   const [mime, setMime] = useState("");
   const [voicedMs, setVoicedMs] = useState(0);
   const [clipped, setClipped] = useState(false);
-  const [name, setName] = useState(copy.lang === "zh-Hant" ? "我的聲音" : "My voice");
+  const [name, setName] = useState(spoken.defaultVoiceName);
   const [voiceId, setVoiceId] = useState("");
   const [selectable, setSelectable] = useState(false);
   const [takeUrl, setTakeUrl] = useState("");
