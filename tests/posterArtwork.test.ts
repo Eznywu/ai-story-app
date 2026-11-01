@@ -1,9 +1,12 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import test from "node:test";
 import { parseAudienceAge } from "../lib/posters/audienceAge.ts";
 import { artworkCacheKey } from "../lib/posters/artworkCacheKey.ts";
 import { artworkScopeKey } from "../lib/posters/artworkLimits.ts";
 import { buildArtworkPrompt } from "../lib/posters/artworkPrompt.ts";
+import { luluReferencePrompt } from "../lib/posters/luluReference.ts";
+import { posterFooter, savePosterLabel } from "../lib/posters/posterFooter.ts";
 import {
   runArtworkRequest,
   type ArtworkJobRow,
@@ -243,6 +246,53 @@ test("character appearance and audience age reach the prompt, and genre does not
       assert.match(prompt, /bedtime/i);
     }
   }
+});
+
+test("the Lulu reference prompt is the committed fixture", () => {
+  const prompt = luluReferencePrompt();
+  const saved = fs.readFileSync(
+    new URL("../lib/posters/fixtures/lulu-lantern-path-prompt.txt", import.meta.url),
+    "utf8"
+  );
+  assert.equal(saved.trim(), prompt.trim());
+  assert.match(prompt, /Lulu/);
+  assert.match(prompt, /blue knitted scarf/);
+  assert.match(prompt, /lantern path/i);
+  assert.match(prompt, /soft dimensional shading/);
+  assert.match(prompt, /foreground/);
+  assert.match(prompt, /gpt-image|1024 by 1024|No text/);
+});
+
+test("ages 0–2 keepsakes speak to the parent, and the save label is localised", () => {
+  const baby = posterFooter({
+    audienceBand: "0-2",
+    language: "en",
+    childName: "Mei",
+    title: "Moon",
+    moment: "Mei smiles",
+  });
+  assert.equal(baby.parentFacing, true);
+  assert.match(baby.note, /for you/i);
+  assert.match(baby.note, /Mei/);
+  const babyZh = posterFooter({
+    audienceBand: "0-2",
+    language: "zh-Hant",
+    childName: "安安",
+    title: "月亮",
+    moment: "安安笑了",
+  });
+  assert.match(babyZh.note, /給你/);
+  const older = posterFooter({
+    audienceBand: "3-5",
+    language: "en",
+    childName: "Lulu",
+    title: "Lulu and the Lantern Path",
+    moment: "Lulu finds the lantern path",
+  });
+  assert.equal(older.parentFacing, false);
+  assert.equal(older.note, "Lulu finds the lantern path");
+  assert.equal(savePosterLabel("en"), "Save my poster");
+  assert.equal(savePosterLabel("zh-Hant"), "儲存我的海報");
 });
 
 test("a six-month-old listener can keep a rabbit protagonist", () => {

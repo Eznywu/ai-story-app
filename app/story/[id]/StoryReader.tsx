@@ -11,6 +11,7 @@ import { useTts } from "@/app/hooks/useTts";
 import { useStoryLibrary } from "@/app/hooks/useStoryLibrary";
 import { skipWithin } from "@/lib/audio/skipWithin";
 import { downloadPosterPng, requestStoryArtwork } from "@/lib/posters/poster";
+import { savePosterLabel } from "@/lib/posters/posterFooter";
 import type { ArtworkRequestResult } from "@/lib/posters/poster";
 import { getErrorMessage } from "@/lib/errors";
 import { redirectIfUnsigned } from "@/lib/auth/redirectIfUnsigned";
@@ -551,6 +552,14 @@ export function StoryReader({ storyId }: { storyId: string }) {
               });
             }}
           />
+          <button
+            type="button"
+            className="savePoster"
+            onClick={() => void onDownloadKeepsake().catch(() => {})}
+            disabled={!story || poster.status === "generating" || poster.status === "pending"}
+          >
+            {savePosterLabel(story?.language)}
+          </button>
           <StoryArtwork
             kind="keepsake"
             title={title}
@@ -775,7 +784,7 @@ export function StoryReader({ storyId }: { storyId: string }) {
             onClick={() => void onDownloadKeepsake().catch(() => {})}
             disabled={!story || poster.status === "generating"}
           >
-            {poster.posterUrl ? "Download keepsake poster" : "Open keepsake poster"}
+            {savePosterLabel(story?.language)}
           </button>
           {brokenCoverUrl ? (
             <button

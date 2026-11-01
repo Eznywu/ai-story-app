@@ -32,7 +32,7 @@ function hasGeminiKey(): boolean {
 
 /** Committed square scene. No provider is called. */
 export function mockIllustrationPng(kind: SceneKind = "human"): Buffer {
-  const file = path.join(process.cwd(), "lib/providers/fixtures", `mock-scene-${kind}.png`);
+  const file = path.join(process.cwd(), "lib/providers/fixtures", `mock-scene-${kind}-MOCK.png`);
   return fs.readFileSync(file);
 }
 

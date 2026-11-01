@@ -5107,6 +5107,28 @@ h1.listenTitle,
   word-break: break-word;
 }
 
+.savePoster {
+  width: min(100%, 22rem);
+  max-width: 100%;
+  justify-self: center;
+  min-height: 48px;
+  margin: 12px auto 0;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: #d6be91;
+  color: #47312a;
+  font: inherit;
+  font-weight: 700;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+.savePoster:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
 .artworkFrame--cover,
 .artworkFrame--keepsake {
   width: min(100%, 22rem);

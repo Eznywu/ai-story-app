@@ -2,6 +2,7 @@ import sharp from "sharp";
 import { BRAND_IDENTITY } from "@/lib/brand";
 import type { ImageMime } from "@/lib/posters/imageBytes";
 import { happyHorseMarkSvg } from "@/lib/posters/happyHorseMark";
+import type { AgeBand } from "@/lib/posters/audienceAge";
 import {
   COVER_SIZE,
   KEEPSAKE_ART_HEIGHT,
@@ -37,10 +38,62 @@ function textBlock(
   return { svg, nextY: y + Math.max(lines.length, 0) * step };
 }
 
-/** Square cover: the illustration already matches the frame, so it goes edge to edge. */
-async function composeCover(illustration: Buffer): Promise<Buffer> {
-  return sharp(illustration)
+type FooterInput = {
+  title: string;
+  caption: string;
+  dedication: string;
+  childName?: string;
+  audienceBand?: AgeBand;
+  language?: string | null;
+};
+
+function footerLines(input: FooterInput) {
+  return {
+    title: input.title.trim() || "Happy Horse",
+    name: (input.childName ?? "").trim(),
+    note: input.caption.trim(),
+  };
+}
+
+/**
+ * Square cover. The scene stays edge to edge. A short cream bar sits on the
+ * open ground the prompt reserves, with the child's name, title, and a small mark.
+ */
+async function composeCover(illustration: Buffer, input: FooterInput): Promise<Buffer> {
+  const art = await sharp(illustration)
     .resize(COVER_SIZE, COVER_SIZE, { fit: "cover", position: "centre" })
+    .png()
+    .toBuffer();
+  const lines = footerLines(input);
+  const textWidth = COVER_SIZE - POSTER_TEXT_MARGIN * 2 - 72;
+  const copy = posterCopy({
+    title: lines.title,
+    caption: lines.name,
+    dedication: lines.note,
+    textWidth,
+    titlePx: 28,
+    captionPx: 20,
+  });
+  const barTop = COVER_SIZE - 112;
+  const title = textBlock(copy.title.lines.slice(0, 2), POSTER_TEXT_MARGIN, barTop + 34, 28, BRAND_IDENTITY.brown, 700);
+  const name = textBlock(
+    lines.name ? [lines.name] : [],
+    POSTER_TEXT_MARGIN,
+    title.nextY + 4,
+    20,
+    BRAND_IDENTITY.brown,
+    600
+  );
+  const markSize = 32;
+  const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="${COVER_SIZE}" height="${COVER_SIZE}" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="${barTop}" width="${COVER_SIZE}" height="${COVER_SIZE - barTop}" fill="${BRAND_IDENTITY.cream}"/>
+  ${title.svg}
+  ${name.svg}
+  ${happyHorseMarkSvg(COVER_SIZE - POSTER_TEXT_MARGIN - markSize, COVER_SIZE - markSize - 18, markSize)}
+</svg>`;
+  return sharp(art)
+    .composite([{ input: Buffer.from(svg), left: 0, top: 0 }])
     .png()
     .toBuffer();
 }
@@ -49,19 +102,15 @@ async function composeCover(illustration: Buffer): Promise<Buffer> {
  * 4:5 keepsake. The square scene fills the top 80% edge to edge.
  * Title, caption, dedication, and the Happy Horse mark sit in the band below.
  */
-async function composeKeepsake(input: {
-  illustration: Buffer;
-  title: string;
-  caption: string;
-  dedication: string;
-}): Promise<Buffer> {
+async function composeKeepsake(input: FooterInput & { illustration: Buffer }): Promise<Buffer> {
+  const lines = footerLines(input);
   const textWidth = KEEPSAKE_WIDTH - POSTER_TEXT_MARGIN * 2;
-  const titlePx = 28;
+  const titlePx = 30;
   const captionPx = 20;
   const copy = posterCopy({
-    title: input.title,
-    caption: input.caption,
-    dedication: input.dedication,
+    title: lines.title,
+    caption: lines.note,
+    dedication: lines.name,
     textWidth,
     titlePx,
     captionPx,
@@ -71,29 +120,28 @@ async function composeKeepsake(input: {
     .png()
     .toBuffer();
   let cursor = KEEPSAKE_ART_HEIGHT + 28;
-  const title = textBlock(copy.title.lines, POSTER_TEXT_MARGIN, cursor, titlePx, BRAND_IDENTITY.brown, 700);
-  cursor = title.nextY + 8;
-  const caption = textBlock(copy.caption.lines, POSTER_TEXT_MARGIN, cursor, captionPx, "#6b584f", 500);
-  cursor = caption.nextY + 4;
-  const dedication = textBlock(
-    copy.dedication.lines,
+  const title = textBlock(copy.title.lines.slice(0, 2), POSTER_TEXT_MARGIN, cursor, titlePx, BRAND_IDENTITY.brown, 700);
+  cursor = title.nextY + 6;
+  const name = textBlock(
+    lines.name ? [lines.name] : [],
     POSTER_TEXT_MARGIN,
     cursor,
-    20,
-    BRAND_IDENTITY.terracotta,
-    600
+    22,
+    BRAND_IDENTITY.brown,
+    700
   );
-  const markSize = 40;
-  const markY = KEEPSAKE_HEIGHT - markSize - 16;
+  cursor = name.nextY + 4;
+  const caption = textBlock(copy.caption.lines.slice(0, 2), POSTER_TEXT_MARGIN, cursor, captionPx, "#6b584f", 500);
+  const markSize = 32;
+  const markY = KEEPSAKE_HEIGHT - markSize - 14;
   const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="${KEEPSAKE_WIDTH}" height="${KEEPSAKE_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
   <rect width="100%" height="100%" fill="${BRAND_IDENTITY.cream}"/>
   <rect x="0" y="${KEEPSAKE_ART_HEIGHT}" width="${KEEPSAKE_WIDTH}" height="${KEEPSAKE_HEIGHT - KEEPSAKE_ART_HEIGHT}" fill="${BRAND_IDENTITY.cream}"/>
   ${title.svg}
+  ${name.svg}
   ${caption.svg}
-  ${dedication.svg}
-  ${happyHorseMarkSvg(POSTER_TEXT_MARGIN, markY, markSize)}
-  <text x="${POSTER_TEXT_MARGIN + markSize + 12}" y="${markY + 32}" fill="${BRAND_IDENTITY.brown}" font-size="24" font-weight="700" font-family="sans-serif">Happy Horse</text>
+  ${happyHorseMarkSvg(KEEPSAKE_WIDTH - POSTER_TEXT_MARGIN - markSize, markY, markSize)}
 </svg>`;
   return sharp(Buffer.from(svg))
     .composite([{ input: art, left: 0, top: 0 }])
@@ -101,14 +149,11 @@ async function composeKeepsake(input: {
     .toBuffer();
 }
 
-export async function composeArtworkPng(input: {
+export async function composeArtworkPng(input: FooterInput & {
   illustration: Buffer;
   kind: "cover" | "keepsake";
-  title: string;
-  caption: string;
-  dedication: string;
 }): Promise<Buffer> {
-  if (input.kind === "cover") return composeCover(input.illustration);
+  if (input.kind === "cover") return composeCover(input.illustration, input);
   return composeKeepsake(input);
 }
 

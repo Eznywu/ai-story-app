@@ -104,9 +104,35 @@ const PAINTERS: Record<SceneKind, (x: number, y: number, size: number) => RGBA> 
   space,
 };
 
+const MOCK_GLYPHS: Record<string, string[]> = {
+  M: ["10001", "11011", "10101", "10001", "10001"],
+  O: ["01110", "10001", "10001", "10001", "01110"],
+  C: ["01110", "10001", "10000", "10001", "01110"],
+  K: ["10001", "10010", "11100", "10010", "10001"],
+};
+
+function mockStamp(x: number, y: number): RGBA | null {
+  const scale = 3;
+  const originX = 12;
+  const originY = 12;
+  const word = "MOCK";
+  const localX = x - originX;
+  const localY = y - originY;
+  if (localX < 0 || localY < 0) return null;
+  const glyphWidth = 5 * scale + scale;
+  const index = Math.floor(localX / glyphWidth);
+  if (index < 0 || index >= word.length) return null;
+  const glyph = MOCK_GLYPHS[word[index] ?? ""];
+  if (!glyph) return null;
+  const col = Math.floor((localX % glyphWidth) / scale);
+  const row = Math.floor(localY / scale);
+  if (row < 0 || row >= glyph.length || col < 0 || col >= 5) return null;
+  return glyph[row]?.[col] === "1" ? [71, 49, 42, 255] : null;
+}
+
 export function renderScene(kind: SceneKind, size = 640): Buffer {
   const paint = PAINTERS[kind];
-  return encodeRgbaPng(size, size, (x, y) => paint(x, y, size));
+  return encodeRgbaPng(size, size, (x, y) => mockStamp(x, y) ?? paint(x, y, size));
 }
 
 export function sceneKindFromPrompt(prompt: string): SceneKind {

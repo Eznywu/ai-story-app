@@ -16,6 +16,7 @@ import {
   readCharacterSnapshot,
   type CharacterSnapshot,
 } from "@/lib/posters/characterSnapshot";
+import { posterFooter } from "@/lib/posters/posterFooter";
 import { deriveVisualBrief, validateVisualBrief, type VisualBrief } from "@/lib/posters/visualBrief";
 
 export type ArtworkIntent = "create" | "read" | "download" | "reload" | "regenerate";
@@ -118,6 +119,9 @@ export type ArtworkDeps = {
     title: string;
     caption: string;
     dedication: string;
+    childName?: string;
+    audienceBand?: import("@/lib/posters/audienceAge").AgeBand;
+    language?: string | null;
   }) => Promise<Buffer>;
   transcodeToPng?: (bytes: Buffer, mime: ImageMime) => Promise<Buffer>;
   legacyBrief?: (story: ArtworkStoryRow) => Promise<unknown>;
@@ -284,8 +288,28 @@ export async function runArtworkRequest(
   const character = characterFor(story);
   const audience = parseAudienceAge(story.age);
   const brief = await resolveBrief(story, character, deps);
-  const caption = (input.caption ?? "").trim() || captionFrom(brief, story);
-  const dedication = input.dedication !== undefined ? input.dedication.trim() : dedicationFrom(story);
+  const zh = (story.language ?? "").toLowerCase().includes("zh");
+  const footer = posterFooter({
+    audienceBand: audience.band,
+    language: story.language,
+    childName: story.mainCharacterName,
+    title,
+    moment: (input.caption ?? "").trim() || captionFrom(brief, story),
+  });
+  const caption = footer.note;
+  const dedication =
+    input.dedication !== undefined
+      ? input.dedication.trim()
+      : footer.parentFacing
+        ? zh
+          ? "給爸爸媽媽"
+          : "For you"
+        : footer.childName || dedicationFrom(story);
+  const composeLabels = {
+    childName: footer.childName,
+    audienceBand: audience.band,
+    language: story.language,
+  };
   const cacheKey = artworkCacheKey({
     userId: input.userId,
     storyId: story.id,
@@ -332,8 +356,8 @@ export async function runArtworkRequest(
         costIsEstimate: true,
       };
     }
-    const cover = await deps.compose({ illustration, kind: "cover", title, caption, dedication });
-    const poster = await deps.compose({ illustration, kind: "keepsake", title, caption, dedication });
+    const cover = await deps.compose({ illustration, kind: "cover", title, caption, dedication, ...composeLabels });
+    const poster = await deps.compose({ illustration, kind: "keepsake", title, caption, dedication, ...composeLabels });
     const saved = await deps.store.saveSuccess({
       storyId: story.id,
       cacheKey,
@@ -563,8 +587,8 @@ export async function runArtworkRequest(
     const image = await deps.provider({ prompt });
     const png = await pngBytes(image.bytes, image.claimedMime, deps);
     const spent = estimatedImageUsd({ quality: image.quality || quality, usage: image.usage });
-    const cover = await deps.compose({ illustration: png, kind: "cover", title, caption, dedication });
-    const poster = await deps.compose({ illustration: png, kind: "keepsake", title, caption, dedication });
+    const cover = await deps.compose({ illustration: png, kind: "cover", title, caption, dedication, ...composeLabels });
+    const poster = await deps.compose({ illustration: png, kind: "keepsake", title, caption, dedication, ...composeLabels });
     const saved = await deps.store.saveSuccess({
       storyId: story.id,
       cacheKey,
