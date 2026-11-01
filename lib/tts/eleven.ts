@@ -19,6 +19,11 @@ export type ElevenTtsInput = {
   language?: string;
   /** Ignored. The warmth slider is gone. Everyday recordings use the frozen baseline until a preset is promoted. */
   emotion?: number;
+  /** Server-resolved provider id. The browser never supplies this. */
+  providerVoiceId?: string;
+  ownerId?: string | null;
+  voiceVersion?: number;
+  voiceKind?: "default" | "personal" | "legacy";
 };
 
 export type NarrationSuccess = {
@@ -72,13 +77,11 @@ async function readableStreamToBuffer(stream: ReadableStream<Uint8Array>): Promi
 }
 
 export function resolveNarrationVoice(voiceId: string | undefined, language: string) {
-  const fallbackVoiceId = process.env.ELEVENLABS_VOICE_ID?.trim();
   const resolved = resolveVoiceById(voiceId, language);
-  const elevenVoiceId = resolved?.elevenId ?? fallbackVoiceId;
-  if (!elevenVoiceId || !resolved) {
-    throw createError("No narration voice is selected. Pick a voice, or set ELEVENLABS_VOICE_ID.", 500);
+  if (!resolved?.elevenId) {
+    throw createError("No narration voice is selected. Pick a story voice and try again.", 400);
   }
-  return { appVoiceId: resolved.id, elevenVoiceId };
+  return { appVoiceId: resolved.id, elevenVoiceId: resolved.elevenId, legacy: Boolean(resolved.legacy) };
 }
 
 export async function speakWithElevenRequest(elevenVoiceId: string, request: ElevenSpeechRequest): Promise<Buffer> {
@@ -141,7 +144,12 @@ export async function narrateWithEleven(input: ElevenTtsInput & { hadPreviousAud
   if (!process.env.ELEVENLABS_API_KEY?.trim() && !usingMock) {
     throw createError("Narration needs an ElevenLabs API key. Set ELEVENLABS_API_KEY and try again.", 500);
   }
-  const voice = resolveNarrationVoice(input.voiceId, language);
+  const voice = input.providerVoiceId
+    ? { appVoiceId: input.voiceId || input.providerVoiceId, elevenVoiceId: input.providerVoiceId, legacy: input.voiceKind === "legacy" }
+    : resolveNarrationVoice(input.voiceId, language);
+  if (voice.legacy) {
+    throw createError("That narrator is no longer offered. The saved recording still plays. Pick a story voice to make a new one.", 409);
+  }
   const dictionary = getPronunciationDictionary();
   const plan = planNarration({
     text,
@@ -149,6 +157,9 @@ export async function narrateWithEleven(input: ElevenTtsInput & { hadPreviousAud
     voiceId: voice.appVoiceId,
     dictionary,
     speed: input.speed,
+    ownerId: input.ownerId,
+    voiceVersion: input.voiceVersion,
+    voiceKind: input.voiceKind,
   });
   const rendered = await renderSectionsWithRetry({
     sections: plan.sections.map((section) => ({ index: section.index, text: section.text })),

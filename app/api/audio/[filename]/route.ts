@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import fs from "fs/promises";
 import { requireUser } from "@/lib/auth/requireUser";
 import { userOwnsMedia } from "@/lib/auth/ownedStory";
-import { isRemoteMediaUrl, localMediaPath } from "@/lib/media/objectStore";
+import { isRemoteMediaUrl, localMediaPath, readPrivateMedia } from "@/lib/media/objectStore";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -64,8 +64,23 @@ export async function GET(req: Request) {
     } catch {
       const story = await prisma.story.findFirst({
         where: { userId: auth.user.id, audioFilename: filename },
-        select: { audioUrl: true },
+        select: { audioUrl: true, audioPrivate: true, audioStorageUrl: true },
       });
+      if (story?.audioPrivate) {
+        const bytes = await readPrivateMedia({
+          folder: "audio",
+          filename,
+          storageUrl: story.audioStorageUrl,
+        });
+        if (!bytes) return NextResponse.json({ error: "File not found" }, { status: 404 });
+        return new Response(new Uint8Array(bytes), {
+          headers: {
+            "Content-Type": "audio/mpeg",
+            "Content-Length": String(bytes.byteLength),
+            "Cache-Control": "private, no-store",
+          },
+        });
+      }
       if (story?.audioUrl && isRemoteMediaUrl(story.audioUrl)) {
         return NextResponse.redirect(story.audioUrl, 302);
       }

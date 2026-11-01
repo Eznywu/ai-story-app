@@ -3401,6 +3401,109 @@ textarea::placeholder {
   border-color: #d6be91;
 }
 
+.voiceGroup {
+  margin-top: 14px;
+}
+
+.voiceCard {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border-radius: 14px;
+  border: 1px solid rgba(186, 198, 255, 0.18);
+  background: rgba(22, 32, 70, 0.88);
+}
+
+.voiceCard--on {
+  border-color: #d6be91;
+}
+
+.voiceCard__main {
+  display: grid;
+  gap: 2px;
+  min-height: 48px;
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.voiceCard__main:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.voiceCard__name {
+  font-weight: 700;
+}
+
+.voiceCard__desc,
+.voiceCard__selected {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.92rem;
+}
+
+.voiceCard__preview,
+.voiceFlow button {
+  min-height: 44px;
+  border-radius: 999px;
+  border: 1px solid rgba(214, 190, 145, 0.8);
+  background: transparent;
+  color: #d6be91;
+  font-weight: 700;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.voiceFlow {
+  display: grid;
+  gap: 12px;
+}
+
+.voiceFlow__title {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.voiceFlow__passage {
+  line-height: 1.5;
+}
+
+.voiceFlow__timer {
+  font-variant-numeric: tabular-nums;
+  font-size: 1.4rem;
+}
+
+.voiceFlow__bar {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.voiceFlow__bar span {
+  display: block;
+  height: 100%;
+  background: #d6be91;
+}
+
+.voiceFlow__check {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-height: 44px;
+}
+
+.voiceFlow__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 dialog.quietSheet {
   display: none;
   position: fixed;

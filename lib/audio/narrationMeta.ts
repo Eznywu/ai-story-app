@@ -45,6 +45,9 @@ export async function recordNarrationAssets(input: {
       attempt: input.attempts[section.index] ?? 1,
       baselineFlag: baselineFlag && section.index === 0,
       source: "story",
+      voiceKind: input.plan.voiceKind ?? null,
+      voiceVersion: input.plan.voiceVersion ?? null,
+      ownerUserId: input.plan.ownerId ?? null,
     })),
   });
   if (baselineFlag) {
@@ -58,6 +61,9 @@ export async function recordNarrationAssets(input: {
           cacheKey: input.plan.cacheKey,
           storyId: input.storyId ?? null,
           humanReviewStatus: "pending",
+          voiceId: input.plan.voiceId,
+          language: input.plan.language,
+          voiceKind: input.plan.voiceKind ?? null,
         },
       },
     });

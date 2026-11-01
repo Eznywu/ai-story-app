@@ -17,6 +17,9 @@ export function reviewWeekKey(now = new Date()): string {
 export type ReviewClipRef = {
   id: string;
   url: string | null;
+  voiceId?: string;
+  language?: string;
+  voiceKind?: string;
 };
 
 export type WeeklySelection<T> = {
@@ -89,10 +92,14 @@ export type WeeklyReport = {
 
 export function clipRef(item: unknown): ReviewClipRef | null {
   if (!item || typeof item !== "object") return null;
-  const record = item as { id?: unknown; url?: unknown };
+  const record = item as { id?: unknown; url?: unknown; voiceId?: unknown; language?: unknown; voiceKind?: unknown };
   if (typeof record.id !== "string" || !record.id.trim()) return null;
   const url = typeof record.url === "string" && record.url.trim() ? record.url : null;
-  return { id: record.id, url };
+  const extra: Pick<ReviewClipRef, "voiceId" | "language" | "voiceKind"> = {};
+  if (typeof record.voiceId === "string" && record.voiceId.trim()) extra.voiceId = record.voiceId;
+  if (typeof record.language === "string" && record.language.trim()) extra.language = record.language;
+  if (typeof record.voiceKind === "string" && record.voiceKind.trim()) extra.voiceKind = record.voiceKind;
+  return { id: record.id, url, ...extra };
 }
 
 export function buildWeeklyReport(input: {

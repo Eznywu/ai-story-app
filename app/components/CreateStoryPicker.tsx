@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import type { VoiceItem } from "@/app/hooks/useTts";
+import { useRef, useState } from "react";
+import type { PersonalVoiceAccess, VoiceItem } from "@/app/hooks/useTts";
+import { AddMyVoiceFlow } from "@/app/components/AddMyVoiceFlow";
 import { QuietSheet } from "@/app/components/QuietSheet";
 import { StorySetupExtras } from "@/app/components/StorySetupExtras";
 import { languageLabel, voiceSummary } from "@/app/components/voiceLabel";
+import { voiceCopy } from "@/lib/voices/uiCopy";
 import { STORY_AGE_OPTIONS } from "@/lib/stories/storyAgeOptions";
 import { STORY_INPUT_MAX_CHARS } from "@/lib/types";
 import type { KidProfile, StoryCharacterProfile } from "@/lib/profiles/profilesTypes";
@@ -58,6 +60,8 @@ type Props = {
   moralLesson: string;
   voices: VoiceItem[];
   selectedVoiceId: string;
+  personalVoices?: PersonalVoiceAccess;
+  voiceNotice?: string;
   isLoadingVoices?: boolean;
   voicesError?: string;
   isGenerating: boolean;
@@ -75,6 +79,7 @@ type Props = {
   onEducationalGoalChange: (value: string) => void;
   onMoralLessonChange: (value: string) => void;
   onVoiceChange: (value: string) => void;
+  onVoiceCreated?: (voiceId: string) => void;
   onRetryVoices?: () => void;
   onAddKid: () => void;
   onAddCharacter: () => void;
@@ -214,14 +219,14 @@ export function CreateStoryPicker(props: Props) {
   );
   const [whoOpen, setWhoOpen] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
+  const [addingVoice, setAddingVoice] = useState(false);
+  const previewAudio = useRef<HTMLAudioElement | null>(null);
+  const [previewingId, setPreviewingId] = useState("");
+  const copy = voiceCopy(props.language);
   const [themesOpen, setThemesOpen] = useState(!FEATURED.includes(props.genre));
   const [touchOpen, setTouchOpen] = useState(guidanceOpenByDefault);
 
-  const langGroup = props.language.toLowerCase().startsWith("zh") ? "zh" : "en";
-  const matchingVoices = props.voices.filter((voice) =>
-    (voice.language ?? "en").toLowerCase().startsWith(langGroup)
-  );
-  const voiceChoices = matchingVoices.length ? matchingVoices : props.voices;
+  const voiceChoices = props.voices.filter((voice) => voice.group !== "mine" && voiceSpeaks(voice, props.language));
   const selectedVoice = props.voices.find((voice) => voice.id === props.selectedVoiceId);
   const voiceLabel = props.isLoadingVoices
     ? "Loading voices…"
@@ -303,6 +308,26 @@ export function CreateStoryPicker(props: Props) {
             </button>
           );
         })}
+      </div>
+
+      <h2 className="createScreen__label">{copy.language}</h2>
+      <div className="createSheet__chips" role="group" aria-label={copy.language}>
+        <button
+          type="button"
+          className={`createSheet__chip${props.language === "en" ? " createSheet__chip--on" : ""}`}
+          aria-pressed={props.language === "en"}
+          onClick={() => props.onLanguageChange("en")}
+        >
+          {copy.english}
+        </button>
+        <button
+          type="button"
+          className={`createSheet__chip${props.language === "zh-Hant" ? " createSheet__chip--on" : ""}`}
+          aria-pressed={props.language === "zh-Hant"}
+          onClick={() => props.onLanguageChange("zh-Hant")}
+        >
+          {copy.chinese}
+        </button>
       </div>
 
       <h2 className="createScreen__label">Read by</h2>
@@ -494,62 +519,154 @@ export function CreateStoryPicker(props: Props) {
       ) : null}
 
       {voiceOpen ? (
-        <QuietSheet title="Read by" onClose={() => setVoiceOpen(false)}>
-          <div className="createSheet__chips" role="group" aria-label="Language">
-            <button
-              type="button"
-              className={`createSheet__chip${props.language === "en" ? " createSheet__chip--on" : ""}`}
-              aria-pressed={props.language === "en"}
-              onClick={() => props.onLanguageChange("en")}
-            >
-              English
-            </button>
-            <button
-              type="button"
-              className={`createSheet__chip${props.language === "zh-Hant" ? " createSheet__chip--on" : ""}`}
-              aria-pressed={props.language === "zh-Hant"}
-              onClick={() => props.onLanguageChange("zh-Hant")}
-            >
-              中文
-            </button>
-          </div>
-          {props.voicesError ? (
-            <div className="fieldErrorRow" role="alert">
-              <span className="fieldErrorText">{props.voicesError}</span>
-              {props.onRetryVoices ? (
-                <button className="createLink" type="button" onClick={props.onRetryVoices}>
-                  Retry voices
-                </button>
-              ) : null}
-            </div>
+        <QuietSheet
+          title="Read by"
+          onClose={() => {
+            setAddingVoice(false);
+            setVoiceOpen(false);
+            previewAudio.current?.pause();
+          }}
+        >
+          {addingVoice ? (
+            <AddMyVoiceFlow
+              language={props.language}
+              personalVoices={props.personalVoices || "sign-in-required"}
+              onClose={() => setAddingVoice(false)}
+              onCreated={(voiceId) => {
+                setAddingVoice(false);
+                props.onVoiceCreated?.(voiceId);
+                props.onVoiceChange(voiceId);
+              }}
+            />
           ) : (
-            <div className="createSheet__list" role="listbox" aria-label="Voice">
-              {props.isLoadingVoices ? <p className="createRow__meta">Loading voices…</p> : null}
-              {voiceChoices.map((voice) => {
-                const selected = props.selectedVoiceId === voice.id;
-                const label = voiceSummary(voice, voice.language || props.language);
-                return (
-                  <button
-                    key={voice.id}
-                    type="button"
-                    role="option"
-                    aria-selected={selected}
-                    className={`createSheet__voice${selected ? " createSheet__voice--on" : ""}`}
-                    onClick={() => {
-                      props.onVoiceChange(voice.id);
+            <>
+              {props.voiceNotice ? <p className="fieldErrorText">{props.voiceNotice}</p> : null}
+              {props.voicesError ? (
+                <div className="fieldErrorRow" role="alert">
+                  <span className="fieldErrorText">{props.voicesError}</span>
+                  {props.onRetryVoices ? (
+                    <button className="createLink" type="button" onClick={props.onRetryVoices}>
+                      Retry voices
+                    </button>
+                  ) : null}
+                </div>
+              ) : (
+                <>
+                  <VoiceGroup
+                    title={copy.storyVoices}
+                    voices={voiceChoices.filter((voice) => voice.group !== "mine")}
+                    selectedVoiceId={props.selectedVoiceId}
+                    language={props.language}
+                    previewingId={previewingId}
+                    onSelect={(id) => {
+                      props.onVoiceChange(id);
                       setVoiceOpen(false);
                     }}
-                  >
-                    <IconWave className="createRow__wave" />
-                    <span>{label}</span>
-                  </button>
-                );
-              })}
-            </div>
+                    onPreview={(voice) => void playPreview(voice, props.language, previewAudio, setPreviewingId)}
+                  />
+                  <VoiceGroup
+                    title={copy.myVoices}
+                    voices={props.voices.filter((voice) => voice.group === "mine")}
+                    selectedVoiceId={props.selectedVoiceId}
+                    language={props.language}
+                    previewingId={previewingId}
+                    empty={copy.emptyMine}
+                    onSelect={(id) => {
+                      props.onVoiceChange(id);
+                      setVoiceOpen(false);
+                    }}
+                    onPreview={(voice) => void playPreview(voice, props.language, previewAudio, setPreviewingId)}
+                  />
+                </>
+              )}
+              <button type="button" className="createLink createLink--touch" onClick={() => setAddingVoice(true)}>
+                {copy.add}
+              </button>
+              <p className="createRow__meta">{languageLabel(props.language)} narration</p>
+            </>
           )}
-          <p className="createRow__meta">{languageLabel(props.language)} narration</p>
+          <audio ref={previewAudio} className="visuallyHidden" />
         </QuietSheet>
       ) : null}
     </div>
   );
+}
+
+function voiceSpeaks(voice: VoiceItem, language: string) {
+  const group = language.toLowerCase().startsWith("zh") ? "zh" : "en";
+  const langs = voice.languages?.length ? voice.languages : [voice.language || "en"];
+  return langs.some((item) => item.toLowerCase().startsWith(group));
+}
+
+function VoiceGroup(props: {
+  title: string;
+  voices: VoiceItem[];
+  selectedVoiceId: string;
+  language: string;
+  previewingId: string;
+  empty?: string;
+  onSelect: (id: string) => void;
+  onPreview: (voice: VoiceItem) => void;
+}) {
+  const copy = voiceCopy(props.language);
+  return (
+    <section className="voiceGroup">
+      <h3 className="createScreen__label">{props.title}</h3>
+      {props.voices.length ? (
+        <div className="createSheet__list" role="listbox" aria-label={props.title}>
+          {props.voices.map((voice) => {
+            const selected = props.selectedVoiceId === voice.id;
+            const ready = voice.selectable !== false && voice.status !== "pending_verification";
+            return (
+              <div key={voice.id} className={`voiceCard${selected ? " voiceCard--on" : ""}`}>
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={selected}
+                  className="voiceCard__main"
+                  disabled={!ready}
+                  onClick={() => props.onSelect(voice.id)}
+                >
+                  <span className="voiceCard__name">{voice.name || voiceSummary(voice, props.language)}</span>
+                  <span className="voiceCard__desc">{voice.description}</span>
+                  {selected ? <span className="voiceCard__selected">{copy.selected}</span> : null}
+                  {!ready ? <span className="voiceCard__selected">{copy.pending}</span> : null}
+                </button>
+                <button
+                  type="button"
+                  className="voiceCard__preview"
+                  aria-label={`${copy.preview} ${voice.name || ""}`}
+                  onClick={() => props.onPreview(voice)}
+                >
+                  {props.previewingId === voice.id ? copy.previewStop : copy.preview}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="createRow__meta">{props.empty || ""}</p>
+      )}
+    </section>
+  );
+}
+
+async function playPreview(
+  voice: VoiceItem,
+  language: string,
+  audioRef: { current: HTMLAudioElement | null },
+  setPreviewingId: (id: string) => void
+) {
+  const audio = audioRef.current;
+  if (!audio) return;
+  if (!audio.paused && audio.dataset.voiceId === voice.id) {
+    audio.pause();
+    setPreviewingId("");
+    return;
+  }
+  audio.src = `/api/voice-preview?voiceId=${encodeURIComponent(voice.id)}&language=${encodeURIComponent(language)}`;
+  audio.dataset.voiceId = voice.id;
+  setPreviewingId(voice.id);
+  audio.onended = () => setPreviewingId("");
+  await audio.play().catch(() => setPreviewingId(""));
 }

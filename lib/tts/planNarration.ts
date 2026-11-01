@@ -33,6 +33,9 @@ export type NarrationPlan = {
   voiceSettings: VoiceSettingsSent;
   sections: PlannedSection[];
   cacheKey: string;
+  ownerId?: string | null;
+  voiceVersion?: number;
+  voiceKind?: "default" | "personal" | "legacy";
 };
 
 export function planNarration(input: {
@@ -48,6 +51,9 @@ export function planNarration(input: {
   comparisonConfigId?: string;
   /** Defaults to the checked-in switch, which has not approved a candidate. */
   presetRequest?: PresetRequest;
+  ownerId?: string | null;
+  voiceVersion?: number;
+  voiceKind?: "default" | "personal" | "legacy";
 }): NarrationPlan {
   const comparison = input.comparisonConfigId ? TTS_CONFIGS[input.comparisonConfigId] : undefined;
   if (input.comparisonConfigId && !comparison) {
@@ -81,6 +87,9 @@ export function planNarration(input: {
     languageCode: languageCodeForModel(modelId, input.language),
     voiceSettings,
     sections,
+    ownerId: input.ownerId ?? null,
+    voiceVersion: input.voiceVersion,
+    voiceKind: input.voiceKind,
     cacheKey: narrationCacheKey({
       script: spoken.script,
       voiceId: input.voiceId,
@@ -89,6 +98,8 @@ export function planNarration(input: {
       dictionaryVersion: input.dictionary.version,
       configVersion: choice.config.version,
       language: input.language,
+      ownerId: input.ownerId,
+      voiceVersion: input.voiceVersion,
     }),
   };
 }

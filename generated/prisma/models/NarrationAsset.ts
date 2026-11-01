@@ -31,6 +31,7 @@ export type NarrationAssetAvgAggregateOutputType = {
   sectionCount: number | null
   durationMs: number | null
   attempt: number | null
+  voiceVersion: number | null
 }
 
 export type NarrationAssetSumAggregateOutputType = {
@@ -38,6 +39,7 @@ export type NarrationAssetSumAggregateOutputType = {
   sectionCount: number | null
   durationMs: number | null
   attempt: number | null
+  voiceVersion: number | null
 }
 
 export type NarrationAssetMinAggregateOutputType = {
@@ -64,6 +66,9 @@ export type NarrationAssetMinAggregateOutputType = {
   attempt: number | null
   baselineFlag: boolean | null
   source: string | null
+  voiceKind: string | null
+  voiceVersion: number | null
+  ownerUserId: string | null
   createdAt: Date | null
 }
 
@@ -91,6 +96,9 @@ export type NarrationAssetMaxAggregateOutputType = {
   attempt: number | null
   baselineFlag: boolean | null
   source: string | null
+  voiceKind: string | null
+  voiceVersion: number | null
+  ownerUserId: string | null
   createdAt: Date | null
 }
 
@@ -119,6 +127,9 @@ export type NarrationAssetCountAggregateOutputType = {
   attempt: number
   baselineFlag: number
   source: number
+  voiceKind: number
+  voiceVersion: number
+  ownerUserId: number
   createdAt: number
   _all: number
 }
@@ -129,6 +140,7 @@ export type NarrationAssetAvgAggregateInputType = {
   sectionCount?: true
   durationMs?: true
   attempt?: true
+  voiceVersion?: true
 }
 
 export type NarrationAssetSumAggregateInputType = {
@@ -136,6 +148,7 @@ export type NarrationAssetSumAggregateInputType = {
   sectionCount?: true
   durationMs?: true
   attempt?: true
+  voiceVersion?: true
 }
 
 export type NarrationAssetMinAggregateInputType = {
@@ -162,6 +175,9 @@ export type NarrationAssetMinAggregateInputType = {
   attempt?: true
   baselineFlag?: true
   source?: true
+  voiceKind?: true
+  voiceVersion?: true
+  ownerUserId?: true
   createdAt?: true
 }
 
@@ -189,6 +205,9 @@ export type NarrationAssetMaxAggregateInputType = {
   attempt?: true
   baselineFlag?: true
   source?: true
+  voiceKind?: true
+  voiceVersion?: true
+  ownerUserId?: true
   createdAt?: true
 }
 
@@ -217,6 +236,9 @@ export type NarrationAssetCountAggregateInputType = {
   attempt?: true
   baselineFlag?: true
   source?: true
+  voiceKind?: true
+  voiceVersion?: true
+  ownerUserId?: true
   createdAt?: true
   _all?: true
 }
@@ -332,6 +354,9 @@ export type NarrationAssetGroupByOutputType = {
   attempt: number
   baselineFlag: boolean
   source: string
+  voiceKind: string | null
+  voiceVersion: number | null
+  ownerUserId: string | null
   createdAt: Date
   _count: NarrationAssetCountAggregateOutputType | null
   _avg: NarrationAssetAvgAggregateOutputType | null
@@ -383,6 +408,9 @@ export type NarrationAssetWhereInput = {
   attempt?: Prisma.IntFilter<"NarrationAsset"> | number
   baselineFlag?: Prisma.BoolFilter<"NarrationAsset"> | boolean
   source?: Prisma.StringFilter<"NarrationAsset"> | string
+  voiceKind?: Prisma.StringNullableFilter<"NarrationAsset"> | string | null
+  voiceVersion?: Prisma.IntNullableFilter<"NarrationAsset"> | number | null
+  ownerUserId?: Prisma.StringNullableFilter<"NarrationAsset"> | string | null
   createdAt?: Prisma.DateTimeFilter<"NarrationAsset"> | Date | string
   story?: Prisma.XOR<Prisma.StoryNullableScalarRelationFilter, Prisma.StoryWhereInput> | null
 }
@@ -412,6 +440,9 @@ export type NarrationAssetOrderByWithRelationInput = {
   attempt?: Prisma.SortOrder
   baselineFlag?: Prisma.SortOrder
   source?: Prisma.SortOrder
+  voiceKind?: Prisma.SortOrderInput | Prisma.SortOrder
+  voiceVersion?: Prisma.SortOrderInput | Prisma.SortOrder
+  ownerUserId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   story?: Prisma.StoryOrderByWithRelationInput
 }
@@ -444,6 +475,9 @@ export type NarrationAssetWhereUniqueInput = Prisma.AtLeast<{
   attempt?: Prisma.IntFilter<"NarrationAsset"> | number
   baselineFlag?: Prisma.BoolFilter<"NarrationAsset"> | boolean
   source?: Prisma.StringFilter<"NarrationAsset"> | string
+  voiceKind?: Prisma.StringNullableFilter<"NarrationAsset"> | string | null
+  voiceVersion?: Prisma.IntNullableFilter<"NarrationAsset"> | number | null
+  ownerUserId?: Prisma.StringNullableFilter<"NarrationAsset"> | string | null
   createdAt?: Prisma.DateTimeFilter<"NarrationAsset"> | Date | string
   story?: Prisma.XOR<Prisma.StoryNullableScalarRelationFilter, Prisma.StoryWhereInput> | null
 }, "id">
@@ -473,6 +507,9 @@ export type NarrationAssetOrderByWithAggregationInput = {
   attempt?: Prisma.SortOrder
   baselineFlag?: Prisma.SortOrder
   source?: Prisma.SortOrder
+  voiceKind?: Prisma.SortOrderInput | Prisma.SortOrder
+  voiceVersion?: Prisma.SortOrderInput | Prisma.SortOrder
+  ownerUserId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.NarrationAssetCountOrderByAggregateInput
   _avg?: Prisma.NarrationAssetAvgOrderByAggregateInput
@@ -509,6 +546,9 @@ export type NarrationAssetScalarWhereWithAggregatesInput = {
   attempt?: Prisma.IntWithAggregatesFilter<"NarrationAsset"> | number
   baselineFlag?: Prisma.BoolWithAggregatesFilter<"NarrationAsset"> | boolean
   source?: Prisma.StringWithAggregatesFilter<"NarrationAsset"> | string
+  voiceKind?: Prisma.StringNullableWithAggregatesFilter<"NarrationAsset"> | string | null
+  voiceVersion?: Prisma.IntNullableWithAggregatesFilter<"NarrationAsset"> | number | null
+  ownerUserId?: Prisma.StringNullableWithAggregatesFilter<"NarrationAsset"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"NarrationAsset"> | Date | string
 }
 
@@ -536,6 +576,9 @@ export type NarrationAssetCreateInput = {
   attempt?: number
   baselineFlag?: boolean
   source?: string
+  voiceKind?: string | null
+  voiceVersion?: number | null
+  ownerUserId?: string | null
   createdAt?: Date | string
   story?: Prisma.StoryCreateNestedOneWithoutNarrationAssetsInput
 }
@@ -565,6 +608,9 @@ export type NarrationAssetUncheckedCreateInput = {
   attempt?: number
   baselineFlag?: boolean
   source?: string
+  voiceKind?: string | null
+  voiceVersion?: number | null
+  ownerUserId?: string | null
   createdAt?: Date | string
 }
 
@@ -592,6 +638,9 @@ export type NarrationAssetUpdateInput = {
   attempt?: Prisma.IntFieldUpdateOperationsInput | number
   baselineFlag?: Prisma.BoolFieldUpdateOperationsInput | boolean
   source?: Prisma.StringFieldUpdateOperationsInput | string
+  voiceKind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  voiceVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  ownerUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   story?: Prisma.StoryUpdateOneWithoutNarrationAssetsNestedInput
 }
@@ -621,6 +670,9 @@ export type NarrationAssetUncheckedUpdateInput = {
   attempt?: Prisma.IntFieldUpdateOperationsInput | number
   baselineFlag?: Prisma.BoolFieldUpdateOperationsInput | boolean
   source?: Prisma.StringFieldUpdateOperationsInput | string
+  voiceKind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  voiceVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  ownerUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -649,6 +701,9 @@ export type NarrationAssetCreateManyInput = {
   attempt?: number
   baselineFlag?: boolean
   source?: string
+  voiceKind?: string | null
+  voiceVersion?: number | null
+  ownerUserId?: string | null
   createdAt?: Date | string
 }
 
@@ -676,6 +731,9 @@ export type NarrationAssetUpdateManyMutationInput = {
   attempt?: Prisma.IntFieldUpdateOperationsInput | number
   baselineFlag?: Prisma.BoolFieldUpdateOperationsInput | boolean
   source?: Prisma.StringFieldUpdateOperationsInput | string
+  voiceKind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  voiceVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  ownerUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -704,6 +762,9 @@ export type NarrationAssetUncheckedUpdateManyInput = {
   attempt?: Prisma.IntFieldUpdateOperationsInput | number
   baselineFlag?: Prisma.BoolFieldUpdateOperationsInput | boolean
   source?: Prisma.StringFieldUpdateOperationsInput | string
+  voiceKind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  voiceVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  ownerUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -742,6 +803,9 @@ export type NarrationAssetCountOrderByAggregateInput = {
   attempt?: Prisma.SortOrder
   baselineFlag?: Prisma.SortOrder
   source?: Prisma.SortOrder
+  voiceKind?: Prisma.SortOrder
+  voiceVersion?: Prisma.SortOrder
+  ownerUserId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -750,6 +814,7 @@ export type NarrationAssetAvgOrderByAggregateInput = {
   sectionCount?: Prisma.SortOrder
   durationMs?: Prisma.SortOrder
   attempt?: Prisma.SortOrder
+  voiceVersion?: Prisma.SortOrder
 }
 
 export type NarrationAssetMaxOrderByAggregateInput = {
@@ -776,6 +841,9 @@ export type NarrationAssetMaxOrderByAggregateInput = {
   attempt?: Prisma.SortOrder
   baselineFlag?: Prisma.SortOrder
   source?: Prisma.SortOrder
+  voiceKind?: Prisma.SortOrder
+  voiceVersion?: Prisma.SortOrder
+  ownerUserId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -803,6 +871,9 @@ export type NarrationAssetMinOrderByAggregateInput = {
   attempt?: Prisma.SortOrder
   baselineFlag?: Prisma.SortOrder
   source?: Prisma.SortOrder
+  voiceKind?: Prisma.SortOrder
+  voiceVersion?: Prisma.SortOrder
+  ownerUserId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -811,6 +882,7 @@ export type NarrationAssetSumOrderByAggregateInput = {
   sectionCount?: Prisma.SortOrder
   durationMs?: Prisma.SortOrder
   attempt?: Prisma.SortOrder
+  voiceVersion?: Prisma.SortOrder
 }
 
 export type NarrationAssetCreateNestedManyWithoutStoryInput = {
@@ -855,14 +927,6 @@ export type NarrationAssetUncheckedUpdateManyWithoutStoryNestedInput = {
   deleteMany?: Prisma.NarrationAssetScalarWhereInput | Prisma.NarrationAssetScalarWhereInput[]
 }
 
-export type NullableIntFieldUpdateOperationsInput = {
-  set?: number | null
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
-}
-
 export type NarrationAssetCreateWithoutStoryInput = {
   id?: string
   sectionIndex?: number
@@ -887,6 +951,9 @@ export type NarrationAssetCreateWithoutStoryInput = {
   attempt?: number
   baselineFlag?: boolean
   source?: string
+  voiceKind?: string | null
+  voiceVersion?: number | null
+  ownerUserId?: string | null
   createdAt?: Date | string
 }
 
@@ -914,6 +981,9 @@ export type NarrationAssetUncheckedCreateWithoutStoryInput = {
   attempt?: number
   baselineFlag?: boolean
   source?: string
+  voiceKind?: string | null
+  voiceVersion?: number | null
+  ownerUserId?: string | null
   createdAt?: Date | string
 }
 
@@ -971,6 +1041,9 @@ export type NarrationAssetScalarWhereInput = {
   attempt?: Prisma.IntFilter<"NarrationAsset"> | number
   baselineFlag?: Prisma.BoolFilter<"NarrationAsset"> | boolean
   source?: Prisma.StringFilter<"NarrationAsset"> | string
+  voiceKind?: Prisma.StringNullableFilter<"NarrationAsset"> | string | null
+  voiceVersion?: Prisma.IntNullableFilter<"NarrationAsset"> | number | null
+  ownerUserId?: Prisma.StringNullableFilter<"NarrationAsset"> | string | null
   createdAt?: Prisma.DateTimeFilter<"NarrationAsset"> | Date | string
 }
 
@@ -998,6 +1071,9 @@ export type NarrationAssetCreateManyStoryInput = {
   attempt?: number
   baselineFlag?: boolean
   source?: string
+  voiceKind?: string | null
+  voiceVersion?: number | null
+  ownerUserId?: string | null
   createdAt?: Date | string
 }
 
@@ -1025,6 +1101,9 @@ export type NarrationAssetUpdateWithoutStoryInput = {
   attempt?: Prisma.IntFieldUpdateOperationsInput | number
   baselineFlag?: Prisma.BoolFieldUpdateOperationsInput | boolean
   source?: Prisma.StringFieldUpdateOperationsInput | string
+  voiceKind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  voiceVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  ownerUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -1052,6 +1131,9 @@ export type NarrationAssetUncheckedUpdateWithoutStoryInput = {
   attempt?: Prisma.IntFieldUpdateOperationsInput | number
   baselineFlag?: Prisma.BoolFieldUpdateOperationsInput | boolean
   source?: Prisma.StringFieldUpdateOperationsInput | string
+  voiceKind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  voiceVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  ownerUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -1079,6 +1161,9 @@ export type NarrationAssetUncheckedUpdateManyWithoutStoryInput = {
   attempt?: Prisma.IntFieldUpdateOperationsInput | number
   baselineFlag?: Prisma.BoolFieldUpdateOperationsInput | boolean
   source?: Prisma.StringFieldUpdateOperationsInput | string
+  voiceKind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  voiceVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  ownerUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -1109,6 +1194,9 @@ export type NarrationAssetSelect<ExtArgs extends runtime.Types.Extensions.Intern
   attempt?: boolean
   baselineFlag?: boolean
   source?: boolean
+  voiceKind?: boolean
+  voiceVersion?: boolean
+  ownerUserId?: boolean
   createdAt?: boolean
   story?: boolean | Prisma.NarrationAsset$storyArgs<ExtArgs>
 }, ExtArgs["result"]["narrationAsset"]>
@@ -1138,6 +1226,9 @@ export type NarrationAssetSelectCreateManyAndReturn<ExtArgs extends runtime.Type
   attempt?: boolean
   baselineFlag?: boolean
   source?: boolean
+  voiceKind?: boolean
+  voiceVersion?: boolean
+  ownerUserId?: boolean
   createdAt?: boolean
   story?: boolean | Prisma.NarrationAsset$storyArgs<ExtArgs>
 }, ExtArgs["result"]["narrationAsset"]>
@@ -1167,6 +1258,9 @@ export type NarrationAssetSelectUpdateManyAndReturn<ExtArgs extends runtime.Type
   attempt?: boolean
   baselineFlag?: boolean
   source?: boolean
+  voiceKind?: boolean
+  voiceVersion?: boolean
+  ownerUserId?: boolean
   createdAt?: boolean
   story?: boolean | Prisma.NarrationAsset$storyArgs<ExtArgs>
 }, ExtArgs["result"]["narrationAsset"]>
@@ -1196,10 +1290,13 @@ export type NarrationAssetSelectScalar = {
   attempt?: boolean
   baselineFlag?: boolean
   source?: boolean
+  voiceKind?: boolean
+  voiceVersion?: boolean
+  ownerUserId?: boolean
   createdAt?: boolean
 }
 
-export type NarrationAssetOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "storyId" | "sectionIndex" | "sectionCount" | "status" | "modelId" | "voiceId" | "voiceSettings" | "language" | "dictionaryVersion" | "configVersion" | "configId" | "cacheKey" | "narrationScript" | "filename" | "url" | "durationMs" | "validityStatus" | "validityNotes" | "transcriptStatus" | "transcriptNotes" | "attempt" | "baselineFlag" | "source" | "createdAt", ExtArgs["result"]["narrationAsset"]>
+export type NarrationAssetOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "storyId" | "sectionIndex" | "sectionCount" | "status" | "modelId" | "voiceId" | "voiceSettings" | "language" | "dictionaryVersion" | "configVersion" | "configId" | "cacheKey" | "narrationScript" | "filename" | "url" | "durationMs" | "validityStatus" | "validityNotes" | "transcriptStatus" | "transcriptNotes" | "attempt" | "baselineFlag" | "source" | "voiceKind" | "voiceVersion" | "ownerUserId" | "createdAt", ExtArgs["result"]["narrationAsset"]>
 export type NarrationAssetInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   story?: boolean | Prisma.NarrationAsset$storyArgs<ExtArgs>
 }
@@ -1249,6 +1346,12 @@ export type $NarrationAssetPayload<ExtArgs extends runtime.Types.Extensions.Inte
      * story, benchmark, or weekly
      */
     source: string
+    /**
+     * default, personal, or legacy. Null on rows saved before this was recorded.
+     */
+    voiceKind: string | null
+    voiceVersion: number | null
+    ownerUserId: string | null
     createdAt: Date
   }, ExtArgs["result"]["narrationAsset"]>
   composites: {}
@@ -1698,6 +1801,9 @@ export interface NarrationAssetFieldRefs {
   readonly attempt: Prisma.FieldRef<"NarrationAsset", 'Int'>
   readonly baselineFlag: Prisma.FieldRef<"NarrationAsset", 'Boolean'>
   readonly source: Prisma.FieldRef<"NarrationAsset", 'String'>
+  readonly voiceKind: Prisma.FieldRef<"NarrationAsset", 'String'>
+  readonly voiceVersion: Prisma.FieldRef<"NarrationAsset", 'Int'>
+  readonly ownerUserId: Prisma.FieldRef<"NarrationAsset", 'String'>
   readonly createdAt: Prisma.FieldRef<"NarrationAsset", 'DateTime'>
 }
     

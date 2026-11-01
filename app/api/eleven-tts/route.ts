@@ -1,18 +1,18 @@
 // app/api/eleven-tts/route.ts
 import { NextResponse } from "next/server";
 import fs from "fs/promises";
-import { narrateWithEleven, resolveNarrationVoice } from "@/lib/tts/eleven";
+import { narrateWithEleven } from "@/lib/tts/eleven";
 import { getPronunciationDictionary } from "@/lib/tts/dictionaryFile";
 import { planNarration } from "@/lib/tts/planNarration";
 import { saveStoryAudioFile } from "@/lib/audio/storyMediaFiles";
 import { recordNarrationAssets, recordNarrationFailure } from "@/lib/audio/narrationMeta";
 import { isSafeStoryId } from "@/lib/stories/storyIds";
-import { prisma } from "@/lib/prisma";
 import { getErrorMessage, getErrorStatus } from "@/lib/errors";
 import { findOwnedStory } from "@/lib/auth/ownedStory";
 import { requireUser } from "@/lib/auth/requireUser";
-import { isCloneVoiceId, VOICE_CLONE_PREFIX } from "@/lib/voices/voices";
-import { isRemoteMediaUrl, localMediaPath } from "@/lib/media/objectStore";
+import { authorizeSynthesis } from "@/lib/voices/decisions";
+import { accountCanOwnVoices, findOwnedVoice, listOwnedVoices } from "@/lib/voices/accountVoices";
+import { isRemoteMediaUrl, localMediaPath, readPrivateMedia } from "@/lib/media/objectStore";
 import { clampTtsSpeed } from "@/lib/tts/ttsLimits";
 
 export const runtime = "nodejs";
@@ -33,7 +33,11 @@ function audioHeaders(extra?: Record<string, string | number | null | undefined>
   return headers;
 }
 
-async function readSavedAudio(filename: string | null, url: string | null): Promise<Buffer | null> {
+async function readSavedAudio(
+  filename: string | null,
+  url: string | null,
+  storageUrl?: string | null
+): Promise<Buffer | null> {
   if (filename) {
     const filePath = localMediaPath("audio", filename);
     if (filePath) {
@@ -43,6 +47,10 @@ async function readSavedAudio(filename: string | null, url: string | null): Prom
         /* The file may live in Blob instead. */
       }
     }
+  }
+  if (storageUrl) {
+    const stored = await readPrivateMedia({ folder: "audio", filename, storageUrl });
+    if (stored?.length) return stored;
   }
   if (url && isRemoteMediaUrl(url)) {
     const response = await fetch(url);
@@ -57,21 +65,31 @@ export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
     const requestedVoiceId = typeof body?.voiceId === "string" ? body.voiceId.trim() : "";
-    if (requestedVoiceId && isCloneVoiceId(requestedVoiceId)) {
-      const elevenId = requestedVoiceId.slice(VOICE_CLONE_PREFIX.length).trim();
-      const ownedVoice = elevenId
-        ? await prisma.voice.findFirst({
-            where: { userId: auth.user.id, voiceId: elevenId },
-            select: { id: true },
-          })
-        : null;
-      if (!ownedVoice) {
-        return NextResponse.json({ error: "That voice is not on this account." }, { status: 403 });
-      }
+    const language = typeof body?.language === "string" && body.language.trim() ? body.language.trim() : "zh-Hant";
+    const canOwn = accountCanOwnVoices(auth.user.email);
+    const owned = canOwn ? await listOwnedVoices(auth.user.id) : [];
+    const decision = authorizeSynthesis({
+      requesterId: auth.user.id,
+      requestedId: requestedVoiceId,
+      language,
+      owned,
+    });
+    if (!decision.ok) {
+      return NextResponse.json({ error: decision.error, alternatives: decision.alternatives }, { status: decision.status });
+    }
+    const personal = decision.kind === "personal" ? await findOwnedVoice(auth.user.id, decision.appVoiceId) : null;
+    if (decision.kind === "personal" && !personal) {
+      return NextResponse.json({ error: "That voice is not on this account." }, { status: 404 });
     }
 
     const storyId = typeof body?.storyId === "string" ? body.storyId.trim() : "";
-    let story: { audioFilename: string | null; audioUrl: string | null; audioCacheKey: string | null } | null = null;
+    let story: {
+      audioFilename: string | null;
+      audioUrl: string | null;
+      audioCacheKey: string | null;
+      audioPrivate: boolean;
+      audioStorageUrl: string | null;
+    } | null = null;
     if (storyId) {
       if (!isSafeStoryId(storyId)) {
         return NextResponse.json({ error: "That story id is not valid." }, { status: 400 });
@@ -87,16 +105,17 @@ export async function POST(req: Request) {
     if (!storyText.trim()) {
       return NextResponse.json({ error: "Add story text before making narration." }, { status: 400 });
     }
-    const language = typeof body?.language === "string" && body.language.trim() ? body.language.trim() : "zh-Hant";
     const speed = clampTtsSpeed(Number(body?.speed ?? NaN));
-    const voice = resolveNarrationVoice(requestedVoiceId || undefined, language);
     const dictionary = getPronunciationDictionary();
     const plan = planNarration({
       text: storyText,
       language,
-      voiceId: voice.appVoiceId,
+      voiceId: decision.appVoiceId,
       dictionary,
       speed,
+      ownerId: decision.ownerId,
+      voiceVersion: personal?.voiceVersion ?? decision.voiceVersion,
+      voiceKind: decision.voiceKind,
     });
     const force = body?.force === true;
     const identityHeaders = {
@@ -110,7 +129,7 @@ export async function POST(req: Request) {
     };
 
     if (!force && story?.audioCacheKey && story.audioCacheKey === plan.cacheKey) {
-      const existing = await readSavedAudio(story.audioFilename, story.audioUrl);
+      const existing = await readSavedAudio(story.audioFilename, story.audioUrl, story.audioStorageUrl);
       if (existing?.length) {
         const headers = audioHeaders({
           ...identityHeaders,
@@ -121,11 +140,21 @@ export async function POST(req: Request) {
       }
     }
 
+    if (!decision.allowSynthesis) {
+      return NextResponse.json(
+        { error: decision.warning || "That narrator is no longer offered.", keptPreviousAudio: true, alternatives: decision.alternatives },
+        { status: 409 }
+      );
+    }
     const result = await narrateWithEleven({
       text: storyText,
       speed,
       language,
-      voiceId: requestedVoiceId || undefined,
+      voiceId: decision.appVoiceId,
+      providerVoiceId: personal?.providerVoiceId || decision.providerVoiceId,
+      ownerId: decision.ownerId,
+      voiceVersion: personal?.voiceVersion ?? decision.voiceVersion,
+      voiceKind: decision.voiceKind === "legacy" ? "legacy" : decision.kind,
       hadPreviousAudio: Boolean(story?.audioFilename || story?.audioUrl),
     });
 
@@ -159,6 +188,9 @@ export async function POST(req: Request) {
           configVersion: result.plan.configVersion,
           configId: result.plan.configId,
           cacheKey: result.plan.cacheKey,
+          privateAccess: decision.kind === "personal",
+          voiceKind: decision.voiceKind,
+          voiceVersion: personal?.voiceVersion ?? decision.voiceVersion,
         });
         headers.set("X-Audio-Url", savedUrl);
         await recordNarrationAssets({
