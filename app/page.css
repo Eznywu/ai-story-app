@@ -3519,14 +3519,14 @@ textarea::placeholder {
   margin-left: 3px;
   border-style: solid;
   border-width: 7px 0 7px 12px;
-  border-color: transparent transparent transparent #11182b;
+  border-color: transparent transparent transparent #d6be91;
 }
 
 .clipPlayer__pause {
   width: 12px;
   height: 14px;
-  border-left: 4px solid #11182b;
-  border-right: 4px solid #11182b;
+  border-left: 4px solid #d6be91;
+  border-right: 4px solid #d6be91;
   box-sizing: border-box;
 }
 
@@ -3613,6 +3613,32 @@ textarea::placeholder {
   font-weight: 700;
   padding: 8px 12px;
   cursor: pointer;
+}
+
+/* Wins over `.voiceFlow button`. Icon is champagne on the navy sheet (>=3:1). */
+.voiceFlow .clipPlayer__play {
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid #d6be91;
+  background: #141c3d;
+  color: #d6be91;
+}
+
+.voiceFlow .clipPlayer__play:focus-visible {
+  outline: 2px solid #b9aedc;
+  outline-offset: 3px;
+}
+
+.voiceFlow .clipPlayer__triangle {
+  border-color: transparent transparent transparent #d6be91;
+}
+
+.voiceFlow .clipPlayer__pause {
+  border-left-color: #d6be91;
+  border-right-color: #d6be91;
 }
 
 .voiceFlow {
