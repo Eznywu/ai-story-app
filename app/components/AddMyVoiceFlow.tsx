@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { ClipPlayer } from "@/app/components/ClipPlayer";
 import { HappyHorseCheck } from "@/app/components/HappyHorseCheck";
 import { voiceCopy } from "@/lib/voices/uiCopy";
 import { preferredRecorderMime, recordingClipped, voicedDurationMs } from "@/lib/voices/recordingChecks";
@@ -50,7 +51,6 @@ export function AddMyVoiceFlow(props: Props) {
   const levels = useRef<number[]>([]);
   const peaks = useRef<number[]>([]);
   const started = useRef(0);
-  const previewRef = useRef<HTMLAudioElement | null>(null);
 
   function releaseMic() {
     recorderRef.current = null;
@@ -59,13 +59,8 @@ export function AddMyVoiceFlow(props: Props) {
   }
 
   useEffect(() => {
-    const preview = previewRef.current;
     return () => {
       releaseMic();
-      if (preview) {
-        preview.pause();
-        preview.src = "";
-      }
     };
   }, []);
 
@@ -226,6 +221,7 @@ export function AddMyVoiceFlow(props: Props) {
   const progress = Math.min(100, Math.round((seconds / 90) * 100));
   const tooShort = seconds > 0 && seconds < 60;
   const tooQuiet = voicedMs < 8000;
+  const reviewNote = clipped ? copy.clipped : tooQuiet ? copy.tooQuiet : tooShort ? copy.short : "";
 
   return (
     <div className="voiceFlow">
@@ -282,10 +278,10 @@ export function AddMyVoiceFlow(props: Props) {
       ) : null}
       {step === "review" || step === "saving" ? (
         <>
-          {takeUrl ? <audio ref={previewRef} controls src={takeUrl} /> : null}
-          {tooQuiet ? <p role="alert">{copy.tooQuiet}</p> : null}
-          {clipped ? <p role="alert">{copy.clipped}</p> : null}
-          {tooShort ? <p role="alert">{copy.short}</p> : null}
+          {takeUrl ? (
+            <ClipPlayer src={takeUrl} playLabel={copy.play} pauseLabel={copy.pause} progressLabel={copy.progress} />
+          ) : null}
+          {reviewNote ? <p className="voiceNote">{reviewNote}</p> : null}
           <div className="voiceFlow__actions">
             <button type="button" onClick={resetTake}>
               {copy.discard}
@@ -303,19 +299,12 @@ export function AddMyVoiceFlow(props: Props) {
         <>
           <h3 className="voiceFlow__title">{copy.previewTitle}</h3>
           <p>{copy.previewBody}</p>
-          <button
-            type="button"
-            className="createScreen__submit"
-            onClick={() => {
-              const audio = previewRef.current;
-              if (!audio) return;
-              audio.src = `/api/voice-preview?voiceId=${encodeURIComponent(voiceId)}&language=${encodeURIComponent(copy.lang)}`;
-              void audio.play().catch(() => {});
-            }}
-          >
-            {copy.hearPreview}
-          </button>
-          <audio ref={previewRef} controls />
+          <ClipPlayer
+            src={`/api/voice-preview?voiceId=${encodeURIComponent(voiceId)}&language=${encodeURIComponent(copy.lang)}`}
+            playLabel={copy.play}
+            pauseLabel={copy.pause}
+            progressLabel={copy.progress}
+          />
           <button type="button" onClick={() => setStep("name")}>
             {copy.continueName}
           </button>

@@ -139,8 +139,8 @@ test("MOCK signed-in voice flow in English at 390x844", async ({ page }) => {
   await expect(page.getByText("Aim for 60 to 120 seconds")).toBeVisible();
   await page.screenshot({ path: path.join(outDir, "MOCK-recording-en-390x844.png") });
   await page.getByRole("button", { name: "Stop" }).click();
-  await expect(page.getByText("There was not enough speech")).toBeVisible();
-  await expect(page.getByText("A little short")).toBeVisible();
+  await expect(page.getByText("couldn't hear enough talking")).toBeVisible();
+  await expect(page.getByText("A little short")).toHaveCount(0);
   await page.screenshot({ path: path.join(outDir, "MOCK-silence-short-en-390x844.png") });
 
   await page.evaluate(() => {
@@ -152,7 +152,8 @@ test("MOCK signed-in voice flow in English at 390x844", async ({ page }) => {
   });
   await page.getByRole("button", { name: "Record again" }).click();
   await page.getByRole("button", { name: "Stop" }).click();
-  await expect(page.getByText("too loud and clipped")).toBeVisible();
+  await expect(page.getByText("That was too loud")).toBeVisible();
+  await expect(page.getByText("A little short")).toHaveCount(0);
   await page.screenshot({ path: path.join(outDir, "MOCK-clipping-en-390x844.png") });
 
   await page.evaluate(() => {

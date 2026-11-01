@@ -37,11 +37,14 @@ export function voiceCopy(language: unknown) {
     save: zh ? "儲存並選用" : "Save and use",
     target: zh ? "目標是 60 到 120 秒。請照著念。" : "Aim for 60 to 120 seconds. Read the passage aloud.",
     micDenied: zh
-      ? "麥克風被拒絕了。iPhone Safari：設定 → Safari → 麥克風 → 允許。Chrome：網址列的鎖頭 → 網站設定 → 麥克風 → 允許。若是安裝的 App：iPhone 設定 → Bedtime Story → 麥克風。改完後再試一次。"
-      : "The microphone is blocked. On iPhone Safari: Settings → Safari → Microphone → Allow. In Chrome: the lock icon → Site settings → Microphone → Allow. In the installed app: iPhone Settings → Bedtime Story → Microphone. Then try again.",
-    tooQuiet: zh ? "幾乎沒有說話聲。靠近一點，再念一次。" : "There was not enough speech. Move closer and read it again.",
-    clipped: zh ? "聲音太大、破音了。拿遠一點再錄。" : "That was too loud and clipped. Hold the phone a little farther away.",
-    short: zh ? "還有點短。滿 60 秒會比較好，滿 10 秒就可以使用。" : "A little short. 60 seconds is better. 10 seconds is the minimum.",
+      ? "麥克風被拒絕了。iPhone Safari：設定 → Safari → 麥克風 → 允許。Chrome：網址列的鎖頭 → 網站設定 → 麥克風 → 允許。若是安裝的 App：iPhone 設定 → Happy Horse → 麥克風。改完後再試一次。"
+      : "The microphone is blocked. On iPhone Safari: Settings → Safari → Microphone → Allow. In Chrome: the lock icon → Site settings → Microphone → Allow. In the Happy Horse app: iPhone Settings → Happy Horse → Microphone. Then try again.",
+    tooQuiet: zh ? "幾乎聽不到說話。靠近一點，再念一次。" : "We couldn't hear enough talking. Move a little closer and read it again.",
+    clipped: zh ? "聲音太大了。手機拿遠一點，再試一次。" : "That was too loud. Hold the phone a little farther away and try again.",
+    short: zh ? "有一點短。大約一分鐘就很好。" : "A little short. About one minute is a good length.",
+    play: zh ? "播放" : "Play",
+    pause: zh ? "暫停" : "Pause",
+    progress: zh ? "播放進度" : "Playback progress",
     interrupted: zh ? "錄音中斷了。可以重錄。" : "The recording was interrupted. You can record again.",
     failed: zh ? "沒有成功。可以再試一次。" : "That did not work. You can try again.",
     verification: zh ? "聲音已建立，但還在確認，所以現在不能選用。" : "The voice was created, but it is waiting for verification, so it cannot be selected yet.",

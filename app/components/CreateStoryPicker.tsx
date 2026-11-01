@@ -714,14 +714,16 @@ function VoiceGroup(props: {
                     {copy.delete}
                   </button>
                 ) : null}
-                <button
-                  type="button"
-                  className="voiceCard__preview"
-                  aria-label={`${copy.preview} ${voice.name || ""}`}
-                  onClick={() => props.onPreview(voice)}
-                >
-                  {props.previewingId === voice.id ? copy.previewStop : copy.preview}
-                </button>
+                {pendingVerification ? null : (
+                  <button
+                    type="button"
+                    className="voiceCard__preview"
+                    aria-label={`${copy.preview} ${voice.name || ""}`}
+                    onClick={() => props.onPreview(voice)}
+                  >
+                    {props.previewingId === voice.id ? copy.previewStop : copy.preview}
+                  </button>
+                )}
               </div>
             );
           })}
