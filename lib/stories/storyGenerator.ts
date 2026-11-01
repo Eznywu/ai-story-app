@@ -207,64 +207,21 @@ export function buildStoryGenerationPrompt(
     .join("\n");
 }
 
+/**
+ * Upper bound on output tokens: the requested word count plus the visual-brief JSON that follows
+ * the story. A tighter cap cut long English stories off before the ending and the brief.
+ */
 function outputTokenHint(length: string) {
-  if (length === "short") return 700;
-  if (length === "medium") return 1400;
-  return 2200;
+  if (length === "short") return 800;
+  if (length === "medium") return 1600;
+  return 2600;
 }
 
-function fallbackStory(input: ReturnType<typeof normalizeStoryInput>) {
-  const isZh = input.language.toLowerCase().includes("zh");
-  const name = input.mainCharacterName;
-  const genre = input.genre;
-
-  if (isZh) {
-    const openers = [
-      `夜晚窸窣著合上书頁聲，${name} 把小被角拉好，想聽一個關於 ${genre} 的輕柔故事。`,
-      `房間裡剩下一盞暖暖的光，${name} 閉上眼睛，心裡裝著一片 ${genre} 的小天地。`,
-      `屋子外面安靜下來，${name} 抱著喜歡的小枕，等一個慢慢說的 ${genre} 故事。`,
-    ];
-    const middles = [
-      `風在窗邊寫小小的曲子，${name} 跟著節拍慢慢呼吸，一步、兩步，心像小船轻轻搖。`,
-      `遠方有一聲很輕很輕的火車聲，${name} 想像它載著晚安，一步一步開向夢的月臺。`,
-      `一隻不吵的貓在走廊打盹，${name} 聽著那均勻的呼吸，覺得世界變得好小、好安全。`,
-    ];
-    const bridges = [
-      `故事裡，${name} 拾起一顆「沒關係」放在胸口，小小的，卻剛好讓肩膀鬆下來。`,
-      `${name} 把今天最亮的一小件事摺好，像摺紙船，輕輕放在睡眠的河上漂走。`,
-      `有人小聲說：「我們明天再玩。」${name} 在心底複說一遍，眼皮跟著變重。`,
-    ];
-    const closers = [
-      `最後一句落在枕邊：晚安，${name}。星光替你關燈，夢替你保管悄悄話。`,
-      `${name} 嘴角還留著一丁點微笑，像藏進被窩的小星星，慢慢睡著了。`,
-      `晚安，${name}，願你在 ${genre} 的夢裡也被溫柔抱著。`,
-    ];
-    const pick = <T>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
-    return [pick(openers), pick(middles), pick(bridges), pick(closers)].join("\n");
-  }
-
-  const openers = [
-    `${name} tugs the quilt square and asks for a ${genre.toLowerCase()} story low and slow, like a lullaby with words.`,
-    `The house exhales into quiet, and ${name} waits on the pillow's edge for a gentle ${genre.toLowerCase()} tale.`,
-    `A nightlight paints a small gold pool; ${name} nestles there, ready for a sleepy ${genre.toLowerCase()} adventure.`,
-  ];
-  const middles = [
-    `Somewhere far off, a train sighs once. ${name} names the sound "goodbye, busy day" and lets it roll away.`,
-    `Rain writes thin lines on the glass; ${name} counts them softly—one kindness, one breath, one rest.`,
-    `A clock ticks kindly, not rushing. ${name} matches footsteps to it until shoulders melt into the mattress.`,
-  ];
-  const bridges = [
-    `In the story's middle, ${name} pockets one brave pebble—not heavy, just enough to remember: I tried, I am safe.`,
-    `A stuffed friend leans closer; ${name} shares the blanket and whispers, "We can land together."`,
-    `${name} picks three slow breaths like three fireflies and releases them toward the ceiling.`,
-  ];
-  const closers = [
-    `The last line tucks itself under ${name}'s chin: goodnight, little listener; let the ${genre.toLowerCase()} dreams stay soft.`,
-    `${name} leaves a tiny grin on the pillow—a secret postcard to morning—and slips under sleep's door.`,
-    `Goodnight, ${name}. The room holds still; your heart may wander, but it always has a way home.`,
-  ];
-  const pick = <T>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
-  return [pick(openers), pick(middles), pick(bridges), pick(closers)].join("\n");
+/** Bad requests, auth, and content refusals fail the same way on a second paid try. */
+function worthRetrying(error: unknown): boolean {
+  const status = (error as { status?: unknown } | null)?.status;
+  if (typeof status !== "number") return true;
+  return status === 408 || status === 429 || status >= 500;
 }
 
 export type GeneratedStory = {
@@ -287,25 +244,27 @@ function characterFromRequest(body: StoryGenerationInput, name: string): Charact
   });
 }
 
+/** Splits the story from its visual brief. A missing brief is derived locally; the model is not asked again. */
 function withDerivedBrief(
   text: string,
-  body: StoryGenerationInput,
-  normalized: ReturnType<typeof normalizeStoryInput>
+  normalized: ReturnType<typeof normalizeStoryInput>,
+  character: CharacterSnapshot
 ): GeneratedStory {
   const split = splitStoryAndBrief(text, parseAudienceAge(normalized.age).band);
-  const story = split.story.trim() ? split.story : text.trim();
-  const character = characterFromRequest(body, normalized.mainCharacterName);
+  const story = split.story.trim();
   return {
     text: story,
     visualBrief:
       split.visualBrief ??
-      deriveVisualBrief({
-        title: normalized.title,
-        story,
-        genre: normalized.genre,
-        age: normalized.age,
-        character,
-      }),
+      (story
+        ? deriveVisualBrief({
+            title: normalized.title,
+            story,
+            genre: normalized.genre,
+            age: normalized.age,
+            character,
+          })
+        : null),
   };
 }
 
@@ -326,7 +285,7 @@ export async function generateStoryWithRetry(
   const character = characterFromRequest(body, normalized.mainCharacterName);
 
   if (mockProvidersEnabled() && !opts?.complete) {
-    return withDerivedBrief(mockStoryText(normalized), body, normalized);
+    return withDerivedBrief(mockStoryText(normalized), normalized, character);
   }
 
   const apiKey = process.env.OPENAI_API_KEY?.trim();
@@ -365,7 +324,6 @@ export async function generateStoryWithRetry(
 
   let attempt = 0;
   let lastError: unknown = null;
-  const band = parseAudienceAge(normalized.age).band;
   while (attempt <= retries) {
     try {
       const prompt = buildStoryGenerationPrompt(
@@ -389,33 +347,18 @@ export async function generateStoryWithRetry(
             }
             return "";
           })();
-      const split = splitStoryAndBrief(raw, band);
-      if (split.story.trim()) {
-        // A missing or invalid brief does not send the story request again.
-        return { text: split.story, visualBrief: split.visualBrief };
-      }
+      const generated = withDerivedBrief(raw, normalized, character);
+      if (generated.text) return generated;
       throw new Error("Model returned empty story output");
     } catch (error) {
       lastError = error;
       attempt += 1;
-      if (attempt > retries) break;
+      if (attempt > retries || !worthRetrying(error)) break;
     }
   }
 
-  const msg = getErrorMessage(lastError, "");
-  if (posterProviderTransportFailureMessage(msg)) {
-    const text = fallbackStory(normalized);
-    return {
-      text,
-      visualBrief: deriveVisualBrief({
-        title: normalized.title,
-        story: text,
-        genre: normalized.genre,
-        age: normalized.age,
-        character,
-      }),
-    };
+  if (posterProviderTransportFailureMessage(getErrorMessage(lastError, ""))) {
+    throw createError("The story service could not be reached. Nothing was saved. Please try again in a moment.", 503);
   }
-
   throw lastError ?? new Error("Story generation failed");
 }

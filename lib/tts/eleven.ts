@@ -259,10 +259,3 @@ export async function narrateWithEleven(input: ElevenTtsInput & { hadPreviousAud
     mock: usingMock,
   };
 }
-
-/** One-shot helper kept for older callers. New story audio goes through narrateWithEleven. */
-export async function speakWithEleven(input: ElevenTtsInput): Promise<Buffer> {
-  const result = await narrateWithEleven(input);
-  if (!result.ok) throw createError(result.message, 502);
-  return result.audio;
-}

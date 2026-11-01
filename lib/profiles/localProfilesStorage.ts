@@ -49,11 +49,6 @@ export function loadKidProfiles(): KidProfile[] {
   }
 }
 
-export function saveKidProfiles(profiles: KidProfile[]): void {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(KIDS_KEY, JSON.stringify(profiles));
-}
-
 export function clearLocalKidProfiles(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(KIDS_KEY);
@@ -69,11 +64,6 @@ export function loadStoryCharacters(): StoryCharacterProfile[] {
   } catch {
     return [];
   }
-}
-
-export function saveStoryCharacters(chars: StoryCharacterProfile[]): void {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(CHARS_KEY, JSON.stringify(chars));
 }
 
 export function clearLocalStoryCharacters(): void {
@@ -93,11 +83,12 @@ export function defaultReadingStats(): ReadingStatsState {
   };
 }
 
-export function loadReadingStats(): ReadingStatsState {
-  if (typeof window === "undefined") return defaultReadingStats();
+/** Reading stats an older build kept only in this browser, or null. */
+export function peekStoredReadingStats(): ReadingStatsState | null {
+  if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem(READS_KEY);
-    if (!raw) return defaultReadingStats();
+    if (!raw) return null;
     const o = JSON.parse(raw) as Partial<ReadingStatsState>;
     return {
       ...defaultReadingStats(),
@@ -105,30 +96,8 @@ export function loadReadingStats(): ReadingStatsState {
       todayKey: typeof o.todayKey === "string" ? o.todayKey : todayKey(),
     };
   } catch {
-    return defaultReadingStats();
+    return null;
   }
-}
-
-/** Resets daily read count when the calendar day changes. */
-export function hydrateReadingStats(): ReadingStatsState {
-  const tk = todayKey();
-  let s = loadReadingStats();
-  if (s.todayKey !== tk) {
-    s = { ...s, todayKey: tk, storiesReadToday: 0 };
-    saveReadingStats(s);
-  }
-  return s;
-}
-
-export function saveReadingStats(s: ReadingStatsState): void {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(READS_KEY, JSON.stringify(s));
-}
-
-export function peekStoredReadingStats(): ReadingStatsState | null {
-  if (typeof window === "undefined") return null;
-  if (!localStorage.getItem(READS_KEY)) return null;
-  return loadReadingStats();
 }
 
 export function clearLocalReadingStats(): void {
@@ -158,18 +127,6 @@ export function applyStoryRead(current: ReadingStatsState, storyId: string, titl
   }
   s.lastReadDayKey = tk;
   return s;
-}
-
-/** Call when user plays audio for a story. */
-export function recordStoryRead(storyId: string, title: string): ReadingStatsState {
-  const next = applyStoryRead(loadReadingStats(), storyId, title);
-  saveReadingStats(next);
-  return next;
-}
-
-export function setDraftSummary(summary: string | null): void {
-  const s = loadReadingStats();
-  saveReadingStats({ ...s, draftSummary: summary && summary.trim() ? summary.trim() : null });
 }
 
 function defaultOnboardingState(): OnboardingState {

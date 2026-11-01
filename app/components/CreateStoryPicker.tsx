@@ -10,6 +10,7 @@ import { useInterfaceLocale } from "@/app/components/LocaleProvider";
 import { voiceSummary } from "@/app/components/voiceLabel";
 import { STORY_AGE_OPTIONS } from "@/lib/stories/storyAgeOptions";
 import { STORY_INPUT_MAX_CHARS } from "@/lib/types";
+import { redirectIfUnsigned } from "@/lib/auth/redirectIfUnsigned";
 import type { KidProfile, StoryCharacterProfile } from "@/lib/profiles/profilesTypes";
 
 const GENRES = [
@@ -228,8 +229,35 @@ export function CreateStoryPicker(props: Props) {
   const [renameValue, setRenameValue] = useState("");
   const [deleteId, setDeleteId] = useState("");
   const [deleteAudio, setDeleteAudio] = useState(false);
+  const [manageBusy, setManageBusy] = useState(false);
+  const [manageError, setManageError] = useState("");
   const { messages } = useInterfaceLocale();
   const copy = messages.voice;
+
+  async function manageVoice(method: "PATCH" | "DELETE", id: string, body: object, done: () => void) {
+    if (manageBusy) return;
+    setManageBusy(true);
+    setManageError("");
+    try {
+      const res = await fetch(`/api/voices/${encodeURIComponent(id)}`, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (redirectIfUnsigned(res.status)) return;
+      if (!res.ok) {
+        setManageError(typeof data?.error === "string" && data.error ? data.error : copy.failed);
+        return;
+      }
+      done();
+      props.onRetryVoices?.();
+    } catch {
+      setManageError(copy.failed);
+    } finally {
+      setManageBusy(false);
+    }
+  }
   const ageText = messages.ages[props.age as keyof typeof messages.ages] || props.age;
   const [themesOpen, setThemesOpen] = useState(!FEATURED.includes(props.genre));
   const [touchOpen, setTouchOpen] = useState(guidanceOpenByDefault);
@@ -600,21 +628,21 @@ export function CreateStoryPicker(props: Props) {
                       className="voiceManage"
                       onSubmit={(event) => {
                         event.preventDefault();
-                        void fetch(`/api/voices/${encodeURIComponent(renameId)}`, {
-                          method: "PATCH",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ name: renameValue }),
-                        }).then(() => {
-                          setRenameId("");
-                          props.onRetryVoices?.();
-                        });
+                        void manageVoice("PATCH", renameId, { name: renameValue }, () => setRenameId(""));
                       }}
                     >
                       <label className="createTouch__field">
                         <span className="createScreen__label">{copy.renameTitle}</span>
                         <input value={renameValue} onChange={(event) => setRenameValue(event.target.value)} />
                       </label>
-                      <button type="submit" className="createScreen__submit">{copy.saveName}</button>
+                      {manageError ? (
+                        <div className="fieldErrorRow" role="alert">
+                          <span className="fieldErrorText">{manageError}</span>
+                        </div>
+                      ) : null}
+                      <button type="submit" className="createScreen__submit" disabled={manageBusy || !renameValue.trim()}>
+                        {copy.saveName}
+                      </button>
                     </form>
                   ) : null}
                   {deleteId ? (
@@ -622,20 +650,27 @@ export function CreateStoryPicker(props: Props) {
                       <h3 className="voiceFlow__title">{copy.deleteTitle}</h3>
                       <p>{copy.deleteBody}</p>
                       <HappyHorseCheck checked={deleteAudio} label={copy.deleteAlso} onChange={setDeleteAudio} />
+                      {manageError ? (
+                        <div className="fieldErrorRow" role="alert">
+                          <span className="fieldErrorText">{manageError}</span>
+                        </div>
+                      ) : null}
                       <div className="voiceFlow__actions">
-                        <button type="button" onClick={() => setDeleteId("")}>{copy.cancel}</button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDeleteId("");
+                            setManageError("");
+                          }}
+                        >
+                          {copy.cancel}
+                        </button>
                         <button
                           type="button"
                           className="createScreen__submit"
+                          disabled={manageBusy}
                           onClick={() => {
-                            void fetch(`/api/voices/${encodeURIComponent(deleteId)}`, {
-                              method: "DELETE",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ deleteGeneratedAudio: deleteAudio }),
-                            }).then(() => {
-                              setDeleteId("");
-                              props.onRetryVoices?.();
-                            });
+                            void manageVoice("DELETE", deleteId, { deleteGeneratedAudio: deleteAudio }, () => setDeleteId(""));
                           }}
                         >
                           {copy.confirmDelete}

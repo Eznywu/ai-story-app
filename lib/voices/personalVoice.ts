@@ -43,6 +43,8 @@ export type VoiceStore = {
   markCleanup(id: string, status: "pending" | "done" | "failed", attempts: number, error?: string): Promise<void>;
   storiesUsingVoice(userId: string, appVoiceId: string): Promise<number>;
   clearStoryAudio(userId: string, appVoiceId: string): Promise<number>;
+  /** Cached preview clips spoken in this personal voice. */
+  deletePreviews(userId: string, appVoiceId: string): Promise<void>;
 };
 
 export type VoiceCloneProvider = {
@@ -202,12 +204,24 @@ export async function deletePersonalVoice(
   const voice = await deps.findOwned(input.userId, input.voiceId);
   if (!voice) return { ok: false, status: 404, error: "That voice is not on this account." };
   await deps.store.update(voice.id, input.userId, { status: "deleting" });
-  let providerDeleted = false;
+  // Local copies go first. If one fails, the voice still exists and the person can simply try again.
+  const kept = await deps.store.storiesUsingVoice(input.userId, voice.id);
+  let cleared = 0;
+  try {
+    await deps.store.deletePreviews(input.userId, voice.id);
+    if (input.deleteGeneratedAudio) cleared = await deps.store.clearStoryAudio(input.userId, voice.id);
+  } catch {
+    await deps.store.update(voice.id, input.userId, { status: "delete_failed" });
+    return {
+      ok: false,
+      status: 502,
+      error: "Some saved clips of this voice could not be deleted yet. New narration with it is blocked. Please try again.",
+    };
+  }
   try {
     if (voice.providerVoiceId) {
       await deps.provider.deleteVoice(voice.providerVoiceId);
     }
-    providerDeleted = true;
   } catch (error) {
     const message = error instanceof Error ? error.message : "delete failed";
     await deps.store.update(voice.id, input.userId, { status: "delete_failed" });
@@ -221,16 +235,27 @@ export async function deletePersonalVoice(
     return {
       ok: true,
       removed: false,
-      recordingsCleared: 0,
-      recordingsKept: await deps.store.storiesUsingVoice(input.userId, voice.id),
+      recordingsCleared: cleared,
+      recordingsKept: Math.max(0, kept - cleared),
       cleanupPending: true,
       message: `New narration with this voice is blocked. The voice service could not delete it yet (${message}). A retry is saved. Story text is unchanged.`,
     };
   }
-  await deps.deleteSample(voice.sampleFilename, voice.sampleStorageUrl).catch(() => {});
-  const kept = await deps.store.storiesUsingVoice(input.userId, voice.id);
-  const cleared = input.deleteGeneratedAudio ? await deps.store.clearStoryAudio(input.userId, voice.id) : 0;
-  if (providerDeleted) await deps.store.deleteRow(voice.id, input.userId);
+  const sampleDeleted = await deps
+    .deleteSample(voice.sampleFilename, voice.sampleStorageUrl)
+    .then(() => true)
+    .catch(() => false);
+  if (!sampleDeleted) {
+    // The provider clone is already gone, so only the recorded sample needs the retry job.
+    await deps.store.addCleanup({
+      userId: input.userId,
+      providerVoiceId: "",
+      sampleFilename: voice.sampleFilename,
+      sampleStorageUrl: voice.sampleStorageUrl,
+      voiceRowId: null,
+    });
+  }
+  await deps.store.deleteRow(voice.id, input.userId);
   return {
     ok: true,
     removed: true,

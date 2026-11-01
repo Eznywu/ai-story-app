@@ -1,17 +1,9 @@
 import { prisma } from "@/lib/prisma";
-import { deleteMediaReference, saveMediaBytes } from "@/lib/media/objectStore";
+import { deleteMediaReference, deleteReplacedMedia, saveMediaBytes } from "@/lib/media/objectStore";
 import { isSafeStoryId } from "@/lib/stories/storyIds";
 
-function versionStamp() {
-  return Date.now().toString(36);
-}
-
 function audioFilenameFor(storyId: string) {
-  return `audio_${storyId}${versionStamp()}.mp3`;
-}
-
-function posterFilenameFor(storyId: string) {
-  return `poster_${storyId}${versionStamp()}.png`;
+  return `audio_${storyId}${Date.now().toString(36)}.mp3`;
 }
 
 export function storyAudioPublicUrl(filename: string) {
@@ -31,6 +23,15 @@ export type StoryAudioIdentity = {
   voiceKind?: string | null;
   voiceVersion?: number | null;
 };
+
+/** Story columns that describe the saved recording. Cleared together when the recording is removed. */
+export const CLEARED_STORY_AUDIO = {
+  audioFilename: null,
+  audioUrl: null,
+  audioStorageUrl: null,
+  audioPrivate: false,
+  audioCacheKey: null,
+} as const;
 
 /** Saves a new MP3, then drops the previous file. Call this only after the new audio passed its checks. */
 export async function saveStoryAudioFile(
@@ -79,84 +80,45 @@ export async function saveStoryAudioFile(
     },
   });
   if (previous?.audioFilename && previous.audioFilename !== filename) {
-    await deleteMediaReference({
+    await deleteReplacedMedia({
       folder: "audio",
       filename: previous.audioFilename,
-      url: previous.audioStorageUrl || previous.audioUrl,
+      url: previous.audioUrl,
+      storageUrl: previous.audioStorageUrl,
     });
   }
   return playbackUrl;
 }
 
-/** Overwrites this story's poster PNG and stores the image URL on the row. */
-export async function saveStoryPosterFile(storyId: string, png: Buffer): Promise<string> {
-  if (!isSafeStoryId(storyId)) {
-    throw new Error("Invalid story id");
-  }
-  const previous = await prisma.story.findUnique({
-    where: { id: storyId },
-    select: { posterFilename: true, posterUrl: true },
-  });
-  const filename = posterFilenameFor(storyId);
-  const saved = await saveMediaBytes({
-    folder: "posters",
-    filename,
-    body: png,
-    contentType: "image/png",
-  });
-  await prisma.story.update({
-    where: { id: storyId },
-    data: { posterFilename: filename, posterUrl: saved.url },
-  });
-  if (previous?.posterFilename && previous.posterFilename !== filename) {
-    await deleteMediaReference({
-      folder: "posters",
-      filename: previous.posterFilename,
-      url: previous.posterUrl,
-    });
-  }
-  return saved.url;
-}
-
-export async function removeStoryMediaFiles(story: {
+type StoryAudioRef = {
   audioFilename?: string | null;
   audioUrl?: string | null;
-  posterFilename?: string | null;
-  posterUrl?: string | null;
-  illustrationFilename?: string | null;
-  illustrationUrl?: string | null;
-  coverFilename?: string | null;
-  coverUrl?: string | null;
-}) {
+  audioStorageUrl?: string | null;
+};
+
+/** Deletes every stored copy of a story's media. Throws if a copy could not be deleted. */
+export async function removeStoryMediaFiles(
+  story: StoryAudioRef & {
+    posterFilename?: string | null;
+    posterUrl?: string | null;
+    illustrationFilename?: string | null;
+    illustrationUrl?: string | null;
+    coverFilename?: string | null;
+    coverUrl?: string | null;
+  }
+) {
+  await removeStoryAudioFile(story);
+  await deleteMediaReference({ folder: "posters", filename: story.posterFilename, url: story.posterUrl });
+  await deleteMediaReference({ folder: "posters", filename: story.illustrationFilename, url: story.illustrationUrl });
+  await deleteMediaReference({ folder: "posters", filename: story.coverFilename, url: story.coverUrl });
+}
+
+/** Personal-voice recordings live at `audioStorageUrl`; `audioUrl` is only the app route that streams them. */
+export async function removeStoryAudioFile(story: StoryAudioRef) {
   await deleteMediaReference({
     folder: "audio",
     filename: story.audioFilename,
     url: story.audioUrl,
-  });
-  await deleteMediaReference({
-    folder: "posters",
-    filename: story.posterFilename,
-    url: story.posterUrl,
-  });
-  await deleteMediaReference({
-    folder: "posters",
-    filename: story.illustrationFilename,
-    url: story.illustrationUrl,
-  });
-  await deleteMediaReference({
-    folder: "posters",
-    filename: story.coverFilename,
-    url: story.coverUrl,
-  });
-}
-
-export async function removeStoryAudioFile(story: {
-  audioFilename?: string | null;
-  audioUrl?: string | null;
-}) {
-  await deleteMediaReference({
-    folder: "audio",
-    filename: story.audioFilename,
-    url: story.audioUrl,
+    storageUrl: story.audioStorageUrl,
   });
 }

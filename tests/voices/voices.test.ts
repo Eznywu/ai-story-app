@@ -363,8 +363,51 @@ test("delete blocks new synthesis immediately and can clear recordings without s
   assert.equal(providerGone, true);
   assert.equal(store.rows.some((row) => row.id === "v_mom"), false);
   assert.equal(store.cleared, 1);
+  assert.equal(store.previewsDeleted, 1);
   const other = authorizeOwnedVoice({ requesterId: "user-b", voiceId: "v_mom", owned: [] });
   assert.equal(other.ok, false);
+});
+
+test("a recording that cannot be deleted keeps the voice so the parent can retry", async () => {
+  const store = memoryStore();
+  store.failClear = true;
+  store.rows.push({
+    id: "v_dad",
+    userId: "user-a",
+    displayName: "Dad",
+    language: "en",
+    status: "ready",
+    voiceVersion: 1,
+    requiresVerification: false,
+    providerVoiceId: "prov-2",
+    idempotencyKey: null,
+    consentTextVersion: "2026-11-01",
+    sampleFilename: null,
+    sampleStorageUrl: null,
+  });
+  let providerCalls = 0;
+  const result = await deletePersonalVoice(
+    { userId: "user-a", voiceId: "v_dad", deleteGeneratedAudio: true },
+    {
+      store,
+      provider: {
+        async createClone() {
+          throw new Error("no");
+        },
+        async deleteVoice() {
+          providerCalls += 1;
+        },
+        async subscription() {
+          return { voiceLimit: null, slotsUsed: null };
+        },
+      },
+      findOwned: async (userId, id) => store.rows.find((row) => row.userId === userId && row.id === id) ?? null,
+      deleteSample: async () => {},
+    }
+  );
+  assert.equal(result.ok, false);
+  assert.equal(providerCalls, 0);
+  assert.equal(store.rows.find((row) => row.id === "v_dad")?.status, "delete_failed");
 });
 
 test("live preview estimate is a few cents and is not approved by this test", () => {
@@ -386,7 +429,14 @@ function webm(size: number) {
   return bytes;
 }
 
-function memoryStore(): VoiceStore & { rows: StoredVoice[]; created: number; failInsert: boolean; cleared: number } {
+function memoryStore(): VoiceStore & {
+  rows: StoredVoice[];
+  created: number;
+  failInsert: boolean;
+  cleared: number;
+  failClear: boolean;
+  previewsDeleted: number;
+} {
   const rows: StoredVoice[] = [];
   const store = {
     rows,
@@ -427,9 +477,15 @@ function memoryStore(): VoiceStore & { rows: StoredVoice[]; created: number; fai
       return 1;
     },
     async clearStoryAudio() {
+      if (store.failClear) throw new Error("blob down");
       store.cleared += 1;
       return 1;
     },
+    async deletePreviews() {
+      store.previewsDeleted += 1;
+    },
+    failClear: false,
+    previewsDeleted: 0,
   };
   return store;
 }

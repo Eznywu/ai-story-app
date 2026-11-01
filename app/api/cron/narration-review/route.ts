@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { authorizeCron } from "@/lib/auth/cron";
 import { captureException } from "@/lib/monitoring";
 import { getErrorMessage } from "@/lib/errors";
 import { runWeeklyNarrationReview } from "@/lib/tts/weeklyJob";
@@ -19,13 +20,6 @@ export const maxDuration = 60;
  * not generate audio. It may retry deleting a personal voice that was already
  * marked for removal.
  */
-function authorizeCron(req: Request): boolean {
-  const secret = process.env.CRON_SECRET?.trim();
-  if (!secret) return false;
-  const bearer = req.headers.get("authorization");
-  if (bearer === `Bearer ${secret}`) return true;
-  return req.headers.get("x-cron-secret") === secret;
-}
 
 export async function GET(req: Request) {
   try {
@@ -90,7 +84,10 @@ export async function GET(req: Request) {
     const cleanup = await retryVoiceCleanups(
       { store: prismaVoiceStore(), provider: voiceProviderFromEnv(), deleteSample: deletePrivateSample },
       5
-    ).catch(() => ({ done: 0, pending: 0 }));
+    ).catch((error: unknown) => {
+      captureException(error, { route: "/api/cron/narration-review", step: "voice-cleanup" });
+      return { done: 0, pending: 0, error: getErrorMessage(error, "Voice cleanup could not run") };
+    });
     return NextResponse.json({
       ok: true,
       scheduled: false,

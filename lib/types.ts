@@ -27,6 +27,9 @@ export type StoryDTO = {
 /** Max length for optional story guidance; enforced in `lib/stories/storyGenerator.ts`. */
 export const STORY_INPUT_MAX_CHARS = 360;
 
+/** Upper bound for a saved story and for one narration request. A long story is about 10,000 characters. */
+export const STORY_TEXT_MAX_CHARS = 20_000;
+
 export type StoryCreateInput = {
   title?: string;
   genre?: string;

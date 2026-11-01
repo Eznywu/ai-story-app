@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
-import { saveMediaBytes, deleteMediaReference, localMediaPath, isRemoteMediaUrl } from "@/lib/media/objectStore";
+import { saveMediaBytes, deleteReplacedMedia, localMediaPath, isRemoteMediaUrl } from "@/lib/media/objectStore";
 import { isSafeStoryId } from "@/lib/stories/storyIds";
 import type { ArtworkJobRow, ArtworkStore, ArtworkStoryRow } from "@/lib/posters/artworkService";
 import type { VisualBrief } from "@/lib/posters/visualBrief";
@@ -195,17 +195,17 @@ export function createPrismaArtworkStore(): ArtworkStore {
         },
       });
       if (previous) {
-        await deleteMediaReference({
+        await deleteReplacedMedia({
           folder: "posters",
           filename: previous.illustrationFilename,
           url: previous.illustrationUrl,
         });
-        await deleteMediaReference({
+        await deleteReplacedMedia({
           folder: "posters",
           filename: previous.coverFilename,
           url: previous.coverUrl,
         });
-        await deleteMediaReference({
+        await deleteReplacedMedia({
           folder: "posters",
           filename: previous.posterFilename,
           url: previous.posterUrl,

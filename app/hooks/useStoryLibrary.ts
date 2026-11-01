@@ -42,19 +42,6 @@ function toLibraryItem(raw: Record<string, unknown>): StoryLibraryItem {
   };
 }
 
-async function blobToBase64Png(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onloadend = () => {
-      const s = r.result as string;
-      const comma = s.indexOf(",");
-      resolve(comma >= 0 ? s.slice(comma + 1) : s);
-    };
-    r.onerror = () => reject(new Error("Could not read poster image."));
-    r.readAsDataURL(blob);
-  });
-}
-
 export function useStoryLibrary() {
   const [library, setLibrary] = useState<StoryLibraryItem[]>([]);
   const [loadingLibrary, setLoadingLibrary] = useState(false);
@@ -123,29 +110,17 @@ export function useStoryLibrary() {
         }),
       });
       const data = await res.json().catch(() => ({}));
+      if (redirectIfUnsigned(res.status)) {
+        throw new Error(data?.error || "Sign in to continue.");
+      }
       if (!res.ok) {
         throw new Error(data?.error || `Save failed (${res.status})`);
       }
-      await refreshLibrary();
+      // The caller opens the saved story next; Home reloads the library when it is shown again.
       return data?.story as Record<string, unknown> | undefined;
     } finally {
       setIsSaving(false);
     }
-  }
-
-  async function savePosterForStory(storyId: string, blob: Blob) {
-    const imageBase64 = await blobToBase64Png(blob);
-    const res = await fetch("/api/posters/save", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ storyId, imageBase64 }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      throw new Error(data?.error || `Poster save failed (${res.status})`);
-    }
-    await refreshLibrary();
-    return { posterUrl: String(data?.posterUrl ?? "") };
   }
 
   async function deleteStory(storyId: string) {
@@ -153,10 +128,13 @@ export function useStoryLibrary() {
       method: "DELETE",
     });
     const data = await res.json().catch(() => ({}));
+    if (redirectIfUnsigned(res.status)) {
+      throw new Error(data?.error || "Sign in to continue.");
+    }
     if (!res.ok) {
       throw new Error(data?.error || `Delete failed (${res.status})`);
     }
-    await refreshLibrary();
+    setLibrary((current) => current.filter((item) => item.id !== storyId));
   }
 
   return {
@@ -167,7 +145,6 @@ export function useStoryLibrary() {
     isSaving,
     refreshLibrary,
     saveStory,
-    savePosterForStory,
     deleteStory,
   };
 }

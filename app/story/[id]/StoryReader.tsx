@@ -10,7 +10,6 @@ import { useInterfaceLocale } from "@/app/components/LocaleProvider";
 import { friendlyVoiceName } from "@/app/components/voiceLabel";
 import { fill } from "@/lib/i18n/locales";
 import { useTts } from "@/app/hooks/useTts";
-import { useStoryLibrary } from "@/app/hooks/useStoryLibrary";
 import { skipWithin } from "@/lib/audio/skipWithin";
 import { downloadPosterPng, requestStoryArtwork } from "@/lib/posters/poster";
 import type { ArtworkRequestResult } from "@/lib/posters/poster";
@@ -150,6 +149,7 @@ export function StoryReader({ storyId }: { storyId: string }) {
   const [duration, setDuration] = useState(0);
   const [narrationSpeed, setNarrationSpeed] = useState(() => activeNarrationSpeed());
   const [audioError, setAudioError] = useState("");
+  const [downloadError, setDownloadError] = useState("");
   const [savedAudioUrl, setSavedAudioUrl] = useState<string | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
   const [narrationOpen, setNarrationOpen] = useState(false);
@@ -168,7 +168,6 @@ export function StoryReader({ storyId }: { storyId: string }) {
     fetchVoices,
     makeMp3,
   } = useTts(language, audioRef);
-  const { refreshLibrary } = useStoryLibrary();
   const { onStoryPlayed } = useReadingStats();
 
   const loadStory = useCallback(async () => {
@@ -306,10 +305,9 @@ export function StoryReader({ storyId }: { storyId: string }) {
         forceFallback,
       });
       applyArtwork(result);
-      if (result.posterUrl || result.coverUrl) void refreshLibrary();
       return result;
     },
-    [applyArtwork, refreshLibrary, story]
+    [applyArtwork, story]
   );
 
   useEffect(() => {
@@ -401,6 +399,11 @@ export function StoryReader({ storyId }: { storyId: string }) {
         started.catch((error: unknown) => {
           const message = error instanceof Error ? error.message : String(error);
           if (next.paused && /interrupted by a call to pause/i.test(message)) return;
+          // iOS drops the tap once narration took a while to make; the audio is ready, so the next tap plays it.
+          if (error instanceof DOMException && error.name === "NotAllowedError") {
+            setPlaying(false);
+            return;
+          }
           setAudioError(playbackErrorMessage(error, copy.voiceFailed));
           setPlaying(false);
         });
@@ -456,15 +459,17 @@ export function StoryReader({ storyId }: { storyId: string }) {
   }
 
   async function onDownloadKeepsake() {
-    const current = poster.posterUrl
-      ? poster
-      : await requestArtwork("download");
-    const url = current?.posterUrl;
-    if (!url) throw new Error(posterCopy.couldNotDownload);
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(posterCopy.couldNotDownload);
-    const blob = await response.blob();
-    downloadPosterPng(blob, title);
+    setDownloadError("");
+    try {
+      const current = poster.posterUrl ? poster : await requestArtwork("download");
+      const url = current?.posterUrl;
+      if (!url) throw new Error(posterCopy.couldNotDownload);
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(posterCopy.couldNotDownload);
+      downloadPosterPng(await response.blob(), title);
+    } catch (error: unknown) {
+      setDownloadError(getErrorMessage(error, posterCopy.couldNotDownload));
+    }
   }
 
   const title = story?.title?.trim() || (loading ? copy.opening : copy.story);
@@ -558,11 +563,16 @@ export function StoryReader({ storyId }: { storyId: string }) {
           <button
             type="button"
             className="savePoster"
-            onClick={() => void onDownloadKeepsake().catch(() => {})}
+            onClick={() => void onDownloadKeepsake()}
             disabled={!story || poster.status === "generating" || poster.status === "pending"}
           >
             {posterCopy.save}
           </button>
+          {downloadError ? (
+            <p className="listenStatus listenStatus--error" role="alert">
+              {downloadError}
+            </p>
+          ) : null}
           <StoryArtwork
             kind="keepsake"
             title={title}
@@ -787,7 +797,7 @@ export function StoryReader({ storyId }: { storyId: string }) {
           <button
             type="button"
             className="sheetAction"
-            onClick={() => void onDownloadKeepsake().catch(() => {})}
+            onClick={() => void onDownloadKeepsake()}
             disabled={!story || poster.status === "generating"}
           >
             {posterCopy.save}

@@ -2,6 +2,7 @@ import { findOwnedStory } from "@/lib/auth/ownedStory";
 import { jsonNoStore, requireUser } from "@/lib/auth/requireUser";
 import { getErrorMessage } from "@/lib/errors";
 import { isSafeStoryId } from "@/lib/stories/storyIds";
+import { storyForClient } from "@/lib/stories/storyForClient";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,18 +22,7 @@ export async function GET(_req: Request, { params }: Params) {
     if (!story) {
       return jsonNoStore({ error: "Story not found." }, 404);
     }
-    return jsonNoStore({
-      story: {
-        ...story,
-        createdAt: story.createdAt.toISOString(),
-        posterUrl:
-          story.posterUrl?.trim() ||
-          (story.posterFilename ? `/api/posters/${encodeURIComponent(story.posterFilename)}` : null),
-        audioUrl:
-          story.audioUrl?.trim() ||
-          (story.audioFilename ? `/api/audio/${encodeURIComponent(story.audioFilename)}` : null),
-      },
-    });
+    return jsonNoStore({ story: storyForClient(story) });
   } catch (error: unknown) {
     return jsonNoStore({ error: getErrorMessage(error, "Could not load that story.") }, 500);
   }

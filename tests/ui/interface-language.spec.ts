@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
 
-const outDir = "/opt/cursor/artifacts/screenshots";
+const outDir = process.env.UI_SCREENSHOT_DIR || "/opt/cursor/artifacts/screenshots";
 
 const stories = [
   { id: "story-grandpa", name: "Grandpa", description: "Gentle and reassuring.", languages: ["en"], group: "story", kind: "default", status: "ready", selectable: true, isDefault: true },

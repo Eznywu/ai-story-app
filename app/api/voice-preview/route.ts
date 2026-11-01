@@ -66,34 +66,31 @@ export async function GET(req: Request) {
     selectable: true,
     narrator,
   };
-  const probe = planVoicePreview({ ...base, cached: false });
-  const cacheKey = cacheKeyOf(probe);
+  const plan = planVoicePreview({ ...base, cached: false });
+  const cacheKey = cacheKeyOf(plan);
   const existing = cacheKey
     ? await prisma.narrationPreview.findUnique({ where: { cacheKey } }).catch(() => null)
     : null;
-  const plan = planVoicePreview({ ...base, cached: Boolean(existing?.filename || existing?.storageUrl) });
-  if (plan.action === "forbidden") return NextResponse.json({ error: plan.error }, { status: plan.status });
-  if (plan.action === "library") return NextResponse.redirect(plan.url, 302);
-  if (plan.action === "cache" && existing) {
+  // Only real provider clips are reused. A missing file falls through to a fresh plan, never to the mock clip.
+  if (existing?.source === "generated") {
     const bytes = await readPrivateMedia({ folder: "voices", filename: existing.filename, storageUrl: existing.storageUrl });
     if (bytes) return audioResponse(bytes, existing.source, "hit");
   }
+  if (plan.action === "forbidden") return NextResponse.json({ error: plan.error }, { status: plan.status });
+  if (plan.action === "library") return NextResponse.redirect(plan.url, 302);
   if (plan.action === "generate") {
     const modelId = resolveTtsModelId();
     const capability = getModelCapability(modelId);
     const settings = settingsForSelectedModel(capability, language, undefined, activeTtsConfig().id);
     const request = buildElevenSpeechRequest({ text: plan.script, modelId, language, voiceSettings: settings });
     const audio = await speakWithElevenRequest(plan.providerVoiceId, request);
-    await rememberPreview(plan.cacheKey, decision.appVoiceId, decision.ownerId, language, modelId, personal?.voiceVersion ?? 1, "generated", audio);
+    await rememberPreview(plan.cacheKey, decision.appVoiceId, decision.ownerId, language, modelId, personal?.voiceVersion ?? 1, audio);
     return audioResponse(audio, "generated", "miss");
   }
-  const mock = mockNarrationMp3Buffer();
-  if (plan.action === "mock") {
-    await rememberPreview(plan.cacheKey, decision.appVoiceId, decision.ownerId, language, "mock", personal?.voiceVersion ?? 1, "mock", mock);
-  }
-  return audioResponse(mock, "mock", existing ? "hit" : "miss");
+  return audioResponse(mockNarrationMp3Buffer(), "mock", "miss");
 }
 
+/** Caches a paid preview so replay does not call the provider again. Not cached if the file could not be saved. */
 async function rememberPreview(
   cacheKey: string,
   voiceAppId: string,
@@ -101,32 +98,27 @@ async function rememberPreview(
   language: string,
   modelId: string,
   voiceVersion: number,
-  source: string,
   audio: Buffer
 ) {
-  const filename = `voice_preview_${cacheKey.slice(0, 24)}.mp3`;
-  const saved = await saveMediaBytes({
-    folder: "voices",
-    filename,
-    body: audio,
-    contentType: "audio/mpeg",
-    access: "private",
-  }).catch(() => null);
-  await prisma.narrationPreview
-    .upsert({
+  try {
+    const saved = await saveMediaBytes({
+      folder: "voices",
+      filename: `voice_preview_${cacheKey.slice(0, 24)}.mp3`,
+      body: audio,
+      contentType: "audio/mpeg",
+      access: "private",
+    });
+    const stored = {
+      source: "generated",
+      filename: saved.filename,
+      storageUrl: saved.url.startsWith("http") ? saved.url : null,
+    };
+    await prisma.narrationPreview.upsert({
       where: { cacheKey },
-      create: {
-        cacheKey,
-        voiceAppId,
-        ownerUserId,
-        language,
-        modelId,
-        voiceVersion,
-        source,
-        filename: saved?.filename ?? filename,
-        storageUrl: saved && saved.url.startsWith("http") ? saved.url : null,
-      },
-      update: { source, filename: saved?.filename ?? filename },
-    })
-    .catch(() => {});
+      create: { cacheKey, voiceAppId, ownerUserId, language, modelId, voiceVersion, ...stored },
+      update: stored,
+    });
+  } catch (error) {
+    console.warn("[voice-preview] preview not cached", error instanceof Error ? error.message : error);
+  }
 }

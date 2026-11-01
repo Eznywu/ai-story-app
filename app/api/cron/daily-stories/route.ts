@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { authorizeCron } from "@/lib/auth/cron";
 import { captureException } from "@/lib/monitoring";
 import { getErrorMessage } from "@/lib/errors";
 import { runDailyAutomatedStories } from "@/lib/stories/dailyAutomatedStories";
@@ -6,14 +7,6 @@ import { runDailyAutomatedStories } from "@/lib/stories/dailyAutomatedStories";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
-
-function authorizeCron(req: Request): boolean {
-  const secret = process.env.CRON_SECRET?.trim();
-  if (!secret) return false;
-  const bearer = req.headers.get("authorization");
-  if (bearer === `Bearer ${secret}`) return true;
-  return req.headers.get("x-cron-secret") === secret;
-}
 
 async function handle() {
   if (!process.env.OPENAI_API_KEY) {
