@@ -5451,3 +5451,137 @@ h1.listenTitle,
   object-fit: cover;
 }
 
+.appChromeBar__brandGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.appChromeBar__language {
+  flex: none;
+  margin-inline-start: auto;
+}
+
+.languageButton {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: 1px solid #39435c;
+  background: #1b243b;
+  color: #d6be91;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.languageButton__icon {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.languageButton[aria-expanded="true"] {
+  background: #25314c;
+  box-shadow: inset 0 0 0 2px #b9aedc;
+}
+
+.languageSheet {
+  display: grid;
+  gap: 8px;
+  padding-bottom: 8px;
+}
+
+.languageOption {
+  min-height: 44px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid #39435c;
+  background: #1b243b;
+  color: #f4f1eb;
+  font-size: 1.05rem;
+  text-align: start;
+  cursor: pointer;
+}
+
+.languageOption__name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.languageOption--current {
+  background: rgba(185, 174, 220, 0.28);
+  border-color: #b9aedc;
+}
+
+.languageOption__check {
+  color: #d6be91;
+  font-weight: 700;
+}
+
+.quietSheet--language .quietSheet__panel {
+  background: #1b243b;
+  color: #f4f1eb;
+}
+
+.quietSheet .languageOption:focus-visible,
+.languageButton:focus-visible {
+  outline: 2px solid #b9aedc;
+  outline-offset: 2px;
+}
+
+.homeTabBar__inner--four .homeTabBar__btn {
+  container-type: normal;
+  min-height: 64px;
+}
+
+.homeTabBar__label,
+.homeTabBar__inner--four .homeTabBar__label {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.15;
+}
+
+.createRow__meta {
+  unicode-bidi: isolate;
+}
+
+.homeScreen__title,
+.profilePanel__title,
+.createScreen__title,
+.storyShelf__title,
+.title,
+.homeScreen__sub,
+.profilePanel__lede,
+.createScreen__subtitle {
+  overflow-wrap: anywhere;
+}
+
+[dir="rtl"] .dirFlip,
+[dir="rtl"] .createRow__chevron,
+[dir="rtl"] .listenBar__chevron,
+[dir="rtl"] .listenScript__chevron {
+  transform: scaleX(-1);
+}
+
+[dir="rtl"] .listenScript__chevron--down {
+  transform: none;
+}
+

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "@/app/page.css";
-import { AppChromeBar } from "@/app/components/AppChromeBar";
-import { BackButton } from "@/app/components/BackButton";
+import { LegalIntro } from "@/app/components/LegalIntro";
 
 export const metadata: Metadata = {
   title: "Terms — Happy Horse",
@@ -9,23 +8,12 @@ export const metadata: Metadata = {
     "Terms of use for Happy Horse, including membership, AI features, and third-party providers.",
 };
 
-const LAST_UPDATED = "April 2, 2026";
-
 export default function TermsPage() {
   return (
     <main className="pageRoot legalPage">
       <div className="overlay">
         <div className="container legalDoc">
-      <AppChromeBar />
-      <div className="legalDoc__back">
-        <BackButton className="button">← Back</BackButton>
-      </div>
-      <h1>
-        Terms of Use
-      </h1>
-      <p className="legalDoc__meta">
-        Last updated: {LAST_UPDATED}
-      </p>
+      <LegalIntro kind="terms" year={2026} month={4} day={2} />
 
       <p style={{ marginTop: "1.25rem" }}>
         These Terms of Use (“Terms”) govern your use of <strong>Happy Horse</strong> (the “App”) and related online

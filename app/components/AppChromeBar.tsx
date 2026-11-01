@@ -1,14 +1,18 @@
 "use client";
 
 import { BrandMark } from "@/app/components/BrandMark";
+import { LanguageSwitcher } from "@/app/components/LanguageSwitcher";
 import { BRAND_NAME } from "@/lib/brand";
 
-/** Modest brand mark inside the app. Settings live under Profile. */
+/** Modest brand mark inside the app. Language sits at the inline end. */
 export function AppChromeBar() {
   return (
     <div className="appChromeBar appChromeBar--brand">
-      <BrandMark variant="onDark" className="appChromeBar__mark" label={null} />
-      <span className="appChromeBar__brand">{BRAND_NAME}</span>
+      <div className="appChromeBar__brandGroup">
+        <BrandMark variant="onDark" className="appChromeBar__mark" label={null} />
+        <span className="appChromeBar__brand">{BRAND_NAME}</span>
+      </div>
+      <LanguageSwitcher className="appChromeBar__language" />
     </div>
   );
 }

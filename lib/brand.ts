@@ -29,4 +29,4 @@ export const BRAND_UI = {
 } as const;
 
 export const BRAND_FONT_STACK =
-  'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Hiragino Sans CNS", "Noto Sans TC", "Noto Sans CJK TC", "Microsoft JhengHei", sans-serif';
+  'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "PingFang SC", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans TC", "Noto Sans SC", "Noto Sans JP", "Noto Sans CJK TC", "Noto Sans CJK SC", "Noto Sans CJK JP", "Microsoft JhengHei", "Microsoft YaHei", "Yu Gothic UI", "Meiryo", "Nirmala UI", "Noto Sans Devanagari", "Noto Naskh Arabic", "Noto Sans Arabic", "Geeza Pro", sans-serif';

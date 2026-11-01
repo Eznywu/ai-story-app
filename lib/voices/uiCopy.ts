@@ -1,154 +1,29 @@
+import { getMessages } from "@/lib/i18n/catalog";
+import { fill } from "@/lib/i18n/locales";
 import { CONSENT_TEXT, CONSENT_TEXT_VERSION } from "./consent";
 import { READING_PASSAGE } from "./passages";
 import { normalizeAppLanguage, type AppLanguage } from "./language";
 
+/**
+ * Story-language copy for narration consent, the reading passage, and the
+ * en / zh-Hant voice strings covered by tests. Screen chrome reads the same
+ * catalog through the interface locale, which can differ from story language.
+ */
 export function voiceCopy(language: unknown) {
   const lang: AppLanguage = normalizeAppLanguage(language);
-  const zh = lang === "zh-Hant";
+  const voice = getMessages(lang).voice;
   return {
     lang,
     consentVersion: CONSENT_TEXT_VERSION,
     consent: CONSENT_TEXT[lang],
     passage: READING_PASSAGE[lang],
-    storyVoices: zh ? "故事聲音" : "Story voices",
-    myVoices: zh ? "我的聲音" : "My voices",
-    add: zh ? "加入我的聲音" : "Add my voice",
-    language: zh ? "語言" : "Language",
-    english: "English",
-    chinese: "中文",
-    preview: zh ? "試聽" : "Preview",
-    previewStop: zh ? "停止" : "Stop",
-    selected: zh ? "已選擇" : "Selected",
-    pending: zh ? "還在確認，暫時不能選" : "Waiting for verification. Not ready to select.",
-    signInTitle: zh ? "個人聲音需要登入" : "A personal voice needs sign-in",
-    signInBody: zh
-      ? "故事聲音每個人都能用。錄下自己的聲音需要獨立的帳號，不會存在共用的訪客身份上。這個環境若尚未開啟登入，請先請家人帳號的管理者打開電子郵件登入。"
-      : "Story voices work for everyone. Recording your own voice needs its own signed-in account. It is never saved on the shared guest. If sign-in is still paused here, ask the account owner to turn on email sign-in.",
-    signIn: zh ? "了解登入" : "About sign-in",
-    consentTitle: zh ? "先同意，再錄音" : "Agree, then record",
-    agree: zh ? "我同意" : "I agree",
-    record: zh ? "開始錄音" : "Start recording",
-    stop: zh ? "停止" : "Stop",
-    listen: zh ? "聽一次" : "Listen",
-    discard: zh ? "捨棄" : "Discard",
-    again: zh ? "重錄" : "Record again",
-    useTake: zh ? "用這一段建立聲音" : "Create a voice from this take",
-    nameLabel: zh ? "這個聲音的名字" : "Name this voice",
-    save: zh ? "儲存並選用" : "Save and use",
-    target: zh ? "目標是 60 到 120 秒。請照著念。" : "Aim for 60 to 120 seconds. Read the passage aloud.",
-    micDenied: zh
-      ? "麥克風被拒絕了。iPhone Safari：設定 → Safari → 麥克風 → 允許。Chrome：網址列的鎖頭 → 網站設定 → 麥克風 → 允許。若是安裝的 App：iPhone 設定 → Happy Horse → 麥克風。改完後再試一次。"
-      : "The microphone is blocked. On iPhone Safari: Settings → Safari → Microphone → Allow. In Chrome: the lock icon → Site settings → Microphone → Allow. In the Happy Horse app: iPhone Settings → Happy Horse → Microphone. Then try again.",
-    tooQuiet: zh ? "幾乎聽不到說話。靠近一點，再念一次。" : "We couldn't hear enough talking. Move a little closer and read it again.",
-    clipped: zh ? "聲音太大了。手機拿遠一點，再試一次。" : "That was too loud. Hold the phone a little farther away and try again.",
-    short: zh ? "有一點短。大約一分鐘就很好。" : "A little short. About one minute is a good length.",
-    play: zh ? "播放" : "Play",
-    pause: zh ? "暫停" : "Pause",
-    progress: zh ? "播放進度" : "Playback progress",
-    interrupted: zh ? "錄音中斷了。可以重錄。" : "The recording was interrupted. You can record again.",
-    failed: zh ? "沒有成功。可以再試一次。" : "That did not work. You can try again.",
-    verification: zh ? "聲音已建立，但還在確認，所以現在不能選用。" : "The voice was created, but it is waiting for verification, so it cannot be selected yet.",
-    delete: zh ? "刪除" : "Delete",
-    rename: zh ? "改名" : "Rename",
-    deleteAudio: zh ? "一併刪除用這個聲音做的錄音，故事文字會留下" : "Also delete recordings made with this voice. The story text stays.",
-    emptyMine: zh ? "還沒有自己的聲音。" : "No personal voices yet.",
-    incompatible: zh ? "這個聲音是用另一種語言錄的。它會留在選取狀態。你可以改選下面的故事聲音。" : "This voice was recorded in another language. It stays selected. You can choose a story voice below.",
-    close: zh ? "關閉" : "Close",
-    createTitle: zh ? "寫一個故事" : "Create a story",
-    createSubtitle: zh ? "睡前的一小段魔法。" : "A little magic before bedtime.",
-    forChild: zh ? "給誰聽" : "For",
-    chooseChild: zh ? "選擇孩子" : "Choose a child",
-    tonight: zh ? "今晚的主題" : "Tonight's theme",
-    storyLength: zh ? "故事長度" : "Story length",
-    lengthShort: zh ? "短" : "Short",
-    lengthMedium: zh ? "中" : "Medium",
-    lengthLong: zh ? "長" : "Long",
-    moreThemes: zh ? "更多主題" : "More themes",
-    fewerThemes: zh ? "收合主題" : "Fewer themes",
-    personalTouch: zh ? "加一點個人味道" : "Add a personal touch",
-    hideTouch: zh ? "收起個人味道" : "Hide personal touch",
-    guidance: zh ? "想補充的話" : "Optional guidance",
-    guidancePlaceholder: zh ? "不要怕的東西、喜歡的動物…" : "A fear to skip, a favorite animal…",
-    createStory: zh ? "開始寫故事" : "Create story",
-    writing: zh ? "正在寫故事" : "Writing your story",
-    saving: zh ? "正在儲存" : "Saving your story",
-    readBy: zh ? "誰來念" : "Read by",
-    loadingVoices: zh ? "正在載入聲音…" : "Loading voices…",
-    voicesUnavailable: zh ? "聲音暫時載入不了" : "Voices unavailable",
-    retryVoices: zh ? "再試一次" : "Retry voices",
-    narrationLine: zh ? "用這個語言念故事" : "Narration language",
-    whoTitle: zh ? "這是給誰的故事？" : "Who is this for?",
-    childName: zh ? "名字" : "Name",
-    age: zh ? "年齡" : "Age",
-    childKind: zh ? "孩子" : "Child",
-    any: zh ? "不指定" : "Any",
-    girl: zh ? "女孩" : "Girl",
-    boy: zh ? "男孩" : "Boy",
-    other: zh ? "其他" : "Other",
-    saved: zh ? "已儲存" : "Saved",
-    addKid: zh ? "加孩子" : "Kid",
-    addCharacter: zh ? "加角色" : "Character",
-    pendingAudition: zh ? "尚未試聽，先不要當主要聲音" : "Listening review still open",
-    nonNative: zh ? "這不是台灣國語，試聽還沒完成" : "Not a native voice for this language yet",
-    allowMic: zh ? "允許麥克風" : "Allow microphone",
-    permissionTitle: zh ? "接下來會問麥克風" : "Next, the microphone",
-    permissionBody: zh
-      ? "若出現詢問，請選允許。我們只用它來錄這一段。"
-      : "If a prompt appears, choose Allow. We only use it for this recording.",
-    creating: zh ? "正在建立聲音…" : "Creating your voice…",
-    previewTitle: zh ? "聽一段示範" : "Hear a short preview",
-    previewBody: zh ? "這是用你的聲音念的一小句。再聽一次不會重新收費。" : "A short line in this voice. Playing it again does not make a new recording.",
-    hearPreview: zh ? "播放示範" : "Play preview",
-    continueName: zh ? "下一步，取名字" : "Next, name it",
-    renameTitle: zh ? "改名字" : "Rename",
-    saveName: zh ? "儲存名字" : "Save name",
-    deleteTitle: zh ? "刪除這個聲音？" : "Delete this voice?",
-    deleteBody: zh
-      ? "刪掉之後就不能再用它念新的故事。已經寫好的故事文字會留下。以前用這個聲音做好的錄音還在，除非你勾選下面。"
-      : "After this, the voice cannot make a new recording. Story text stays. Recordings already made with this voice stay too, unless you tick the box below.",
-    deleteAlso: zh ? "也刪掉用這個聲音做好的錄音" : "Also delete recordings made with this voice",
-    confirmDelete: zh ? "刪除聲音" : "Delete voice",
-    cancel: zh ? "取消" : "Cancel",
-    providerRetry: zh ? "建立失敗了。可以再試一次，不會多做一個聲音。" : "That did not go through. Try again. It will not create a second voice.",
-    tryAgain: zh ? "再試一次" : "Try again",
-    genres: zh
-      ? {
-          Animals: "動物",
-          Adventure: "冒險",
-          Friendship: "友情",
-          Fantasy: "奇幻",
-          Family: "家庭",
-          Magic: "魔法",
-          Nature: "自然",
-          Space: "太空",
-          Underwater: "海底",
-          Holiday: "節日",
-          "Fairy Tale": "童話",
-          Mystery: "謎題",
-          Superhero: "超級英雄",
-          "Bedtime Classic": "經典睡前",
-        }
-      : {
-          Animals: "Animals",
-          Adventure: "Adventure",
-          Friendship: "Friendship",
-          Fantasy: "Fantasy",
-          Family: "Family",
-          Magic: "Magic",
-          Nature: "Nature",
-          Space: "Space",
-          Underwater: "Underwater",
-          Holiday: "Holiday",
-          "Fairy Tale": "Fairy Tale",
-          Mystery: "Mystery",
-          Superhero: "Superhero",
-          "Bedtime Classic": "Bedtime Classic",
-        },
+    ...voice,
   };
 }
 
 export function formatSwitchNotice(fromName: string, toName: string, language: unknown): string {
-  const zh = normalizeAppLanguage(language) === "zh-Hant";
-  if (zh) return `${fromName} 不會念中文。${toName} 可以，所以改選 ${toName}。`;
-  return `${fromName} doesn't read English. ${toName} can, so ${toName} is selected.`;
+  const lang = normalizeAppLanguage(language);
+  const voice = getMessages(lang).voice;
+  const template = lang === "zh-Hant" ? voice.switchNoticeZh : voice.switchNoticeEn;
+  return fill(template, { from: fromName, to: toName });
 }

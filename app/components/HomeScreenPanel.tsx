@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import { useInterfaceLocale } from "@/app/components/LocaleProvider";
 import type { StoryLibraryItem } from "@/app/hooks/useStoryLibrary";
+import { fill } from "@/lib/i18n/locales";
 import type { ReadingStatsState } from "@/lib/profiles/profilesTypes";
 
 type Props = {
@@ -34,12 +36,6 @@ function CoverThumb({ url }: { url: string | null }) {
   );
 }
 
-function formatClock(seconds: number) {
-  const whole = Math.max(0, Math.floor(seconds));
-  const minutes = Math.floor(whole / 60);
-  const remain = whole % 60;
-  return `${minutes}:${remain.toString().padStart(2, "0")}`;
-}
 
 function savedListen(id: string): { t: number; d: number } | null {
   if (typeof window === "undefined") return null;
@@ -64,6 +60,8 @@ export function HomeScreenPanel({
   onSeeAll,
   onQuickCreate,
 }: Props) {
+  const { messages, formatClock } = useInterfaceLocale();
+  const copy = messages.home;
   const sorted = useMemo(() => [...library].sort(byCreatedDesc), [library]);
   const featured =
     sorted.find((story) => story.id === stats?.lastStoryId) ?? sorted[0] ?? null;
@@ -74,18 +72,18 @@ export function HomeScreenPanel({
     <section className="homeScreen" aria-labelledby="home-screen-title">
       <header className="homeScreen__head">
         <h1 id="home-screen-title" className="homeScreen__title">
-          {featured ? "Pick up the story" : "Your first story"}
+          {featured ? copy.pickup : copy.first}
         </h1>
-        <p className="homeScreen__sub">A quiet place to listen again, or to begin.</p>
+        <p className="homeScreen__sub">{copy.sub}</p>
       </header>
 
-      {loadingLibrary && sorted.length === 0 ? <p className="homeScreen__note">Loading stories…</p> : null}
+      {loadingLibrary && sorted.length === 0 ? <p className="homeScreen__note">{copy.loading}</p> : null}
 
       {!loadingLibrary && !featured ? (
         <div className="homeEmpty">
-          <p>No stories yet. When you create one, it will wait here.</p>
+          <p>{copy.empty}</p>
           <button type="button" className="button buttonPrimary" onClick={onQuickCreate}>
-            Make your first story
+            {copy.makeFirst}
           </button>
         </div>
       ) : null}
@@ -95,15 +93,17 @@ export function HomeScreenPanel({
           <button type="button" className="homeFeature__main" onClick={() => onOpenStory(featured)}>
             <CoverThumb url={featured.coverUrl || featured.posterUrl || null} />
             <span className="homeFeature__text">
-              <span className="homeFeature__title">{featured.title?.trim() || "Untitled story"}</span>
+              <span className="homeFeature__title">{featured.title?.trim() || copy.untitled}</span>
               <span className="homeFeature__meta">
-                {featured.mainCharacterName?.trim() || "Your story"}
-                {progress ? ` · ${formatClock(progress.t)} of ${formatClock(progress.d)}` : ""}
+                {featured.mainCharacterName?.trim() || copy.yourStory}
+                {progress
+                  ? ` · ${fill(copy.progress, { current: formatClock(progress.t), total: formatClock(progress.d) })}`
+                  : ""}
               </span>
             </span>
           </button>
           <button type="button" className="button buttonPrimary homeFeature__action" onClick={() => onPlayStory(featured)}>
-            {progress ? "Continue" : "Listen again"}
+            {progress ? copy.continue : copy.listenAgain}
           </button>
         </article>
       ) : null}
@@ -111,17 +111,17 @@ export function HomeScreenPanel({
       {others.length > 0 ? (
         <section className="homeRecent" aria-labelledby="recent-stories-heading">
           <div className="homeRecent__head">
-            <h2 id="recent-stories-heading">Recent stories</h2>
+            <h2 id="recent-stories-heading">{copy.recent}</h2>
             <button type="button" className="homeRecent__all" onClick={onSeeAll}>
-              See all
+              {copy.seeAll}
             </button>
           </div>
           <ul className="homeRecent__list">
             {others.map((story) => (
               <li key={story.id}>
                 <button type="button" className="homeRecent__row" onClick={() => onOpenStory(story)}>
-                  <span className="homeRecent__title">{story.title?.trim() || "Untitled story"}</span>
-                  <span className="homeRecent__meta">{story.mainCharacterName?.trim() || "Story"}</span>
+                  <span className="homeRecent__title">{story.title?.trim() || copy.untitled}</span>
+                  <span className="homeRecent__meta">{story.mainCharacterName?.trim() || copy.story}</span>
                 </button>
               </li>
             ))}
@@ -131,14 +131,14 @@ export function HomeScreenPanel({
         <div className="homeRecent__head">
           <span />
           <button type="button" className="homeRecent__all" onClick={onSeeAll}>
-            See all
+            {copy.seeAll}
           </button>
         </div>
       ) : null}
 
       <button type="button" className="homeCreate" onClick={onQuickCreate}>
-        <span>Create a new story</span>
-        <span aria-hidden>›</span>
+        <span>{copy.createNew}</span>
+        <span className="dirFlip" aria-hidden>›</span>
       </button>
     </section>
   );

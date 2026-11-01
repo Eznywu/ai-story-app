@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useInterfaceLocale } from "@/app/components/LocaleProvider";
 
 export type HomeTabId = "home" | "create" | "library" | "profile";
 
@@ -73,16 +74,23 @@ function IconProfile({ className }: { className?: string }) {
   );
 }
 
-const TABS: { id: HomeTabId; label: string; Icon: React.FC<{ className?: string }> }[] = [
-  { id: "home", label: "Home", Icon: IconHome },
-  { id: "create", label: "Create", Icon: IconCreate },
-  { id: "library", label: "My Stories", Icon: IconLibrary },
-  { id: "profile", label: "Profile", Icon: IconProfile },
+const TABS: { id: HomeTabId; Icon: React.FC<{ className?: string }> }[] = [
+  { id: "home", Icon: IconHome },
+  { id: "create", Icon: IconCreate },
+  { id: "library", Icon: IconLibrary },
+  { id: "profile", Icon: IconProfile },
 ];
 
 export function HomeTabBar({ active, onChange }: Props) {
+  const { messages } = useInterfaceLocale();
+  const labels = {
+    home: messages.nav.home,
+    create: messages.nav.create,
+    library: messages.nav.library,
+    profile: messages.nav.profile,
+  };
   return (
-    <nav className="homeTabBar" aria-label="Main navigation">
+    <nav className="homeTabBar" aria-label={messages.nav.label}>
       <div className="homeTabBar__inner homeTabBar__inner--four">
         {TABS.map((tab) => {
           const Icon = tab.Icon;
@@ -98,7 +106,7 @@ export function HomeTabBar({ active, onChange }: Props) {
               <span className="homeTabBar__iconWrap">
                 <Icon className="homeTabBar__icon" />
               </span>
-              <span className="homeTabBar__label">{tab.label}</span>
+              <span className="homeTabBar__label">{labels[tab.id]}</span>
             </button>
           );
         })}

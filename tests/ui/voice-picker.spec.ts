@@ -54,8 +54,12 @@ async function installRoutes(page: Page, mine: unknown[] = []) {
 }
 
 async function openCreate(page: Page, language: "en" | "zh-Hant", name: string) {
+  await page.context().addCookies([
+    { name: "hh_ui_locale", value: language, url: "http://127.0.0.1:3456" },
+  ]);
   await page.addInitScript(
     ({ language, name }) => {
+      localStorage.setItem("hh_ui_locale", language);
       localStorage.setItem(
         "emrsy.onboarding.v1.user-test",
         JSON.stringify({ completed: true, selectedIntent: null, consentedToVoice: false })

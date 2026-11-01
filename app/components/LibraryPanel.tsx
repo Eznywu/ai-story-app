@@ -4,7 +4,9 @@ import React, { useMemo, useState } from "react";
 import Image from "next/image";
 import type { StoryLibraryItem } from "@/app/hooks/useStoryLibrary";
 import { AppStateCard } from "@/app/components/AppStateCard";
+import { useInterfaceLocale } from "@/app/components/LocaleProvider";
 import { QuietSheet } from "@/app/components/QuietSheet";
+import { fill } from "@/lib/i18n/locales";
 
 type Props = {
   library: StoryLibraryItem[];
@@ -22,19 +24,15 @@ type Props = {
 
 type LibraryFilter = "all" | "stories" | "posters" | "audio";
 
-function formatLengthLabel(length: string): string {
-  const value = length.toLowerCase();
-  if (value === "short" || value === "medium" || value === "long") {
-    return value.charAt(0).toUpperCase() + value.slice(1);
-  }
-  return length;
-}
-
-function libraryMetaLine(story: StoryLibraryItem): string {
+function libraryMetaLine(
+  story: StoryLibraryItem,
+  labels: { short: string; medium: string; long: string; audio: string; keepsake: string }
+): string {
   const author = story.mainCharacterName?.trim() || "";
   const genre = story.genre?.trim() || "";
-  const len = story.length ? formatLengthLabel(String(story.length)) : "";
-  const media = [story.audioUrl ? "Audio" : "", story.posterUrl ? "Keepsake" : ""].filter(Boolean);
+  const value = String(story.length || "").toLowerCase();
+  const len = value === "short" ? labels.short : value === "medium" ? labels.medium : value === "long" ? labels.long : story.length ? String(story.length) : "";
+  const media = [story.audioUrl ? labels.audio : "", story.posterUrl ? labels.keepsake : ""].filter(Boolean);
   return [author, genre, len, ...media].filter(Boolean).slice(0, 3).join(" · ");
 }
 
@@ -49,8 +47,11 @@ export function LibraryPanel({
   onDismissLibraryError,
   onDeleteStory,
   onCreatePoster,
-  panelTitle = "My Stories",
+  panelTitle,
 }: Props) {
+  const { messages } = useInterfaceLocale();
+  const copy = messages.library;
+  const title = panelTitle || copy.title;
   const [filter, setFilter] = useState<LibraryFilter>("all");
   const [menuItem, setMenuItem] = useState<StoryLibraryItem | null>(null);
   const [pendingDelete, setPendingDelete] = useState<StoryLibraryItem | null>(null);
@@ -64,24 +65,24 @@ export function LibraryPanel({
   }, [filter, library]);
 
   const filters = [
-    ["all", "All"],
-    ["stories", "Stories"],
-    ["audio", "Audio"],
-    ["posters", "Keepsakes"],
+    ["all", copy.all],
+    ["stories", copy.stories],
+    ["audio", copy.audio],
+    ["posters", copy.keepsakes],
   ] as const;
 
   return (
     <section className="storyShelf" aria-labelledby="library-heading">
       <div className="storyShelf__head">
         <h2 id="library-heading" className="storyShelf__title">
-          {panelTitle}
+          {title}
         </h2>
         <button className="profileGroup__add" onClick={onRefresh} disabled={loadingLibrary} type="button">
-          {loadingLibrary ? "Refreshing…" : "Refresh"}
+          {loadingLibrary ? copy.refreshing : copy.refresh}
         </button>
       </div>
 
-      <div className="libraryFilters" role="tablist" aria-label="Library filter">
+      <div className="libraryFilters" role="tablist" aria-label={copy.filterLabel}>
         {filters.map(([id, label]) => (
           <button
             key={id}
@@ -101,10 +102,10 @@ export function LibraryPanel({
           <span className="panelErrorText">{libraryError}</span>
           <div className="panelErrorActions">
             <button className="button buttonPrimary" type="button" onClick={onRefresh} disabled={loadingLibrary}>
-              Try again
+              {copy.tryAgain}
             </button>
             <button className="button" type="button" onClick={onDismissLibraryError}>
-              Dismiss
+              {copy.dismiss}
             </button>
           </div>
         </div>
@@ -112,13 +113,13 @@ export function LibraryPanel({
 
       {!libraryError && filteredLibrary.length === 0 && !loadingLibrary ? (
         <AppStateCard
-          title={filter === "audio" ? "No narration yet" : filter === "posters" ? "No keepsakes yet" : "Nothing here yet"}
+          title={filter === "audio" ? copy.noNarration : filter === "posters" ? copy.noKeepsakes : copy.nothing}
           body={
             filter === "audio"
-              ? "Prepare narration on a story and the recording will show up with it."
+              ? copy.noNarrationBody
               : filter === "posters"
-                ? "Cover artwork stays with its story. You can make a keepsake from the story page."
-                : "Saved stories will gather here, with their audio and artwork."
+                ? copy.noKeepsakesBody
+                : copy.nothingBody
           }
         />
       ) : null}
@@ -126,7 +127,7 @@ export function LibraryPanel({
       {filteredLibrary.length > 0 ? (
         <div className="storyGrid">
           {filteredLibrary.map((story) => {
-            const title = story.title?.trim() || "Untitled story";
+            const title = story.title?.trim() || copy.untitled;
             return (
               <article key={story.id} className="storyCard">
                 <button type="button" className="storyCard__open" onClick={() => onLoadStory(story)}>
@@ -138,12 +139,20 @@ export function LibraryPanel({
                     )}
                   </span>
                   <span className="storyCard__title">{title}</span>
-                  <span className="storyCard__meta">{libraryMetaLine(story)}</span>
+                  <span className="storyCard__meta">
+                    {libraryMetaLine(story, {
+                      short: messages.voice.lengthShort,
+                      medium: messages.voice.lengthMedium,
+                      long: messages.voice.lengthLong,
+                      audio: copy.audio,
+                      keepsake: copy.keepsake,
+                    })}
+                  </span>
                 </button>
                 <button
                   type="button"
                   className="storyCard__menu"
-                  aria-label={`Actions for ${title}`}
+                  aria-label={fill(copy.actions, { title })}
                   aria-haspopup="dialog"
                   onClick={() => setMenuItem(story)}
                 >
@@ -158,12 +167,12 @@ export function LibraryPanel({
       {loadingLibrary && library.length === 0 ? (
         <div className="emptyState loadingBlock">
           <span className="spinner spinnerSmall" aria-hidden />
-          <span>Loading stories…</span>
+          <span>{copy.loading}</span>
         </div>
       ) : null}
 
       {menuItem ? (
-        <QuietSheet title={menuItem.title?.trim() || "Story"} onClose={() => setMenuItem(null)}>
+        <QuietSheet title={menuItem.title?.trim() || copy.storyFallback} onClose={() => setMenuItem(null)} closeLabel={messages.common.close}>
           <button
             type="button"
             className="sheetAction"
@@ -174,7 +183,7 @@ export function LibraryPanel({
               onPlayStory(item);
             }}
           >
-            {menuItem.audioUrl ? "Listen" : "Prepare narration"}
+            {menuItem.audioUrl ? copy.listen : copy.prepare}
           </button>
           {menuItem.posterUrl ? (
             <button
@@ -185,7 +194,7 @@ export function LibraryPanel({
                 setMenuItem(null);
               }}
             >
-              View keepsake
+              {copy.viewKeepsake}
             </button>
           ) : onCreatePoster ? (
             <button
@@ -197,7 +206,7 @@ export function LibraryPanel({
                 onCreatePoster(item);
               }}
             >
-              Open story for a keepsake
+              {copy.openKeepsake}
             </button>
           ) : null}
           {onDeleteStory ? (
@@ -209,16 +218,16 @@ export function LibraryPanel({
                 setMenuItem(null);
               }}
             >
-              Delete story
+              {copy.deleteStory}
             </button>
           ) : null}
         </QuietSheet>
       ) : null}
 
       {pendingDelete ? (
-        <QuietSheet title="Delete this story?" onClose={() => setPendingDelete(null)}>
+        <QuietSheet title={copy.deleteTitle} closeLabel={messages.common.close} onClose={() => setPendingDelete(null)}>
           <p className="listenHint">
-            {pendingDelete.title?.trim() || "This story"} and its saved audio and artwork will be removed.
+            {fill(copy.deleteBody, { title: pendingDelete.title?.trim() || copy.thisStory })}
           </p>
           <button
             type="button"
@@ -229,19 +238,19 @@ export function LibraryPanel({
               onDeleteStory?.(item);
             }}
           >
-            Delete
+            {copy.remove}
           </button>
           <button type="button" className="sheetAction" onClick={() => setPendingDelete(null)}>
-            Keep it
+            {copy.keep}
           </button>
         </QuietSheet>
       ) : null}
 
       {keepsake?.posterUrl ? (
-        <QuietSheet title="Keepsake" onClose={() => setKeepsake(null)}>
+        <QuietSheet title={copy.keepsake} closeLabel={messages.common.close} onClose={() => setKeepsake(null)}>
           <div className="keepsakeView">
             <Image src={keepsake.posterUrl} alt="" width={640} height={800} unoptimized className="keepsakeView__img" />
-            <p className="listenHint">{keepsake.title?.trim() || "Story artwork"}</p>
+            <p className="listenHint">{keepsake.title?.trim() || copy.artwork}</p>
             <button
               type="button"
               className="sheetAction"
@@ -251,7 +260,7 @@ export function LibraryPanel({
                 onLoadStory(item);
               }}
             >
-              Open story
+              {copy.openStory}
             </button>
           </div>
         </QuietSheet>

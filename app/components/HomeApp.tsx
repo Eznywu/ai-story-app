@@ -31,21 +31,23 @@ import {
   type OnboardingIntent,
 } from "@/lib/profiles/localProfilesStorage";
 import { useAuthUser } from "@/app/components/RequireAuth";
+import { useInterfaceLocale } from "@/app/components/LocaleProvider";
+import { storyLanguageFromInterface } from "@/lib/i18n/locales";
 import { selectionAfterLanguageChange } from "@/lib/voices/decisions";
-import { formatSwitchNotice, voiceCopy } from "@/lib/voices/uiCopy";
+import { formatSwitchNotice } from "@/lib/voices/uiCopy";
 
 export type HomeUiMode = "responsive" | "mobile" | "desktop";
 
-function warmBanner(source: AppBannerSource): string {
+function warmBanner(source: AppBannerSource, banner: { story: string; save: string; tts: string; poster: string }): string {
   switch (source) {
     case "story":
-      return "We couldn't write the story. Your choices are still here.";
+      return banner.story;
     case "save":
-      return "We couldn't save the story. Your choices are still here.";
+      return banner.save;
     case "tts":
-      return "We couldn't prepare the narration. You can try again.";
+      return banner.tts;
     case "poster":
-      return "We couldn't make the cover. The story is still here.";
+      return banner.poster;
   }
 }
 
@@ -131,6 +133,9 @@ function saveCreateDraft(draft: CreateDraft) {
 export function HomeApp({ uiMode = "responsive" }: Props) {
   const router = useRouter();
   const { user, authEnabled } = useAuthUser();
+  const { locale, messages } = useInterfaceLocale();
+  const localeRef = useRef(locale);
+  localeRef.current = locale;
   const [age, setAge] = useState("6 months");
   const [language, setLanguage] = useState("zh-Hant");
   const [voiceNotice, setVoiceNotice] = useState("");
@@ -201,9 +206,13 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
     setShowOnboarding(false);
     setGateReady(true);
     const draft = loadCreateDraft();
+    if (draft?.language) setLanguage(draft.language);
+    else {
+      const mapped = storyLanguageFromInterface(localeRef.current);
+      if (mapped) setLanguage(mapped);
+    }
     if (draft) {
       if (draft.age) setAge(draft.age);
-      if (draft.language) setLanguage(draft.language);
       if (draft.mainCharacterName) setMainCharacterName(draft.mainCharacterName);
       if (draft.childGender) setChildGender(draft.childGender);
       if (draft.genre) setGenre(draft.genre);
@@ -226,10 +235,6 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
     const line = mainCharacterName.trim() ? `${mainCharacterName.trim()} · ${genre}` : null;
     setDraftSummary(line);
   }, [mainCharacterName, genre, setDraftSummary]);
-
-  useEffect(() => {
-    document.documentElement.lang = language.toLowerCase().startsWith("zh") ? "zh-Hant" : "en";
-  }, [language]);
 
   useEffect(() => {
     if (!gateReady) return;
@@ -590,14 +595,14 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
             <AppChromeBar />
             {activeTab === "library" ? (
               <header>
-                <div className="title">My Stories</div>
-                <div className="subtitle">Stories, narration, and keepsakes stay together.</div>
+                <div className="title">{messages.library.title}</div>
+                <div className="subtitle">{messages.library.subtitle}</div>
               </header>
             ) : null}
 
             {banner ? (
               <div className="errorBox" role="alert">
-                <p className="errorText">{warmBanner(banner.source)}</p>
+                <p className="errorText">{warmBanner(banner.source, messages.banner)}</p>
                 <div className="errorActions">
                   <button
                     className="button errorRetry"
@@ -605,7 +610,7 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
                     onClick={retryBanner}
                     disabled={bannerRetryBusy}
                   >
-                    Try again
+                    {messages.common.tryAgain}
                   </button>
                   <button
                     className="button errorDismiss"
@@ -613,7 +618,7 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
                     onClick={() => setBanner(null)}
                     disabled={bannerRetryBusy}
                   >
-                    Dismiss
+                    {messages.common.dismiss}
                   </button>
                 </div>
               </div>
@@ -656,7 +661,7 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
                 voicesError={voicesError}
                 isGenerating={isGenerating || isSaving}
                 submitLabel={
-                  isSaving ? voiceCopy(language).saving : isGenerating ? voiceCopy(language).writing : voiceCopy(language).createStory
+                  isSaving ? messages.voice.saving : isGenerating ? messages.voice.writing : messages.voice.createStory
                 }
                 onAgeChange={setAge}
                 onLanguageChange={onLanguagePick}
@@ -687,7 +692,7 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
                 loadingLibrary={loadingLibrary}
                 libraryError={libraryError}
                 playBusy={false}
-                panelTitle="My Stories"
+                panelTitle={messages.library.title}
                 onRefresh={() => void refreshLibrary()}
                 onDismissLibraryError={() => setLibraryError("")}
                 onLoadStory={(item) => openLibraryStory(item)}
@@ -712,9 +717,9 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
 
             {gateReady && !showWelcome ? (
               <footer className="legalFooter">
-                <a href="/legal/privacy">Privacy</a>
+                <a href="/legal/privacy">{messages.common.privacy}</a>
                 <span aria-hidden="true"> · </span>
-                <a href="/legal/terms">Terms</a>
+                <a href="/legal/terms">{messages.common.terms}</a>
               </footer>
             ) : null}
           </div>

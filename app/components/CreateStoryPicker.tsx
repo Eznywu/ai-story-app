@@ -6,8 +6,8 @@ import { AddMyVoiceFlow } from "@/app/components/AddMyVoiceFlow";
 import { HappyHorseCheck } from "@/app/components/HappyHorseCheck";
 import { QuietSheet } from "@/app/components/QuietSheet";
 import { StorySetupExtras } from "@/app/components/StorySetupExtras";
+import { useInterfaceLocale } from "@/app/components/LocaleProvider";
 import { voiceSummary } from "@/app/components/voiceLabel";
-import { voiceCopy } from "@/lib/voices/uiCopy";
 import { STORY_AGE_OPTIONS } from "@/lib/stories/storyAgeOptions";
 import { STORY_INPUT_MAX_CHARS } from "@/lib/types";
 import type { KidProfile, StoryCharacterProfile } from "@/lib/profiles/profilesTypes";
@@ -228,7 +228,9 @@ export function CreateStoryPicker(props: Props) {
   const [renameValue, setRenameValue] = useState("");
   const [deleteId, setDeleteId] = useState("");
   const [deleteAudio, setDeleteAudio] = useState(false);
-  const copy = voiceCopy(props.language);
+  const { messages } = useInterfaceLocale();
+  const copy = messages.voice;
+  const ageText = messages.ages[props.age as keyof typeof messages.ages] || props.age;
   const [themesOpen, setThemesOpen] = useState(!FEATURED.includes(props.genre));
   const [touchOpen, setTouchOpen] = useState(guidanceOpenByDefault);
 
@@ -261,14 +263,14 @@ export function CreateStoryPicker(props: Props) {
         className="createRow"
         onClick={() => setWhoOpen(true)}
         aria-haspopup="dialog"
-        aria-label={childName ? `${copy.forChild} ${childName}, ${props.age}` : copy.chooseChild}
+        aria-label={childName ? `${copy.forChild} ${childName}, ${ageText}` : copy.chooseChild}
       >
         <span className="createAvatar" aria-hidden>
           {initialOf(childName)}
         </span>
         <span className="createRow__text">
           <span className="createRow__title">{childName || copy.chooseChild}</span>
-          <span className="createRow__meta">{props.age}</span>
+          <span className="createRow__meta">{ageText}</span>
         </span>
         <IconChevron className="createRow__chevron" />
       </button>
@@ -426,7 +428,7 @@ export function CreateStoryPicker(props: Props) {
                 aria-pressed={props.age === age}
                 onClick={() => props.onAgeChange(age)}
               >
-                {age}
+                {messages.ages[age as keyof typeof messages.ages] || age}
               </button>
             ))}
           </div>
@@ -674,7 +676,8 @@ function VoiceGroup(props: {
   onRename?: (voice: VoiceItem) => void;
   onDelete?: (voice: VoiceItem) => void;
 }) {
-  const copy = voiceCopy(props.language);
+  const { messages } = useInterfaceLocale();
+  const copy = messages.voice;
   return (
     <section className="voiceGroup">
       <h3 className="createScreen__label">{props.title}</h3>

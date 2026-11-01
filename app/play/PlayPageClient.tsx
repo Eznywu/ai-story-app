@@ -50,7 +50,7 @@ export function PlayPageClient() {
             </div>
           )}
           <div style={{ marginTop: 16 }}>
-            <BackButton className="button">← Back</BackButton>
+            <BackButton className="button" />
           </div>
         </div>
       </div>
