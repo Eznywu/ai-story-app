@@ -32,6 +32,7 @@ import {
 } from "@/lib/profiles/localProfilesStorage";
 import { useAuthUser } from "@/app/components/RequireAuth";
 import { useInterfaceLocale } from "@/app/components/LocaleProvider";
+import { useDocumentTheme } from "@/app/hooks/useDocumentTheme";
 import { storyLanguageFromInterface } from "@/lib/i18n/locales";
 import { selectionAfterLanguageChange } from "@/lib/voices/decisions";
 import { formatSwitchNotice } from "@/lib/voices/uiCopy";
@@ -182,6 +183,7 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
     voicesError,
     fetchVoices,
     personalVoices,
+    voiceLimit,
     chooseVoice,
     registerClonedVoice,
   } = useTts(language);
@@ -189,6 +191,7 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
   const { profiles: kids, add: addKid } = useKidProfiles();
   const { characters, add: addCharacter } = useStoryCharacters();
   const { stats, setDraftSummary } = useReadingStats();
+  useDocumentTheme(!gateReady || showWelcome || showOnboarding ? "night" : "warm");
 
   const canContinueReading = useMemo(
     () => Boolean(stats?.lastStoryId && library.some((i) => i.id === stats.lastStoryId)),
@@ -300,7 +303,11 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
   }, [activeTab, gateReady, showOnboarding, showWelcome]);
 
   function openStory(id: string, play = false) {
-    router.push(play ? `/story/${id}?play=1` : `/story/${id}`);
+    const query = new URLSearchParams();
+    if (play) query.set("play", "1");
+    if (activeTab === "home") query.set("from", "home");
+    const suffix = query.toString();
+    router.push(`/story/${id}${suffix ? `?${suffix}` : ""}`);
   }
 
   useEffect(() => {
@@ -555,6 +562,7 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
   const rootClass = [
     "pageRoot",
     "pageRoot--tabs",
+    "pageRoot--warm",
     activeTab === "create" && "pageRoot--calm",
     uiMode === "mobile" && "pageRoot--uiMobile",
     uiMode === "desktop" && "pageRoot--uiDesktop",
@@ -609,7 +617,7 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
       <main className={rootClass}>
         <div className="overlay overlay--withTabs">
           <div className="container">
-            <AppChromeBar />
+            <AppChromeBar tone="light" />
             {activeTab === "library" ? (
               <header>
                 <div className="title">{messages.library.title}</div>
@@ -646,6 +654,7 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
                 library={library}
                 loadingLibrary={loadingLibrary}
                 stats={stats}
+                voices={voices}
                 onOpenStory={(item) => openLibraryStory(item)}
                 onPlayStory={(item) => openLibraryStory(item, true)}
                 onSeeAll={() => setActiveTab("library")}
@@ -672,6 +681,7 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
                 voices={voices}
                 selectedVoiceId={selectedVoiceId}
                 personalVoices={personalVoices}
+                voiceLimit={voiceLimit}
                 voiceNotice={voiceNotice}
                 personalNote={personalNote}
                 isLoadingVoices={isLoadingVoices}
@@ -693,7 +703,10 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
                 onEducationalGoalChange={setEducationalGoal}
                 onMoralLessonChange={setMoralLesson}
                 onVoiceChange={onVoicePick}
-                onVoiceCreated={(voiceId) => void registerClonedVoice(voiceId)}
+                onVoiceCreated={(voiceId, selectable) => {
+                  if (selectable) void registerClonedVoice(voiceId);
+                  else void fetchVoices();
+                }}
                 onRetryVoices={() => void fetchVoices()}
                 onAddKid={() => setKidModalOpen(true)}
                 onAddCharacter={() => setCharModalOpen(true)}

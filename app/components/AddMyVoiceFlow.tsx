@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { ClipPlayer } from "@/app/components/ClipPlayer";
 import { HappyHorseCheck } from "@/app/components/HappyHorseCheck";
 import { useInterfaceLocale } from "@/app/components/LocaleProvider";
+import { VoicePreviewButton, VoicePreviewError } from "@/app/components/VoicePreviewButton";
+import type { VoicePreviewControls } from "@/app/hooks/useVoicePreview";
 import { voiceCopy } from "@/lib/voices/uiCopy";
 import { preferredRecorderMime, recordingClipped, voicedDurationMs } from "@/lib/voices/recordingChecks";
 import { CONSENT_TEXT_VERSION } from "@/lib/voices/consent";
@@ -27,6 +29,8 @@ type Step = "consent" | "permission" | "denied" | "record" | "review" | "saving"
 type Props = {
   language: string;
   personalVoices: "available" | "sign-in-required";
+  /** Shared with the voice list, so only one preview plays at a time. */
+  preview: VoicePreviewControls;
   onCreated: (voiceId: string, selectable: boolean) => void;
   onClose: () => void;
 };
@@ -308,13 +312,18 @@ export function AddMyVoiceFlow(props: Props) {
         <>
           <h3 className="voiceFlow__title">{copy.previewTitle}</h3>
           <p>{copy.previewBody}</p>
-          <ClipPlayer
-            src={`/api/voice-preview?voiceId=${encodeURIComponent(voiceId)}&language=${encodeURIComponent(copy.lang)}`}
-            playLabel={copy.play}
-            pauseLabel={copy.pause}
-            progressLabel={copy.progress}
-          />
-          <button type="button" onClick={() => setStep("name")}>
+          <VoicePreviewButton voiceId={voiceId} name={name} language={copy.lang} preview={props.preview} className="voiceFlow__preview" />
+          <VoicePreviewError voiceId={voiceId} preview={props.preview} />
+          {props.preview.state.voiceId === voiceId && props.preview.state.status === "error" ? (
+            <p className="voiceNote">{copy.previewLater}</p>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => {
+              props.preview.stop();
+              setStep("name");
+            }}
+          >
             {copy.continueName}
           </button>
         </>
@@ -330,7 +339,14 @@ export function AddMyVoiceFlow(props: Props) {
           </button>
         </>
       ) : null}
-      {step === "done" ? <p role="status">{copy.verification}</p> : null}
+      {step === "done" ? (
+        <>
+          <p role="status">{copy.verification}</p>
+          <button type="button" className="createScreen__submit" onClick={() => props.onCreated(voiceId, false)}>
+            {copy.done}
+          </button>
+        </>
+      ) : null}
       {step === "error" ? (
         <>
           <p role="alert">{error || copy.providerRetry}</p>

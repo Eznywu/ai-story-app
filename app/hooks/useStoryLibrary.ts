@@ -39,6 +39,8 @@ function toLibraryItem(raw: Record<string, unknown>): StoryLibraryItem {
     dedication: raw?.dedication ? String(raw.dedication) : null,
     audioUrl:
       raw?.audioUrl != null && String(raw.audioUrl).trim() !== "" ? String(raw.audioUrl) : null,
+    audioVoiceId: raw?.audioVoiceId ? String(raw.audioVoiceId) : null,
+    audioLanguage: raw?.audioLanguage ? String(raw.audioLanguage) : null,
   };
 }
 

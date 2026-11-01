@@ -22,6 +22,9 @@ export type StoryDTO = {
   dedication?: string | null;
   /** Present when narration MP3 was saved for this story. */
   audioUrl?: string | null;
+  /** App voice id and language of the saved narration, when there is one. */
+  audioVoiceId?: string | null;
+  audioLanguage?: string | null;
 };
 
 /** Max length for optional story guidance; enforced in `lib/stories/storyGenerator.ts`. */

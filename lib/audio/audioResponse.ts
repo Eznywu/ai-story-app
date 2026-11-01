@@ -1,10 +1,11 @@
 /** Safari and iOS only seek audio when the server answers byte ranges. */
-export function audioResponse(data: Buffer, range: string | null) {
+export function audioResponse(data: Buffer, range: string | null, extraHeaders: Record<string, string> = {}) {
   const total = data.byteLength;
   const shared = {
     "Content-Type": "audio/mpeg",
     "Accept-Ranges": "bytes",
     "Cache-Control": "private, no-store",
+    ...extraHeaders,
   };
   if (!range) {
     return new Response(new Uint8Array(data), { headers: { ...shared, "Content-Length": String(total) } });

@@ -81,6 +81,7 @@ export function useTts(language: string, externalAudioRef?: RefObject<HTMLAudioE
   const [isLoadingVoices, setIsLoadingVoices] = useState(false);
   const [voicesError, setVoicesError] = useState("");
   const [personalVoices, setPersonalVoices] = useState<PersonalVoiceAccess>("sign-in-required");
+  const [voiceLimit, setVoiceLimit] = useState<number | null>(null);
   const internalAudioRef = useRef<HTMLAudioElement | null>(null);
   const narrationsInFlight = useRef(new Map<string, Promise<Narration>>());
   const audioRef = externalAudioRef ?? internalAudioRef;
@@ -89,9 +90,10 @@ export function useTts(language: string, externalAudioRef?: RefObject<HTMLAudioE
     setIsLoadingVoices(true);
     setVoicesError("");
     try {
-      const data = await clientJson<{ voices?: unknown[]; personalVoices?: unknown }>(
+      const data = await clientJson<{ voices?: unknown[]; personalVoices?: unknown; voiceLimit?: unknown }>(
         `/api/voices?language=${encodeURIComponent(language)}`
       );
+      setVoiceLimit(typeof data.voiceLimit === "number" && data.voiceLimit > 0 ? data.voiceLimit : null);
       const list: unknown[] = Array.isArray(data?.voices) ? data.voices : [];
       const normalized = list.filter(isVoiceApiItem).map((v) => ({
         id: String(v.id),
@@ -279,6 +281,7 @@ export function useTts(language: string, externalAudioRef?: RefObject<HTMLAudioE
     voicesError,
     fetchVoices,
     personalVoices,
+    voiceLimit,
     chooseVoice,
     makeMp3,
     playSavedAudio,
