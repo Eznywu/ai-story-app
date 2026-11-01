@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { localTestParentEnabled } from "@/lib/auth/config";
 import { requireUser } from "@/lib/auth/requireUser";
 import { accountCanOwnVoices, findOwnedVoice, listOwnedVoices } from "@/lib/voices/accountVoices";
 import { authorizeSynthesis } from "@/lib/voices/decisions";
@@ -93,6 +94,11 @@ export async function GET(req: Request) {
   if (plan.action === "unavailable") {
     const detail = UNAVAILABLE[plan.reason];
     return previewError(detail.status, plan.reason, detail.error);
+  }
+  // Local test parent never calls ElevenLabs. AB-17 also refuses a stand-in clip, so the picker hears nothing.
+  if (plan.action === "generate" && localTestParentEnabled()) {
+    const detail = UNAVAILABLE.no_provider_voice;
+    return previewError(detail.status, "no_provider_voice", detail.error);
   }
 
   let job = inflight.get(plan.cacheKey);

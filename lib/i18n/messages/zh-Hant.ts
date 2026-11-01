@@ -442,4 +442,8 @@ export const messages = {
     choose: "選擇故事聲音",
     refresh: "重新整理清單",
   },
+  localTest: {
+    label: "本機測試家長",
+    voice: "測試聲音",
+  },
 } satisfies Messages;

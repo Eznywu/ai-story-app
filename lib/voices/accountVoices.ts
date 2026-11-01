@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { GUEST_EMAIL, authEnabled } from "@/lib/auth/config";
+import { GUEST_EMAIL, LOCAL_TEST_PARENT_EMAIL, authEnabled, localTestParentEnabled } from "@/lib/auth/config";
 import { deleteMediaReference, readPrivateMedia, saveMediaBytes } from "@/lib/media/objectStore";
 import { CLEARED_STORY_AUDIO, removeStoryAudioFile } from "@/lib/audio/storyMediaFiles";
 import { normalizeAppLanguage } from "@/lib/voices/language";
@@ -38,7 +38,13 @@ function mapVoice(row: {
 }
 
 export function accountCanOwnVoices(email: string): boolean {
-  return personalVoicesAllowed({ authEnabled: authEnabled(), email, guestEmail: GUEST_EMAIL });
+  return personalVoicesAllowed({
+    authEnabled: authEnabled(),
+    email,
+    guestEmail: GUEST_EMAIL,
+    localTestParentEmail: LOCAL_TEST_PARENT_EMAIL,
+    localTestParent: localTestParentEnabled(),
+  });
 }
 
 export function prismaVoiceStore(): VoiceStore {

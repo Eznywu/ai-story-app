@@ -407,4 +407,8 @@ export const messages = {
     choose: "Choisir une voix d’histoire",
     refresh: "Actualiser la liste",
   },
+  localTest: {
+    label: "Parent de test local",
+    voice: "Voix de test",
+  },
 } satisfies Messages;

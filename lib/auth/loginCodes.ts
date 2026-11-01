@@ -9,7 +9,7 @@ import {
   SEND_MIN_INTERVAL_MS,
   authEnabled,
   hashLoginCode,
-  isGuestEmail,
+  isReservedLoginEmail,
   loginCodeMatches,
   sixDigitCode,
 } from "@/lib/auth/config";
@@ -27,7 +27,7 @@ export type VerifyCodeResult =
   | { ok: false; status: number; error: string };
 
 export async function sendLoginCode(email: string, ip: string): Promise<SendCodeResult> {
-  if (isGuestEmail(email)) {
+  if (isReservedLoginEmail(email)) {
     return { ok: false, status: 400, error: "Enter the parent email address." };
   }
 
@@ -112,7 +112,7 @@ export async function sendLoginCode(email: string, ip: string): Promise<SendCode
 }
 
 export async function verifyLoginCode(email: string, code: string): Promise<VerifyCodeResult> {
-  if (isGuestEmail(email)) {
+  if (isReservedLoginEmail(email)) {
     return { ok: false, status: 400, error: "Enter the parent email address." };
   }
 

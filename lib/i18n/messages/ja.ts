@@ -407,4 +407,8 @@ export const messages = {
     choose: "物語の声を選ぶ",
     refresh: "一覧を更新",
   },
+  localTest: {
+    label: "ローカルのテスト保護者",
+    voice: "テストの声",
+  },
 } satisfies Messages;

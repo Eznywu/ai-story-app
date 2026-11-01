@@ -870,6 +870,7 @@ function VoiceGroup(props: {
                   <span className="voiceCard__name">
                     {selected ? <span className="voiceCard__mark" aria-hidden>✓</span> : null}
                     {voice.name || voiceSummary(voice, props.language)}
+                    {voice.testVoice ? <span className="voiceCard__test">{messages.localTest.voice}</span> : null}
                   </span>
                   <span className="voiceCard__desc">{voice.description}</span>
                   {selected ? <span className="voiceCard__selected">{copy.selected}</span> : null}

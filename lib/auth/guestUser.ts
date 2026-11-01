@@ -1,5 +1,5 @@
 import type { Prisma } from "@/generated/prisma/client";
-import { GUEST_EMAIL } from "@/lib/auth/config";
+import { GUEST_EMAIL, LOCAL_TEST_PARENT_EMAIL } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
 import type { AuthUser } from "@/lib/auth/session";
 
@@ -19,6 +19,29 @@ export async function getOrCreateGuestUser(): Promise<AuthUser> {
   } catch (error) {
     const again = await prisma.user.findUnique({
       where: { email: GUEST_EMAIL },
+      select: { id: true, email: true },
+    });
+    if (again) return again;
+    throw error;
+  }
+}
+
+/** Dedicated local parent. Voices are never stored on the shared guest. */
+export async function getOrCreateLocalTestParent(): Promise<AuthUser> {
+  const existing = await prisma.user.findUnique({
+    where: { email: LOCAL_TEST_PARENT_EMAIL },
+    select: { id: true, email: true },
+  });
+  if (existing) return existing;
+
+  try {
+    return await prisma.user.create({
+      data: { email: LOCAL_TEST_PARENT_EMAIL },
+      select: { id: true, email: true },
+    });
+  } catch (error) {
+    const again = await prisma.user.findUnique({
+      where: { email: LOCAL_TEST_PARENT_EMAIL },
       select: { id: true, email: true },
     });
     if (again) return again;

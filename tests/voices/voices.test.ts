@@ -190,6 +190,36 @@ test("guests cannot own voices, consent and quota are enforced", () => {
   assert.equal(personalVoicesAllowed({ authEnabled: false, email: "guest@local.invalid", guestEmail: "guest@local.invalid" }), false);
   assert.equal(personalVoicesAllowed({ authEnabled: true, email: "guest@local.invalid", guestEmail: "guest@local.invalid" }), false);
   assert.equal(personalVoicesAllowed({ authEnabled: true, email: "a@example.com", guestEmail: "guest@local.invalid" }), true);
+  assert.equal(
+    personalVoicesAllowed({
+      authEnabled: false,
+      email: "local-test-parent@local.invalid",
+      guestEmail: "guest@local.invalid",
+      localTestParentEmail: "local-test-parent@local.invalid",
+      localTestParent: true,
+    }),
+    true
+  );
+  assert.equal(
+    personalVoicesAllowed({
+      authEnabled: false,
+      email: "local-test-parent@local.invalid",
+      guestEmail: "guest@local.invalid",
+      localTestParentEmail: "local-test-parent@local.invalid",
+      localTestParent: false,
+    }),
+    false
+  );
+  assert.equal(
+    personalVoicesAllowed({
+      authEnabled: false,
+      email: "guest@local.invalid",
+      guestEmail: "guest@local.invalid",
+      localTestParentEmail: "local-test-parent@local.invalid",
+      localTestParent: true,
+    }),
+    false
+  );
   assert.equal(consentAllowsCreate({ accepted: false, textVersion: "2026-11-01" }).ok, false);
   assert.equal(consentAllowsCreate({ accepted: true, textVersion: "old" }).ok, false);
   assert.equal(consentAllowsCreate({ accepted: true, textVersion: "2026-11-01" }).ok, true);
