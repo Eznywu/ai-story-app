@@ -41,11 +41,26 @@ export async function GET(req: Request) {
       });
     } catch {
       const story = await prisma.story.findFirst({
-        where: { userId: auth.user.id, posterFilename: filename },
-        select: { posterUrl: true },
+        where: {
+          userId: auth.user.id,
+          OR: [
+            { posterFilename: filename },
+            { illustrationFilename: filename },
+            { coverFilename: filename },
+          ],
+        },
+        select: { posterUrl: true, illustrationUrl: true, coverUrl: true, posterFilename: true, illustrationFilename: true, coverFilename: true },
       });
-      if (story?.posterUrl && isRemoteMediaUrl(story.posterUrl)) {
-        return NextResponse.redirect(story.posterUrl, 302);
+      const remote =
+        story?.posterFilename === filename
+          ? story.posterUrl
+          : story?.illustrationFilename === filename
+            ? story.illustrationUrl
+            : story?.coverFilename === filename
+              ? story.coverUrl
+              : null;
+      if (remote && isRemoteMediaUrl(remote)) {
+        return NextResponse.redirect(remote, 302);
       }
       return new Response(JSON.stringify({ error: "File not found" }), {
         status: 404,

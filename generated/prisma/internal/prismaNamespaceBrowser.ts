@@ -55,6 +55,8 @@ export const ModelName = {
   Session: 'Session',
   LoginCode: 'LoginCode',
   Story: 'Story',
+  ArtworkJob: 'ArtworkJob',
+  ArtworkSpendDay: 'ArtworkSpendDay',
   Voice: 'Voice',
   KidProfile: 'KidProfile',
   StoryCharacter: 'StoryCharacter',
@@ -138,10 +140,54 @@ export const StoryScalarFieldEnum = {
   audioConfigId: 'audioConfigId',
   audioCacheKey: 'audioCacheKey',
   dailyAutomated: 'dailyAutomated',
+  characterId: 'characterId',
+  characterSnapshot: 'characterSnapshot',
+  visualBrief: 'visualBrief',
+  illustrationFilename: 'illustrationFilename',
+  illustrationUrl: 'illustrationUrl',
+  coverFilename: 'coverFilename',
+  coverUrl: 'coverUrl',
+  artworkStatus: 'artworkStatus',
+  artworkCacheKey: 'artworkCacheKey',
+  posterCaption: 'posterCaption',
+  dedication: 'dedication',
+  artworkMeta: 'artworkMeta',
   createdAt: 'createdAt'
 } as const
 
 export type StoryScalarFieldEnum = (typeof StoryScalarFieldEnum)[keyof typeof StoryScalarFieldEnum]
+
+
+export const ArtworkJobScalarFieldEnum = {
+  id: 'id',
+  cacheKey: 'cacheKey',
+  scopeKey: 'scopeKey',
+  storyId: 'storyId',
+  status: 'status',
+  provider: 'provider',
+  model: 'model',
+  quality: 'quality',
+  attemptCount: 'attemptCount',
+  estimatedCostUsd: 'estimatedCostUsd',
+  leaseUntil: 'leaseUntil',
+  blockedUntil: 'blockedUntil',
+  errorMessage: 'errorMessage',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArtworkJobScalarFieldEnum = (typeof ArtworkJobScalarFieldEnum)[keyof typeof ArtworkJobScalarFieldEnum]
+
+
+export const ArtworkSpendDayScalarFieldEnum = {
+  id: 'id',
+  scopeKey: 'scopeKey',
+  dayKey: 'dayKey',
+  generations: 'generations',
+  estimatedUsd: 'estimatedUsd'
+} as const
+
+export type ArtworkSpendDayScalarFieldEnum = (typeof ArtworkSpendDayScalarFieldEnum)[keyof typeof ArtworkSpendDayScalarFieldEnum]
 
 
 export const VoiceScalarFieldEnum = {

@@ -78,6 +78,8 @@ type Props = {
   onRetryVoices?: () => void;
   onAddKid: () => void;
   onAddCharacter: () => void;
+  onSelectKid?: (kid: KidProfile) => void;
+  onSelectCharacter?: (character: StoryCharacterProfile) => void;
   onCreate: () => void;
 };
 
@@ -421,6 +423,7 @@ export function CreateStoryPicker(props: Props) {
                     type="button"
                     className={`createSheet__chip${props.mainCharacterName === kid.name ? " createSheet__chip--on" : ""}`}
                     onClick={() => {
+                      props.onSelectKid?.(kid);
                       props.onMainCharacterNameChange(kid.name);
                       props.onAgeChange(kid.age);
                       props.onChildGenderChange(
@@ -445,6 +448,7 @@ export function CreateStoryPicker(props: Props) {
                       props.mainCharacterName === character.name ? " createSheet__chip--on" : ""
                     }`}
                     onClick={() => {
+                      props.onSelectCharacter?.(character);
                       props.onMainCharacterNameChange(character.name);
                       props.onChildGenderChange("any");
                       const note = [

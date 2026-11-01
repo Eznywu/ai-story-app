@@ -1,7 +1,6 @@
 import { fetch } from "undici";
 import { createError, getErrorStatus } from "@/lib/errors";
 import { getGeminiBaseUrl, getPosterHttpDispatcher, posterProxyMode } from "@/lib/providerHttp";
-import { buildPosterImagePrompt } from "@/lib/posters/posterPromptConfig";
 import { providerTimeoutMs } from "@/lib/vercelDuration";
 
 /**
@@ -10,7 +9,8 @@ import { providerTimeoutMs } from "@/lib/vercelDuration";
  * `gemini-3.1-flash-image-preview`, `gemini-3-pro-image-preview`.
  * @see https://ai.google.dev/gemini-api/docs/image-generation
  */
-const IMAGE_MODEL = process.env.GEMINI_IMAGE_MODEL ?? "imagen-4.0-fast-generate-001";
+/** Benchmark or an explicit single-provider choice. Imagen 4 shut down on 17 Aug 2026. */
+const IMAGE_MODEL = process.env.GEMINI_IMAGE_MODEL ?? "gemini-3.1-flash-lite-image";
 
 function posterUsesImagenPredict(modelId: string): boolean {
   return modelId.toLowerCase().startsWith("imagen");
@@ -149,7 +149,7 @@ function extractNativeGeminiImageBase64(data: unknown): string | undefined {
 
 function nativeImageGenerationBody(prompt: string): Record<string, unknown> {
   const aspectRatio =
-    process.env.GEMINI_NATIVE_IMAGE_ASPECT_RATIO?.trim() || "3:4";
+    process.env.GEMINI_NATIVE_IMAGE_ASPECT_RATIO?.trim() || "1:1";
   const imageSize = process.env.GEMINI_NATIVE_IMAGE_SIZE?.trim();
   const imageConfig: Record<string, string> = { aspectRatio };
   if (imageSize) imageConfig.imageSize = imageSize;
@@ -192,7 +192,7 @@ async function generatePosterViaNativeGeminiImage(modelId: string, prompt: strin
       ? ` (finishReason: ${finishReason})`
       : "";
   throw createError(
-    `Native image model returned no image bytes.${hint} Try GEMINI_IMAGE_MODEL=imagen-4.0-fast-generate-001 or another gemini-*-image* model.`,
+    `Native image model returned no image bytes.${hint} Try GEMINI_IMAGE_MODEL=gemini-3.1-flash-lite-image.`,
     502
   );
 }
@@ -201,10 +201,8 @@ async function generatePosterViaNativeGeminiImage(modelId: string, prompt: strin
  * Gemini image: Imagen (`:predict`) or native Nano Banana family (`:generateContent`).
  */
 export async function generatePosterPngFromGemini(input: {
-  title: string;
-  story: string;
-  genre?: string;
-}): Promise<Buffer> {
+  prompt: string;
+}): Promise<{ bytes: Buffer; model: string; size: string }> {
   const modelId = IMAGE_MODEL.trim();
   try {
     console.info("[poster][gemini] request", {
@@ -212,14 +210,11 @@ export async function generatePosterPngFromGemini(input: {
       proxy: posterProxyMode(),
       baseUrlConfigured: Boolean(getGeminiBaseUrl()),
     });
-    const prompt = buildPosterImagePrompt({
-      title: input.title,
-      genre: input.genre,
-      story: input.story,
-    });
+    const prompt = input.prompt;
 
     if (!posterUsesImagenPredict(modelId)) {
-      return await generatePosterViaNativeGeminiImage(modelId, prompt);
+      const bytes = await generatePosterViaNativeGeminiImage(modelId, prompt);
+      return { bytes, model: modelId, size: "1024x1024" };
     }
 
     const data = await geminiPostJson(
@@ -228,7 +223,7 @@ export async function generatePosterPngFromGemini(input: {
         instances: [{ prompt }],
         parameters: {
           sampleCount: 1,
-          aspectRatio: "3:4",
+          aspectRatio: "1:1",
           personGeneration: "DONT_ALLOW",
         },
       }
@@ -247,7 +242,7 @@ export async function generatePosterPngFromGemini(input: {
 
     const b64 = findBytesBase64Encoded(predictions[0]);
     if (b64) {
-      return Buffer.from(b64, "base64");
+      return { bytes: Buffer.from(b64, "base64"), model: modelId, size: "1024x1024" };
     }
 
     throw createError("Image generation returned no image bytes. Try a shorter story or different genre.", 502);

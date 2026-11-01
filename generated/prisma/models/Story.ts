@@ -47,6 +47,15 @@ export type StoryMinAggregateOutputType = {
   audioConfigId: string | null
   audioCacheKey: string | null
   dailyAutomated: boolean | null
+  characterId: string | null
+  illustrationFilename: string | null
+  illustrationUrl: string | null
+  coverFilename: string | null
+  coverUrl: string | null
+  artworkStatus: string | null
+  artworkCacheKey: string | null
+  posterCaption: string | null
+  dedication: string | null
   createdAt: Date | null
 }
 
@@ -73,6 +82,15 @@ export type StoryMaxAggregateOutputType = {
   audioConfigId: string | null
   audioCacheKey: string | null
   dailyAutomated: boolean | null
+  characterId: string | null
+  illustrationFilename: string | null
+  illustrationUrl: string | null
+  coverFilename: string | null
+  coverUrl: string | null
+  artworkStatus: string | null
+  artworkCacheKey: string | null
+  posterCaption: string | null
+  dedication: string | null
   createdAt: Date | null
 }
 
@@ -100,6 +118,18 @@ export type StoryCountAggregateOutputType = {
   audioConfigId: number
   audioCacheKey: number
   dailyAutomated: number
+  characterId: number
+  characterSnapshot: number
+  visualBrief: number
+  illustrationFilename: number
+  illustrationUrl: number
+  coverFilename: number
+  coverUrl: number
+  artworkStatus: number
+  artworkCacheKey: number
+  posterCaption: number
+  dedication: number
+  artworkMeta: number
   createdAt: number
   _all: number
 }
@@ -128,6 +158,15 @@ export type StoryMinAggregateInputType = {
   audioConfigId?: true
   audioCacheKey?: true
   dailyAutomated?: true
+  characterId?: true
+  illustrationFilename?: true
+  illustrationUrl?: true
+  coverFilename?: true
+  coverUrl?: true
+  artworkStatus?: true
+  artworkCacheKey?: true
+  posterCaption?: true
+  dedication?: true
   createdAt?: true
 }
 
@@ -154,6 +193,15 @@ export type StoryMaxAggregateInputType = {
   audioConfigId?: true
   audioCacheKey?: true
   dailyAutomated?: true
+  characterId?: true
+  illustrationFilename?: true
+  illustrationUrl?: true
+  coverFilename?: true
+  coverUrl?: true
+  artworkStatus?: true
+  artworkCacheKey?: true
+  posterCaption?: true
+  dedication?: true
   createdAt?: true
 }
 
@@ -181,6 +229,18 @@ export type StoryCountAggregateInputType = {
   audioConfigId?: true
   audioCacheKey?: true
   dailyAutomated?: true
+  characterId?: true
+  characterSnapshot?: true
+  visualBrief?: true
+  illustrationFilename?: true
+  illustrationUrl?: true
+  coverFilename?: true
+  coverUrl?: true
+  artworkStatus?: true
+  artworkCacheKey?: true
+  posterCaption?: true
+  dedication?: true
+  artworkMeta?: true
   createdAt?: true
   _all?: true
 }
@@ -281,6 +341,18 @@ export type StoryGroupByOutputType = {
   audioConfigId: string | null
   audioCacheKey: string | null
   dailyAutomated: boolean
+  characterId: string | null
+  characterSnapshot: runtime.JsonValue | null
+  visualBrief: runtime.JsonValue | null
+  illustrationFilename: string | null
+  illustrationUrl: string | null
+  coverFilename: string | null
+  coverUrl: string | null
+  artworkStatus: string | null
+  artworkCacheKey: string | null
+  posterCaption: string | null
+  dedication: string | null
+  artworkMeta: runtime.JsonValue | null
   createdAt: Date
   _count: StoryCountAggregateOutputType | null
   _min: StoryMinAggregateOutputType | null
@@ -329,6 +401,18 @@ export type StoryWhereInput = {
   audioConfigId?: Prisma.StringNullableFilter<"Story"> | string | null
   audioCacheKey?: Prisma.StringNullableFilter<"Story"> | string | null
   dailyAutomated?: Prisma.BoolFilter<"Story"> | boolean
+  characterId?: Prisma.StringNullableFilter<"Story"> | string | null
+  characterSnapshot?: Prisma.JsonNullableFilter<"Story">
+  visualBrief?: Prisma.JsonNullableFilter<"Story">
+  illustrationFilename?: Prisma.StringNullableFilter<"Story"> | string | null
+  illustrationUrl?: Prisma.StringNullableFilter<"Story"> | string | null
+  coverFilename?: Prisma.StringNullableFilter<"Story"> | string | null
+  coverUrl?: Prisma.StringNullableFilter<"Story"> | string | null
+  artworkStatus?: Prisma.StringNullableFilter<"Story"> | string | null
+  artworkCacheKey?: Prisma.StringNullableFilter<"Story"> | string | null
+  posterCaption?: Prisma.StringNullableFilter<"Story"> | string | null
+  dedication?: Prisma.StringNullableFilter<"Story"> | string | null
+  artworkMeta?: Prisma.JsonNullableFilter<"Story">
   createdAt?: Prisma.DateTimeFilter<"Story"> | Date | string
   user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   narrationAssets?: Prisma.NarrationAssetListRelationFilter
@@ -358,6 +442,18 @@ export type StoryOrderByWithRelationInput = {
   audioConfigId?: Prisma.SortOrderInput | Prisma.SortOrder
   audioCacheKey?: Prisma.SortOrderInput | Prisma.SortOrder
   dailyAutomated?: Prisma.SortOrder
+  characterId?: Prisma.SortOrderInput | Prisma.SortOrder
+  characterSnapshot?: Prisma.SortOrderInput | Prisma.SortOrder
+  visualBrief?: Prisma.SortOrderInput | Prisma.SortOrder
+  illustrationFilename?: Prisma.SortOrderInput | Prisma.SortOrder
+  illustrationUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  coverFilename?: Prisma.SortOrderInput | Prisma.SortOrder
+  coverUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  artworkStatus?: Prisma.SortOrderInput | Prisma.SortOrder
+  artworkCacheKey?: Prisma.SortOrderInput | Prisma.SortOrder
+  posterCaption?: Prisma.SortOrderInput | Prisma.SortOrder
+  dedication?: Prisma.SortOrderInput | Prisma.SortOrder
+  artworkMeta?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   user?: Prisma.UserOrderByWithRelationInput
   narrationAssets?: Prisma.NarrationAssetOrderByRelationAggregateInput
@@ -390,6 +486,18 @@ export type StoryWhereUniqueInput = Prisma.AtLeast<{
   audioConfigId?: Prisma.StringNullableFilter<"Story"> | string | null
   audioCacheKey?: Prisma.StringNullableFilter<"Story"> | string | null
   dailyAutomated?: Prisma.BoolFilter<"Story"> | boolean
+  characterId?: Prisma.StringNullableFilter<"Story"> | string | null
+  characterSnapshot?: Prisma.JsonNullableFilter<"Story">
+  visualBrief?: Prisma.JsonNullableFilter<"Story">
+  illustrationFilename?: Prisma.StringNullableFilter<"Story"> | string | null
+  illustrationUrl?: Prisma.StringNullableFilter<"Story"> | string | null
+  coverFilename?: Prisma.StringNullableFilter<"Story"> | string | null
+  coverUrl?: Prisma.StringNullableFilter<"Story"> | string | null
+  artworkStatus?: Prisma.StringNullableFilter<"Story"> | string | null
+  artworkCacheKey?: Prisma.StringNullableFilter<"Story"> | string | null
+  posterCaption?: Prisma.StringNullableFilter<"Story"> | string | null
+  dedication?: Prisma.StringNullableFilter<"Story"> | string | null
+  artworkMeta?: Prisma.JsonNullableFilter<"Story">
   createdAt?: Prisma.DateTimeFilter<"Story"> | Date | string
   user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   narrationAssets?: Prisma.NarrationAssetListRelationFilter
@@ -419,6 +527,18 @@ export type StoryOrderByWithAggregationInput = {
   audioConfigId?: Prisma.SortOrderInput | Prisma.SortOrder
   audioCacheKey?: Prisma.SortOrderInput | Prisma.SortOrder
   dailyAutomated?: Prisma.SortOrder
+  characterId?: Prisma.SortOrderInput | Prisma.SortOrder
+  characterSnapshot?: Prisma.SortOrderInput | Prisma.SortOrder
+  visualBrief?: Prisma.SortOrderInput | Prisma.SortOrder
+  illustrationFilename?: Prisma.SortOrderInput | Prisma.SortOrder
+  illustrationUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  coverFilename?: Prisma.SortOrderInput | Prisma.SortOrder
+  coverUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  artworkStatus?: Prisma.SortOrderInput | Prisma.SortOrder
+  artworkCacheKey?: Prisma.SortOrderInput | Prisma.SortOrder
+  posterCaption?: Prisma.SortOrderInput | Prisma.SortOrder
+  dedication?: Prisma.SortOrderInput | Prisma.SortOrder
+  artworkMeta?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.StoryCountOrderByAggregateInput
   _max?: Prisma.StoryMaxOrderByAggregateInput
@@ -452,6 +572,18 @@ export type StoryScalarWhereWithAggregatesInput = {
   audioConfigId?: Prisma.StringNullableWithAggregatesFilter<"Story"> | string | null
   audioCacheKey?: Prisma.StringNullableWithAggregatesFilter<"Story"> | string | null
   dailyAutomated?: Prisma.BoolWithAggregatesFilter<"Story"> | boolean
+  characterId?: Prisma.StringNullableWithAggregatesFilter<"Story"> | string | null
+  characterSnapshot?: Prisma.JsonNullableWithAggregatesFilter<"Story">
+  visualBrief?: Prisma.JsonNullableWithAggregatesFilter<"Story">
+  illustrationFilename?: Prisma.StringNullableWithAggregatesFilter<"Story"> | string | null
+  illustrationUrl?: Prisma.StringNullableWithAggregatesFilter<"Story"> | string | null
+  coverFilename?: Prisma.StringNullableWithAggregatesFilter<"Story"> | string | null
+  coverUrl?: Prisma.StringNullableWithAggregatesFilter<"Story"> | string | null
+  artworkStatus?: Prisma.StringNullableWithAggregatesFilter<"Story"> | string | null
+  artworkCacheKey?: Prisma.StringNullableWithAggregatesFilter<"Story"> | string | null
+  posterCaption?: Prisma.StringNullableWithAggregatesFilter<"Story"> | string | null
+  dedication?: Prisma.StringNullableWithAggregatesFilter<"Story"> | string | null
+  artworkMeta?: Prisma.JsonNullableWithAggregatesFilter<"Story">
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Story"> | Date | string
 }
 
@@ -478,6 +610,18 @@ export type StoryCreateInput = {
   audioConfigId?: string | null
   audioCacheKey?: string | null
   dailyAutomated?: boolean
+  characterId?: string | null
+  characterSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  visualBrief?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  illustrationFilename?: string | null
+  illustrationUrl?: string | null
+  coverFilename?: string | null
+  coverUrl?: string | null
+  artworkStatus?: string | null
+  artworkCacheKey?: string | null
+  posterCaption?: string | null
+  dedication?: string | null
+  artworkMeta?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   user?: Prisma.UserCreateNestedOneWithoutStoriesInput
   narrationAssets?: Prisma.NarrationAssetCreateNestedManyWithoutStoryInput
@@ -507,6 +651,18 @@ export type StoryUncheckedCreateInput = {
   audioConfigId?: string | null
   audioCacheKey?: string | null
   dailyAutomated?: boolean
+  characterId?: string | null
+  characterSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  visualBrief?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  illustrationFilename?: string | null
+  illustrationUrl?: string | null
+  coverFilename?: string | null
+  coverUrl?: string | null
+  artworkStatus?: string | null
+  artworkCacheKey?: string | null
+  posterCaption?: string | null
+  dedication?: string | null
+  artworkMeta?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   narrationAssets?: Prisma.NarrationAssetUncheckedCreateNestedManyWithoutStoryInput
 }
@@ -534,6 +690,18 @@ export type StoryUpdateInput = {
   audioConfigId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   audioCacheKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dailyAutomated?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  characterId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  characterSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  visualBrief?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  illustrationFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  illustrationUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artworkStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artworkCacheKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  posterCaption?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dedication?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artworkMeta?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneWithoutStoriesNestedInput
   narrationAssets?: Prisma.NarrationAssetUpdateManyWithoutStoryNestedInput
@@ -563,6 +731,18 @@ export type StoryUncheckedUpdateInput = {
   audioConfigId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   audioCacheKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dailyAutomated?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  characterId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  characterSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  visualBrief?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  illustrationFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  illustrationUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artworkStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artworkCacheKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  posterCaption?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dedication?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artworkMeta?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   narrationAssets?: Prisma.NarrationAssetUncheckedUpdateManyWithoutStoryNestedInput
 }
@@ -591,6 +771,18 @@ export type StoryCreateManyInput = {
   audioConfigId?: string | null
   audioCacheKey?: string | null
   dailyAutomated?: boolean
+  characterId?: string | null
+  characterSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  visualBrief?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  illustrationFilename?: string | null
+  illustrationUrl?: string | null
+  coverFilename?: string | null
+  coverUrl?: string | null
+  artworkStatus?: string | null
+  artworkCacheKey?: string | null
+  posterCaption?: string | null
+  dedication?: string | null
+  artworkMeta?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
 }
 
@@ -617,6 +809,18 @@ export type StoryUpdateManyMutationInput = {
   audioConfigId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   audioCacheKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dailyAutomated?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  characterId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  characterSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  visualBrief?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  illustrationFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  illustrationUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artworkStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artworkCacheKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  posterCaption?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dedication?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artworkMeta?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -644,6 +848,18 @@ export type StoryUncheckedUpdateManyInput = {
   audioConfigId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   audioCacheKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dailyAutomated?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  characterId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  characterSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  visualBrief?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  illustrationFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  illustrationUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artworkStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artworkCacheKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  posterCaption?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dedication?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artworkMeta?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -681,6 +897,18 @@ export type StoryCountOrderByAggregateInput = {
   audioConfigId?: Prisma.SortOrder
   audioCacheKey?: Prisma.SortOrder
   dailyAutomated?: Prisma.SortOrder
+  characterId?: Prisma.SortOrder
+  characterSnapshot?: Prisma.SortOrder
+  visualBrief?: Prisma.SortOrder
+  illustrationFilename?: Prisma.SortOrder
+  illustrationUrl?: Prisma.SortOrder
+  coverFilename?: Prisma.SortOrder
+  coverUrl?: Prisma.SortOrder
+  artworkStatus?: Prisma.SortOrder
+  artworkCacheKey?: Prisma.SortOrder
+  posterCaption?: Prisma.SortOrder
+  dedication?: Prisma.SortOrder
+  artworkMeta?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -707,6 +935,15 @@ export type StoryMaxOrderByAggregateInput = {
   audioConfigId?: Prisma.SortOrder
   audioCacheKey?: Prisma.SortOrder
   dailyAutomated?: Prisma.SortOrder
+  characterId?: Prisma.SortOrder
+  illustrationFilename?: Prisma.SortOrder
+  illustrationUrl?: Prisma.SortOrder
+  coverFilename?: Prisma.SortOrder
+  coverUrl?: Prisma.SortOrder
+  artworkStatus?: Prisma.SortOrder
+  artworkCacheKey?: Prisma.SortOrder
+  posterCaption?: Prisma.SortOrder
+  dedication?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -733,6 +970,15 @@ export type StoryMinOrderByAggregateInput = {
   audioConfigId?: Prisma.SortOrder
   audioCacheKey?: Prisma.SortOrder
   dailyAutomated?: Prisma.SortOrder
+  characterId?: Prisma.SortOrder
+  illustrationFilename?: Prisma.SortOrder
+  illustrationUrl?: Prisma.SortOrder
+  coverFilename?: Prisma.SortOrder
+  coverUrl?: Prisma.SortOrder
+  artworkStatus?: Prisma.SortOrder
+  artworkCacheKey?: Prisma.SortOrder
+  posterCaption?: Prisma.SortOrder
+  dedication?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -826,6 +1072,18 @@ export type StoryCreateWithoutUserInput = {
   audioConfigId?: string | null
   audioCacheKey?: string | null
   dailyAutomated?: boolean
+  characterId?: string | null
+  characterSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  visualBrief?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  illustrationFilename?: string | null
+  illustrationUrl?: string | null
+  coverFilename?: string | null
+  coverUrl?: string | null
+  artworkStatus?: string | null
+  artworkCacheKey?: string | null
+  posterCaption?: string | null
+  dedication?: string | null
+  artworkMeta?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   narrationAssets?: Prisma.NarrationAssetCreateNestedManyWithoutStoryInput
 }
@@ -853,6 +1111,18 @@ export type StoryUncheckedCreateWithoutUserInput = {
   audioConfigId?: string | null
   audioCacheKey?: string | null
   dailyAutomated?: boolean
+  characterId?: string | null
+  characterSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  visualBrief?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  illustrationFilename?: string | null
+  illustrationUrl?: string | null
+  coverFilename?: string | null
+  coverUrl?: string | null
+  artworkStatus?: string | null
+  artworkCacheKey?: string | null
+  posterCaption?: string | null
+  dedication?: string | null
+  artworkMeta?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   narrationAssets?: Prisma.NarrationAssetUncheckedCreateNestedManyWithoutStoryInput
 }
@@ -910,6 +1180,18 @@ export type StoryScalarWhereInput = {
   audioConfigId?: Prisma.StringNullableFilter<"Story"> | string | null
   audioCacheKey?: Prisma.StringNullableFilter<"Story"> | string | null
   dailyAutomated?: Prisma.BoolFilter<"Story"> | boolean
+  characterId?: Prisma.StringNullableFilter<"Story"> | string | null
+  characterSnapshot?: Prisma.JsonNullableFilter<"Story">
+  visualBrief?: Prisma.JsonNullableFilter<"Story">
+  illustrationFilename?: Prisma.StringNullableFilter<"Story"> | string | null
+  illustrationUrl?: Prisma.StringNullableFilter<"Story"> | string | null
+  coverFilename?: Prisma.StringNullableFilter<"Story"> | string | null
+  coverUrl?: Prisma.StringNullableFilter<"Story"> | string | null
+  artworkStatus?: Prisma.StringNullableFilter<"Story"> | string | null
+  artworkCacheKey?: Prisma.StringNullableFilter<"Story"> | string | null
+  posterCaption?: Prisma.StringNullableFilter<"Story"> | string | null
+  dedication?: Prisma.StringNullableFilter<"Story"> | string | null
+  artworkMeta?: Prisma.JsonNullableFilter<"Story">
   createdAt?: Prisma.DateTimeFilter<"Story"> | Date | string
 }
 
@@ -936,6 +1218,18 @@ export type StoryCreateWithoutNarrationAssetsInput = {
   audioConfigId?: string | null
   audioCacheKey?: string | null
   dailyAutomated?: boolean
+  characterId?: string | null
+  characterSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  visualBrief?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  illustrationFilename?: string | null
+  illustrationUrl?: string | null
+  coverFilename?: string | null
+  coverUrl?: string | null
+  artworkStatus?: string | null
+  artworkCacheKey?: string | null
+  posterCaption?: string | null
+  dedication?: string | null
+  artworkMeta?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   user?: Prisma.UserCreateNestedOneWithoutStoriesInput
 }
@@ -964,6 +1258,18 @@ export type StoryUncheckedCreateWithoutNarrationAssetsInput = {
   audioConfigId?: string | null
   audioCacheKey?: string | null
   dailyAutomated?: boolean
+  characterId?: string | null
+  characterSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  visualBrief?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  illustrationFilename?: string | null
+  illustrationUrl?: string | null
+  coverFilename?: string | null
+  coverUrl?: string | null
+  artworkStatus?: string | null
+  artworkCacheKey?: string | null
+  posterCaption?: string | null
+  dedication?: string | null
+  artworkMeta?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
 }
 
@@ -1006,6 +1312,18 @@ export type StoryUpdateWithoutNarrationAssetsInput = {
   audioConfigId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   audioCacheKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dailyAutomated?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  characterId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  characterSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  visualBrief?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  illustrationFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  illustrationUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artworkStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artworkCacheKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  posterCaption?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dedication?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artworkMeta?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneWithoutStoriesNestedInput
 }
@@ -1034,6 +1352,18 @@ export type StoryUncheckedUpdateWithoutNarrationAssetsInput = {
   audioConfigId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   audioCacheKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dailyAutomated?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  characterId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  characterSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  visualBrief?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  illustrationFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  illustrationUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artworkStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artworkCacheKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  posterCaption?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dedication?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artworkMeta?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -1060,6 +1390,18 @@ export type StoryCreateManyUserInput = {
   audioConfigId?: string | null
   audioCacheKey?: string | null
   dailyAutomated?: boolean
+  characterId?: string | null
+  characterSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  visualBrief?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  illustrationFilename?: string | null
+  illustrationUrl?: string | null
+  coverFilename?: string | null
+  coverUrl?: string | null
+  artworkStatus?: string | null
+  artworkCacheKey?: string | null
+  posterCaption?: string | null
+  dedication?: string | null
+  artworkMeta?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
 }
 
@@ -1086,6 +1428,18 @@ export type StoryUpdateWithoutUserInput = {
   audioConfigId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   audioCacheKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dailyAutomated?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  characterId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  characterSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  visualBrief?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  illustrationFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  illustrationUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artworkStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artworkCacheKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  posterCaption?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dedication?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artworkMeta?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   narrationAssets?: Prisma.NarrationAssetUpdateManyWithoutStoryNestedInput
 }
@@ -1113,6 +1467,18 @@ export type StoryUncheckedUpdateWithoutUserInput = {
   audioConfigId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   audioCacheKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dailyAutomated?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  characterId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  characterSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  visualBrief?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  illustrationFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  illustrationUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artworkStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artworkCacheKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  posterCaption?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dedication?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artworkMeta?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   narrationAssets?: Prisma.NarrationAssetUncheckedUpdateManyWithoutStoryNestedInput
 }
@@ -1140,6 +1506,18 @@ export type StoryUncheckedUpdateManyWithoutUserInput = {
   audioConfigId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   audioCacheKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dailyAutomated?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  characterId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  characterSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  visualBrief?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  illustrationFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  illustrationUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artworkStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artworkCacheKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  posterCaption?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dedication?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artworkMeta?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -1198,6 +1576,18 @@ export type StorySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   audioConfigId?: boolean
   audioCacheKey?: boolean
   dailyAutomated?: boolean
+  characterId?: boolean
+  characterSnapshot?: boolean
+  visualBrief?: boolean
+  illustrationFilename?: boolean
+  illustrationUrl?: boolean
+  coverFilename?: boolean
+  coverUrl?: boolean
+  artworkStatus?: boolean
+  artworkCacheKey?: boolean
+  posterCaption?: boolean
+  dedication?: boolean
+  artworkMeta?: boolean
   createdAt?: boolean
   user?: boolean | Prisma.Story$userArgs<ExtArgs>
   narrationAssets?: boolean | Prisma.Story$narrationAssetsArgs<ExtArgs>
@@ -1228,6 +1618,18 @@ export type StorySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   audioConfigId?: boolean
   audioCacheKey?: boolean
   dailyAutomated?: boolean
+  characterId?: boolean
+  characterSnapshot?: boolean
+  visualBrief?: boolean
+  illustrationFilename?: boolean
+  illustrationUrl?: boolean
+  coverFilename?: boolean
+  coverUrl?: boolean
+  artworkStatus?: boolean
+  artworkCacheKey?: boolean
+  posterCaption?: boolean
+  dedication?: boolean
+  artworkMeta?: boolean
   createdAt?: boolean
   user?: boolean | Prisma.Story$userArgs<ExtArgs>
 }, ExtArgs["result"]["story"]>
@@ -1256,6 +1658,18 @@ export type StorySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   audioConfigId?: boolean
   audioCacheKey?: boolean
   dailyAutomated?: boolean
+  characterId?: boolean
+  characterSnapshot?: boolean
+  visualBrief?: boolean
+  illustrationFilename?: boolean
+  illustrationUrl?: boolean
+  coverFilename?: boolean
+  coverUrl?: boolean
+  artworkStatus?: boolean
+  artworkCacheKey?: boolean
+  posterCaption?: boolean
+  dedication?: boolean
+  artworkMeta?: boolean
   createdAt?: boolean
   user?: boolean | Prisma.Story$userArgs<ExtArgs>
 }, ExtArgs["result"]["story"]>
@@ -1284,10 +1698,22 @@ export type StorySelectScalar = {
   audioConfigId?: boolean
   audioCacheKey?: boolean
   dailyAutomated?: boolean
+  characterId?: boolean
+  characterSnapshot?: boolean
+  visualBrief?: boolean
+  illustrationFilename?: boolean
+  illustrationUrl?: boolean
+  coverFilename?: boolean
+  coverUrl?: boolean
+  artworkStatus?: boolean
+  artworkCacheKey?: boolean
+  posterCaption?: boolean
+  dedication?: boolean
+  artworkMeta?: boolean
   createdAt?: boolean
 }
 
-export type StoryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "title" | "genre" | "length" | "text" | "age" | "language" | "mainCharacterName" | "childGender" | "posterFilename" | "posterUrl" | "audioFilename" | "audioUrl" | "audioModelId" | "audioVoiceId" | "audioVoiceSettings" | "audioLanguage" | "audioDictionaryVersion" | "audioConfigVersion" | "audioConfigId" | "audioCacheKey" | "dailyAutomated" | "createdAt", ExtArgs["result"]["story"]>
+export type StoryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "title" | "genre" | "length" | "text" | "age" | "language" | "mainCharacterName" | "childGender" | "posterFilename" | "posterUrl" | "audioFilename" | "audioUrl" | "audioModelId" | "audioVoiceId" | "audioVoiceSettings" | "audioLanguage" | "audioDictionaryVersion" | "audioConfigVersion" | "audioConfigId" | "audioCacheKey" | "dailyAutomated" | "characterId" | "characterSnapshot" | "visualBrief" | "illustrationFilename" | "illustrationUrl" | "coverFilename" | "coverUrl" | "artworkStatus" | "artworkCacheKey" | "posterCaption" | "dedication" | "artworkMeta" | "createdAt", ExtArgs["result"]["story"]>
 export type StoryInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.Story$userArgs<ExtArgs>
   narrationAssets?: boolean | Prisma.Story$narrationAssetsArgs<ExtArgs>
@@ -1348,6 +1774,24 @@ export type $StoryPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
      * * True when created by the daily cron (`lib/stories/dailyAutomatedStories.ts`).
      */
     dailyAutomated: boolean
+    /**
+     * * Frozen character at save time. Later profile edits do not change this story's art.
+     */
+    characterId: string | null
+    characterSnapshot: runtime.JsonValue | null
+    visualBrief: runtime.JsonValue | null
+    illustrationFilename: string | null
+    illustrationUrl: string | null
+    coverFilename: string | null
+    coverUrl: string | null
+    /**
+     * * illustrated, fallback, error, or pending. Null until the first artwork request.
+     */
+    artworkStatus: string | null
+    artworkCacheKey: string | null
+    posterCaption: string | null
+    dedication: string | null
+    artworkMeta: runtime.JsonValue | null
     createdAt: Date
   }, ExtArgs["result"]["story"]>
   composites: {}
@@ -1797,6 +2241,18 @@ export interface StoryFieldRefs {
   readonly audioConfigId: Prisma.FieldRef<"Story", 'String'>
   readonly audioCacheKey: Prisma.FieldRef<"Story", 'String'>
   readonly dailyAutomated: Prisma.FieldRef<"Story", 'Boolean'>
+  readonly characterId: Prisma.FieldRef<"Story", 'String'>
+  readonly characterSnapshot: Prisma.FieldRef<"Story", 'Json'>
+  readonly visualBrief: Prisma.FieldRef<"Story", 'Json'>
+  readonly illustrationFilename: Prisma.FieldRef<"Story", 'String'>
+  readonly illustrationUrl: Prisma.FieldRef<"Story", 'String'>
+  readonly coverFilename: Prisma.FieldRef<"Story", 'String'>
+  readonly coverUrl: Prisma.FieldRef<"Story", 'String'>
+  readonly artworkStatus: Prisma.FieldRef<"Story", 'String'>
+  readonly artworkCacheKey: Prisma.FieldRef<"Story", 'String'>
+  readonly posterCaption: Prisma.FieldRef<"Story", 'String'>
+  readonly dedication: Prisma.FieldRef<"Story", 'String'>
+  readonly artworkMeta: Prisma.FieldRef<"Story", 'Json'>
   readonly createdAt: Prisma.FieldRef<"Story", 'DateTime'>
 }
     

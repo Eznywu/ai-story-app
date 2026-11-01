@@ -78,10 +78,58 @@ model Story {
   audioCacheKey          String?
   /** True when created by the daily cron (`lib/stories/dailyAutomatedStories.ts`). */
   dailyAutomated Boolean  @default(false)
+  /** Frozen character at save time. Later profile edits do not change this story's art. */
+  characterId        String?
+  characterSnapshot  Json?
+  visualBrief        Json?
+  illustrationFilename String?
+  illustrationUrl      String?
+  coverFilename        String?
+  coverUrl             String?
+  /** illustrated, fallback, error, or pending. Null until the first artwork request. */
+  artworkStatus    String?
+  artworkCacheKey  String?
+  posterCaption    String?
+  dedication       String?
+  artworkMeta      Json?
   createdAt DateTime @default(now())
   narrationAssets NarrationAsset[]
 
   @@index([userId, createdAt])
+  @@index([artworkCacheKey])
+}
+
+/// One illustration job. cacheKey is unique so two servers cannot start the same paid image.
+model ArtworkJob {
+  id               String    @id @default(cuid())
+  cacheKey         String    @unique
+  scopeKey         String
+  storyId          String
+  status           String
+  provider         String?
+  model            String?
+  quality          String?
+  attemptCount     Int       @default(0)
+  estimatedCostUsd Float     @default(0)
+  leaseUntil       DateTime?
+  blockedUntil     DateTime?
+  errorMessage     String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([scopeKey, createdAt])
+  @@index([storyId])
+}
+
+/// Daily artwork allowance. Guest browsers do not share a bucket just because they share a user id.
+model ArtworkSpendDay {
+  id           String @id @default(cuid())
+  scopeKey     String
+  dayKey       String
+  generations  Int    @default(0)
+  estimatedUsd Float  @default(0)
+
+  @@unique([scopeKey, dayKey])
 }
 
 model Voice {

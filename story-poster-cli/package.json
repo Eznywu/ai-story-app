@@ -2,7 +2,7 @@
   "name": "story-poster-cli",
   "version": "1.0.0",
   "private": true,
-  "description": "Story-to-poster pipeline: OpenAI + Gemini illustrated posters",
+  "description": "Prompt comparison for story posters. Not visual QA. Image calls require POSTER_BENCHMARK=1.",
   "type": "module",
   "scripts": {
     "poster": "tsx src/cli.ts",

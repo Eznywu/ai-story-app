@@ -24,7 +24,7 @@ function safeFilename(folder: MediaFolder, filename: string): boolean {
   if (!filename || filename.includes("..") || filename.includes("/") || filename.includes("\\")) {
     return false;
   }
-  if (folder === "posters") return /^poster_[a-z0-9]+\.png$/i.test(filename);
+  if (folder === "posters") return /^(poster|illustration|cover)_[a-z0-9]+\.png$/i.test(filename);
   if (folder === "audio") return /^[a-z0-9][a-z0-9_.-]*\.mp3$/i.test(filename);
   return /^voice_[a-z0-9][a-z0-9_.-]*$/i.test(filename);
 }

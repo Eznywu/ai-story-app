@@ -2,18 +2,17 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import "@/app/page.css";
-import { BrandMark } from "@/app/components/BrandMark";
+import { StoryArtwork } from "@/app/components/StoryArtwork";
 import { QuietSheet } from "@/app/components/QuietSheet";
 import { TtsControls } from "@/app/components/TtsControls";
 import { friendlyVoiceName, languageLabel } from "@/app/components/voiceLabel";
 import { useTts } from "@/app/hooks/useTts";
 import { useStoryLibrary } from "@/app/hooks/useStoryLibrary";
 import { skipWithin } from "@/lib/audio/skipWithin";
-import { coverPresentation } from "@/lib/stories/coverPresentation";
-import { createStoryPoster, downloadPosterPng } from "@/lib/posters/poster";
-import type { PosterCreateOutcome } from "@/lib/posters/poster";
+import { downloadPosterPng, requestStoryArtwork } from "@/lib/posters/poster";
+import { savePosterLabel } from "@/lib/posters/posterFooter";
+import type { ArtworkRequestResult } from "@/lib/posters/poster";
 import { getErrorMessage } from "@/lib/errors";
 import { redirectIfUnsigned } from "@/lib/auth/redirectIfUnsigned";
 import { PLAYBACK_RATES } from "@/lib/tts/ttsLimits";
@@ -32,6 +31,11 @@ type StoryRecord = {
   language: string | null;
   mainCharacterName: string | null;
   posterUrl: string | null;
+  coverUrl?: string | null;
+  illustrationUrl?: string | null;
+  artworkStatus?: string | null;
+  posterCaption?: string | null;
+  dedication?: string | null;
   audioUrl: string | null;
   audioCacheKey?: string | null;
   audioVoiceId?: string | null;
@@ -42,11 +46,15 @@ type StoryRecord = {
   audioVoiceSettings?: { speed?: number } | null;
 };
 
-type PosterState =
-  | { status: "idle" }
-  | { status: "generating" }
-  | { status: "ready"; url: string; outcome: PosterCreateOutcome; hint?: string }
-  | { status: "error"; message: string };
+type PosterState = {
+  status: "idle" | "generating" | "pending" | "illustrated" | "fallback" | "error";
+  illustrationUrl?: string | null;
+  coverUrl?: string | null;
+  posterUrl?: string | null;
+  caption?: string | null;
+  dedication?: string | null;
+  message?: string;
+};
 
 function formatRate(rate: number) {
   return rate === 1 ? "1x" : `${rate}x`;
@@ -133,7 +141,6 @@ export function StoryReader({ storyId }: { storyId: string }) {
   const [loading, setLoading] = useState(true);
   const [poster, setPoster] = useState<PosterState>({ status: "idle" });
   const [brokenCoverUrl, setBrokenCoverUrl] = useState<string | null>(null);
-  const [coverAttempt, setCoverAttempt] = useState(0);
   const [playbackRate, setPlaybackRate] = useState<(typeof PLAYBACK_RATES)[number]>(1);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -158,7 +165,7 @@ export function StoryReader({ storyId }: { storyId: string }) {
     fetchVoices,
     makeMp3,
   } = useTts(language, audioRef);
-  const { savePosterForStory } = useStoryLibrary();
+  const { refreshLibrary } = useStoryLibrary();
   const { onStoryPlayed } = useReadingStats();
 
   const loadStory = useCallback(async () => {
@@ -177,8 +184,29 @@ export function StoryReader({ storyId }: { storyId: string }) {
       if (!row?.id) throw new Error("Story not found.");
       setStory(row);
       setSavedAudioUrl(row.audioUrl);
-      if (row.posterUrl) {
-        setPoster({ status: "ready", url: row.posterUrl, outcome: "illustrated" });
+      const savedStatus =
+        row.artworkStatus === "illustrated" || row.artworkStatus === "fallback" || row.artworkStatus === "error"
+          ? row.artworkStatus
+          : row.posterUrl || row.coverUrl || row.illustrationUrl
+            ? "illustrated"
+            : null;
+      if (savedStatus) {
+        setPoster((current) => {
+          if (current.status === "generating" || current.status === "pending") return current;
+          if (current.illustrationUrl || current.posterUrl || current.coverUrl) return current;
+          return {
+            status: savedStatus,
+            illustrationUrl: row.illustrationUrl || row.coverUrl || row.posterUrl,
+            coverUrl: row.coverUrl,
+            posterUrl: row.posterUrl,
+            caption: row.posterCaption,
+            dedication: row.dedication,
+            message:
+              savedStatus === "illustrated"
+                ? undefined
+                : "This saved cover is a simple keepsake, not new AI artwork.",
+          };
+        });
       }
       return row;
     } catch (error: unknown) {
@@ -235,41 +263,67 @@ export function StoryReader({ storyId }: { storyId: string }) {
     };
   }, [savedAudioUrl, storyId]);
 
-  const generatePoster = useCallback(async () => {
-    if (!story?.text.trim()) return;
-    setBrokenCoverUrl(null);
-    setCoverAttempt((attempt) => attempt + 1);
-    setPoster({ status: "generating" });
-    try {
-      const result = await createStoryPoster({
-        title: story.title,
-        story: story.text,
-        genre: story.genre,
+  const applyArtwork = useCallback((result: ArtworkRequestResult) => {
+    const status =
+      result.status === "illustrated" || result.status === "fallback" || result.status === "error" || result.status === "pending"
+        ? result.status
+        : "error";
+    setPoster({
+      status,
+      illustrationUrl: result.illustrationUrl,
+      coverUrl: result.coverUrl,
+      posterUrl: result.posterUrl,
+      caption: result.caption,
+      dedication: result.dedication,
+      message: result.error,
+    });
+    setStory((current) =>
+      current
+        ? {
+            ...current,
+            illustrationUrl: result.illustrationUrl ?? current.illustrationUrl,
+            coverUrl: result.coverUrl ?? current.coverUrl,
+            posterUrl: result.posterUrl ?? current.posterUrl,
+            posterCaption: result.caption ?? current.posterCaption,
+            dedication: result.dedication ?? current.dedication,
+            artworkStatus: status === "pending" ? current.artworkStatus : status,
+          }
+        : current
+    );
+  }, []);
+
+  const requestArtwork = useCallback(
+    async (intent: "create" | "read" | "download" | "reload" | "regenerate", forceFallback = false) => {
+      if (!story?.id) return null;
+      if (intent === "create" || intent === "regenerate") setPoster({ status: "generating" });
+      const result = await requestStoryArtwork({
         storyId: story.id,
+        title: story.title,
+        intent,
+        forceFallback,
       });
-      const saved = await savePosterForStory(story.id, result.blob);
-      const url = saved.posterUrl || URL.createObjectURL(result.blob);
-      setPoster({
-        status: "ready",
-        url,
-        outcome: result.outcome,
-        hint: result.fallbackReason,
-      });
-      setStory((current) => (current ? { ...current, posterUrl: saved.posterUrl || url } : current));
-    } catch (error: unknown) {
-      setPoster({
-        status: "error",
-        message: getErrorMessage(error, "Poster could not be created."),
-      });
-    }
-  }, [savePosterForStory, story]);
+      applyArtwork(result);
+      if (result.posterUrl || result.coverUrl) void refreshLibrary();
+      return result;
+    },
+    [applyArtwork, refreshLibrary, story]
+  );
 
   useEffect(() => {
-    if (!story || story.posterUrl || posterOnce.current === story.id) return;
-    if (poster.status === "generating" || poster.status === "ready" || poster.status === "error") return;
+    if (!story || posterOnce.current === story.id) return;
+    if (poster.status === "generating" || poster.status === "illustrated" || poster.status === "fallback" || poster.status === "error") {
+      return;
+    }
+    if (story.artworkStatus === "fallback" || story.artworkStatus === "error" || story.artworkStatus === "illustrated") {
+      return;
+    }
+    if (story.posterUrl || story.coverUrl || story.illustrationUrl) return;
     posterOnce.current = story.id;
-    void generatePoster();
-  }, [generatePoster, poster.status, story]);
+    const forceFallback = new URLSearchParams(window.location.search).get("artwork") === "fallback";
+    void requestArtwork("create", forceFallback).catch((error: unknown) => {
+      setPoster({ status: "error", message: getErrorMessage(error, "Poster could not be created.") });
+    });
+  }, [poster.status, requestArtwork, story]);
 
   const audioIdentity = savedAudioIdentityStatus(
     story
@@ -399,11 +453,12 @@ export function StoryReader({ storyId }: { storyId: string }) {
   }
 
   async function onDownloadKeepsake() {
-    if (poster.status !== "ready") {
-      await generatePoster();
-      return;
-    }
-    const response = await fetch(poster.url);
+    const current = poster.posterUrl
+      ? poster
+      : await requestArtwork("download");
+    const url = current?.posterUrl;
+    if (!url) throw new Error("Could not download this poster.");
+    const response = await fetch(url);
     if (!response.ok) throw new Error("Could not download this poster.");
     const blob = await response.blob();
     downloadPosterPng(blob, title);
@@ -428,9 +483,8 @@ export function StoryReader({ storyId }: { storyId: string }) {
   const seekMax = knownDuration ? duration : 0;
   const seekValue = Math.min(progress, seekMax || progress);
   const progressPct = seekMax > 0 ? Math.min(100, (seekValue / seekMax) * 100) : 0;
-  const cover = coverPresentation(poster, brokenCoverUrl);
-  const coverFallback =
-    cover.showFallbackArt || (poster.status === "ready" && poster.outcome === "text_fallback");
+  const artworkFailed = poster.status === "fallback" || poster.status === "error";
+  const posterLarge = readScale > 0;
 
   let playLabel = "Play";
   if (isMakingMp3) playLabel = "Preparing narration";
@@ -476,39 +530,46 @@ export function StoryReader({ storyId }: { storyId: string }) {
             </div>
           ) : null}
 
-          <div className={`listenCover${coverFallback ? " listenCover--fallback" : ""}`}>
-            {cover.showImage && cover.imageUrl ? (
-              <Image
-                key={`${cover.imageUrl}:${coverAttempt}`}
-                src={cover.imageUrl}
-                alt={`${title} cover`}
-                width={800}
-                height={800}
-                unoptimized
-                className="listenCover__img"
-                onError={() => {
-                  if (cover.imageUrl) setBrokenCoverUrl(cover.imageUrl);
-                }}
-              />
-            ) : (
-              <div className="listenCover__art" role="img" aria-label={story?.genre ? `${story.genre} cover` : "Story cover"}>
-                <BrandMark variant="onDark" className="listenCover__mark" label={null} />
-                <span className="listenCover__caption">
-                  {poster.status === "generating" || (loading && !loadError) ? "Painting the cover…" : story?.genre || "Story"}
-                </span>
-              </div>
-            )}
-          </div>
-          {cover.message ? (
-            <p className="listenHint" role="status">
-              {cover.message}
-              {cover.showRetry ? (
-                <button type="button" className="listenRetry" onClick={() => void generatePoster()}>
-                  Try cover again
-                </button>
-              ) : null}
-            </p>
-          ) : null}
+          <StoryArtwork
+            kind="cover"
+            title={title}
+            caption={poster.caption || story?.posterCaption}
+            dedication={poster.dedication || story?.dedication}
+            illustrationUrl={poster.illustrationUrl || story?.illustrationUrl}
+            status={loading && poster.status === "idle" ? "generating" : poster.status}
+            message={poster.message || (brokenCoverUrl ? "This cover couldn't be loaded." : null)}
+            large={posterLarge}
+            onIllustrationError={() => {
+              const current = poster.illustrationUrl || story?.illustrationUrl;
+              if (!current || brokenCoverUrl === current) return;
+              setBrokenCoverUrl(current);
+              void requestArtwork("reload").catch(() => {
+                setPoster((state) => ({
+                  ...state,
+                  status: "error",
+                  message: "This cover couldn't be loaded.",
+                }));
+              });
+            }}
+          />
+          <button
+            type="button"
+            className="savePoster"
+            onClick={() => void onDownloadKeepsake().catch(() => {})}
+            disabled={!story || poster.status === "generating" || poster.status === "pending"}
+          >
+            {savePosterLabel(story?.language)}
+          </button>
+          <StoryArtwork
+            kind="keepsake"
+            title={title}
+            caption={poster.caption || story?.posterCaption}
+            dedication={poster.dedication || story?.dedication}
+            illustrationUrl={artworkFailed ? null : poster.illustrationUrl || story?.illustrationUrl}
+            status={loading && poster.status === "idle" ? "generating" : poster.status}
+            message={poster.message}
+            large={posterLarge}
+          />
 
           <h1 className="listenTitle">{title}</h1>
           {creditLine ? <p className="listenMeta">{creditLine}</p> : null}
@@ -710,7 +771,9 @@ export function StoryReader({ storyId }: { storyId: string }) {
           <button
             type="button"
             className="sheetAction"
-            onClick={() => void generatePoster()}
+            onClick={() => void requestArtwork("regenerate").catch((error: unknown) => {
+              setPoster({ status: "error", message: getErrorMessage(error, "Poster could not be created.") });
+            })}
             disabled={!story || poster.status === "generating"}
           >
             {poster.status === "generating" ? "Painting the cover…" : "New cover artwork"}
@@ -721,18 +784,18 @@ export function StoryReader({ storyId }: { storyId: string }) {
             onClick={() => void onDownloadKeepsake().catch(() => {})}
             disabled={!story || poster.status === "generating"}
           >
-            {poster.status === "ready" ? "Download keepsake poster" : "Create keepsake poster"}
+            {savePosterLabel(story?.language)}
           </button>
-          {cover.showRetry ? (
+          {brokenCoverUrl ? (
             <button
               type="button"
               className="sheetAction"
-              onClick={() => void generatePoster()}
+              onClick={() => void requestArtwork("reload")}
             >
-              Try cover again
+              Load the saved cover again
             </button>
           ) : null}
-          <p className="listenHint">Artwork and the keepsake use this story. Narration stays available either way.</p>
+          <p className="listenHint">A new illustration is only made from New cover artwork. Download and reload use the saved picture.</p>
         </QuietSheet>
       ) : null}
 

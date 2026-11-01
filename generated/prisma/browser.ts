@@ -38,6 +38,16 @@ export type LoginCode = Prisma.LoginCodeModel
  */
 export type Story = Prisma.StoryModel
 /**
+ * Model ArtworkJob
+ * One illustration job. cacheKey is unique so two servers cannot start the same paid image.
+ */
+export type ArtworkJob = Prisma.ArtworkJobModel
+/**
+ * Model ArtworkSpendDay
+ * Daily artwork allowance. Guest browsers do not share a bucket just because they share a user id.
+ */
+export type ArtworkSpendDay = Prisma.ArtworkSpendDayModel
+/**
  * Model Voice
  * 
  */

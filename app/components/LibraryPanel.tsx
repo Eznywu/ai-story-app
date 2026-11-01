@@ -59,7 +59,7 @@ export function LibraryPanel({
   const filteredLibrary = useMemo(() => {
     if (filter === "all") return library;
     if (filter === "stories") return library.filter((story) => Boolean(story.story.trim()));
-    if (filter === "posters") return library.filter((story) => Boolean(story.posterUrl));
+    if (filter === "posters") return library.filter((story) => Boolean(story.posterUrl || story.coverUrl));
     return library.filter((story) => Boolean(story.audioUrl));
   }, [filter, library]);
 
@@ -131,8 +131,8 @@ export function LibraryPanel({
               <article key={story.id} className="storyCard">
                 <button type="button" className="storyCard__open" onClick={() => onLoadStory(story)}>
                   <span className="storyCard__cover">
-                    {story.posterUrl ? (
-                      <Image src={story.posterUrl} alt="" width={320} height={320} unoptimized className="storyCard__img" />
+                    {story.coverUrl || story.posterUrl ? (
+                      <Image src={story.coverUrl || story.posterUrl || ""} alt="" width={320} height={320} unoptimized className="storyCard__img" />
                     ) : (
                       <span className="storyCard__fallback" aria-hidden />
                     )}
