@@ -412,4 +412,8 @@ export const messages = {
     choose: "选择故事声音",
     refresh: "刷新列表",
   },
+  localTest: {
+    label: "本地测试家长",
+    voice: "测试声音",
+  },
 } satisfies Messages;

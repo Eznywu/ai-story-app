@@ -11,10 +11,12 @@ type AuthContextValue = {
   user: AuthUser;
   /** False while email sign-in is paused (`AUTH_ENABLED` off). */
   authEnabled: boolean;
+  /** True only for the local dev parent. Never a real signed-in account. */
+  localTestParent: boolean;
   signOut: () => Promise<void>;
 };
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+export const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function useAuthUser(): AuthContextValue {
   const value = useContext(AuthContext);
@@ -27,6 +29,7 @@ export function useAuthUser(): AuthContextValue {
 type SessionPayload = {
   user?: AuthUser | null;
   authEnabled?: boolean;
+  localTestParent?: boolean;
   error?: string;
 };
 
@@ -41,6 +44,7 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<"loading" | "in" | "out" | "error">("loading");
   const [user, setUser] = useState<AuthUser | null>(null);
   const [authEnabled, setAuthEnabled] = useState(true);
+  const [localTestParent, setLocalTestParent] = useState(false);
   const [error, setError] = useState("");
 
   const commitSession = useCallback((ok: boolean, data: SessionPayload) => {
@@ -51,6 +55,7 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
       return;
     }
     setAuthEnabled(data.authEnabled !== false);
+    setLocalTestParent(data.localTestParent === true);
     if (data.user?.id && data.user.email) {
       setUser({ id: data.user.id, email: data.user.email });
       setError("");
@@ -131,5 +136,5 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
     return <SignInScreen onSignedIn={() => void refresh()} />;
   }
 
-  return <AuthContext.Provider value={{ user, authEnabled, signOut }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user, authEnabled, localTestParent, signOut }}>{children}</AuthContext.Provider>;
 }

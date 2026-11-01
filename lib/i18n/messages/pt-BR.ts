@@ -374,4 +374,8 @@ export const messages = {
     choose: "Escolher uma voz de história",
     refresh: "Atualizar a lista",
   },
+  localTest: {
+    label: "Responsável de teste local",
+    voice: "Voz de teste",
+  },
 } satisfies Messages;

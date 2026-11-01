@@ -38,9 +38,22 @@ export type PublicVoice = {
   nonNativeRisk?: boolean;
 };
 
-export function personalVoicesAllowed(input: { authEnabled: boolean; email: string; guestEmail: string }): boolean {
+export function personalVoicesAllowed(input: {
+  authEnabled: boolean;
+  email: string;
+  guestEmail: string;
+  /** Email of the local test parent. Allowed only when `localTestParent` is true. */
+  localTestParentEmail?: string;
+  /** True only while `localTestParentEnabled()` holds. */
+  localTestParent?: boolean;
+}): boolean {
+  const email = input.email.trim().toLowerCase();
+  const guest = input.guestEmail.trim().toLowerCase();
+  if (!email || email === guest) return false;
+  const testParent = (input.localTestParentEmail ?? "").trim().toLowerCase();
+  if (testParent && email === testParent) return input.localTestParent === true;
   if (!input.authEnabled) return false;
-  return input.email.trim().toLowerCase() !== input.guestEmail;
+  return true;
 }
 
 export function toPublicDefault(voice: DefaultNarrator, language: unknown): PublicVoice {

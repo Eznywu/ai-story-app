@@ -410,6 +410,10 @@ export const messages = {
     choose: "Choose a story voice",
     refresh: "Refresh the list",
   },
+  localTest: {
+    label: "Local test parent",
+    voice: "Test voice",
+  },
 };
 
 type DeepString<T> = {

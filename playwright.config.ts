@@ -4,6 +4,7 @@ const port = 3456;
 
 export default defineConfig({
   testDir: "tests/ui",
+  testIgnore: "**/local-parent.spec.ts",
   timeout: 60_000,
   use: {
     baseURL: `http://127.0.0.1:${port}`,

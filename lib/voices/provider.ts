@@ -1,4 +1,6 @@
+import { randomBytes } from "node:crypto";
 import { ElevenLabsClient, ElevenLabsError } from "@elevenlabs/elevenlabs-js";
+import { localTestParentEnabled } from "@/lib/auth/config";
 import type { VoiceCloneProvider } from "./personalVoice";
 
 export function elevenVoiceProvider(apiKey: string): VoiceCloneProvider {
@@ -49,7 +51,24 @@ export function unavailableVoiceProvider(): VoiceCloneProvider {
   };
 }
 
+/** No network. Used while the local test parent is active, even if an API key is set. */
+export function mockVoiceCloneProvider(): VoiceCloneProvider {
+  return {
+    async createClone() {
+      return {
+        providerVoiceId: `mock_local_${randomBytes(8).toString("hex")}`,
+        requiresVerification: false,
+      };
+    },
+    async deleteVoice() {},
+    async subscription() {
+      return { voiceLimit: null, slotsUsed: null };
+    },
+  };
+}
+
 export function voiceProviderFromEnv(env: NodeJS.ProcessEnv = process.env): VoiceCloneProvider {
+  if (localTestParentEnabled(env)) return mockVoiceCloneProvider();
   const key = env.ELEVENLABS_API_KEY?.trim();
   if (!key) return unavailableVoiceProvider();
   return elevenVoiceProvider(key);

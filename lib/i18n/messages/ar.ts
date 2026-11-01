@@ -374,4 +374,8 @@ export const messages = {
     choose: "اختر صوت قصة",
     refresh: "تحديث القائمة",
   },
+  localTest: {
+    label: "ولي أمر تجريبي محلي",
+    voice: "صوت تجريبي",
+  },
 } satisfies Messages;
