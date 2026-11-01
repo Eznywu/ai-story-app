@@ -6,6 +6,7 @@ import { focusWrapIndex, focusableElements } from "@/app/components/focusWrap";
 
 type Props = {
   title: string;
+  closeLabel?: string;
   onClose: () => void;
   children: ReactNode;
 };
@@ -14,7 +15,7 @@ type Props = {
  * Bottom sheet. Opens as a modal dialog: the page behind is inert, Tab stays inside,
  * Escape and the dimmed area dismiss, and focus returns to whatever opened it.
  */
-export function QuietSheet({ title, onClose, children }: Props) {
+export function QuietSheet({ title, closeLabel = "Close", onClose, children }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const titleId = useId();
@@ -79,7 +80,7 @@ export function QuietSheet({ title, onClose, children }: Props) {
             {title}
           </h2>
           <button ref={closeRef} type="button" className="quietSheet__close" onClick={onClose}>
-            Close
+            {closeLabel}
           </button>
         </div>
         {children}

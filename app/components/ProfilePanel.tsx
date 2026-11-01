@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { QuietSheet } from "@/app/components/QuietSheet";
-import { VoiceRecorder } from "@/app/components/VoiceRecorder";
 import type { KidProfile, ReadingStatsState, StoryCharacterProfile } from "@/lib/profiles/profilesTypes";
 
 type Props = {
@@ -27,7 +26,6 @@ export function ProfilePanel({
   onCreateStory,
 }: Props) {
   const [voiceOpen, setVoiceOpen] = useState(false);
-  const [hasClone, setHasClone] = useState(false);
 
   return (
     <section className="profilePanel" aria-labelledby="profile-heading">
@@ -82,14 +80,14 @@ export function ProfilePanel({
           <h2 id="profile-voices">Voices</h2>
         </div>
         <p className="profilePanel__muted">
-          Standard narrators are ready for every story. A personal voice is optional and needs your consent when you
-          record.
+          Story voices are ready for every story. A personal voice is optional. Add it from Create, after you agree,
+          and only on a signed-in account.
         </p>
         <ul className="profileRows">
           <li>
             <button type="button" className="profileRow" onClick={() => setVoiceOpen(true)}>
-              <span className="profileRow__title">Personal voice</span>
-              <span className="profileRow__meta">{hasClone ? "A sample is saved" : "Record if you want"}</span>
+              <span className="profileRow__title">Add my voice</span>
+              <span className="profileRow__meta">Optional, on the create screen</span>
             </button>
           </li>
           <li>
@@ -131,17 +129,21 @@ export function ProfilePanel({
       </section>
 
       {voiceOpen ? (
-        <QuietSheet title="Personal voice" onClose={() => setVoiceOpen(false)}>
-          <VoiceRecorder
-            language={language}
-            hasClone={hasClone}
-            onCloned={() => setHasClone(true)}
-            onClearClone={() => setHasClone(false)}
-            onChooseNarrator={() => {
+        <QuietSheet title="Add my voice" onClose={() => setVoiceOpen(false)}>
+          <p className="profilePanel__muted">
+            Recording stays on the create screen so it is never part of onboarding. Story voices work without an
+            account. Your own voice needs sign-in. Current story language: {language}.
+          </p>
+          <button
+            type="button"
+            className="createScreen__submit"
+            onClick={() => {
               setVoiceOpen(false);
               onCreateStory();
             }}
-          />
+          >
+            Open create
+          </button>
         </QuietSheet>
       ) : null}
     </section>

@@ -27,6 +27,9 @@ export type StoryAudioIdentity = {
   configVersion: string;
   configId: string;
   cacheKey: string;
+  privateAccess?: boolean;
+  voiceKind?: string | null;
+  voiceVersion?: number | null;
 };
 
 /** Saves a new MP3, then drops the previous file. Call this only after the new audio passed its checks. */
@@ -40,20 +43,25 @@ export async function saveStoryAudioFile(
   }
   const previous = await prisma.story.findUnique({
     where: { id: storyId },
-    select: { audioFilename: true, audioUrl: true },
+    select: { audioFilename: true, audioUrl: true, audioStorageUrl: true },
   });
   const filename = audioFilenameFor(storyId);
+  const isPrivate = Boolean(identity?.privateAccess);
   const saved = await saveMediaBytes({
     folder: "audio",
     filename,
     body: audio,
     contentType: "audio/mpeg",
+    access: isPrivate ? "private" : "public",
   });
+  const playbackUrl = isPrivate ? storyAudioPublicUrl(filename) : saved.url;
   await prisma.story.update({
     where: { id: storyId },
     data: {
       audioFilename: filename,
-      audioUrl: saved.url,
+      audioUrl: playbackUrl,
+      audioPrivate: isPrivate,
+      audioStorageUrl: isPrivate && saved.url.startsWith("http") ? saved.url : null,
       ...(identity
         ? {
             audioModelId: identity.modelId,
@@ -64,6 +72,8 @@ export async function saveStoryAudioFile(
             audioConfigVersion: identity.configVersion,
             audioConfigId: identity.configId,
             audioCacheKey: identity.cacheKey,
+            audioVoiceKind: identity.voiceKind ?? null,
+            audioVoiceVersion: identity.voiceVersion ?? null,
           }
         : {}),
     },
@@ -72,10 +82,10 @@ export async function saveStoryAudioFile(
     await deleteMediaReference({
       folder: "audio",
       filename: previous.audioFilename,
-      url: previous.audioUrl,
+      url: previous.audioStorageUrl || previous.audioUrl,
     });
   }
-  return saved.url;
+  return playbackUrl;
 }
 
 /** Overwrites this story's poster PNG and stores the image URL on the row. */

@@ -1,4 +1,4 @@
-import { del, put } from "@vercel/blob";
+import { del, get, put } from "@vercel/blob";
 import fs from "fs/promises";
 import path from "path";
 
@@ -39,7 +39,9 @@ export async function saveMediaBytes(options: {
   filename: string;
   body: Buffer;
   contentType: string;
-}): Promise<{ url: string; filename: string }> {
+  /** Personal samples and personal narration stay private. Story voices may stay public. */
+  access?: "public" | "private";
+}): Promise<{ url: string; filename: string; access: "public" | "private" }> {
   const filename = options.filename;
   if (!safeFilename(options.folder, filename)) {
     throw new Error("Invalid media filename");
@@ -48,16 +50,17 @@ export async function saveMediaBytes(options: {
     throw new Error("Empty media");
   }
 
+  const access = options.access ?? "public";
   if (blobStoreEnabled()) {
     const blob = await put(`${options.folder}/${filename}`, options.body, {
-      access: "public",
+      access,
       token: process.env.BLOB_READ_WRITE_TOKEN,
       contentType: options.contentType,
       addRandomSuffix: false,
       allowOverwrite: true,
-      cacheControlMaxAge: 60,
+      cacheControlMaxAge: access === "private" ? 0 : 60,
     });
-    return { url: blob.url, filename };
+    return { url: blob.url, filename, access };
   }
 
   const dir = path.join(process.cwd(), "uploads", options.folder);
@@ -66,7 +69,39 @@ export async function saveMediaBytes(options: {
   return {
     url: `${LOCAL_URL_PREFIX[options.folder]}${encodeURIComponent(filename)}`,
     filename,
+    access: "private",
   };
+}
+
+/** Read a private blob or a local file. Callers must already have checked ownership. */
+export async function readPrivateMedia(options: {
+  folder: MediaFolder;
+  filename?: string | null;
+  storageUrl?: string | null;
+}): Promise<Buffer | null> {
+  const filename = options.filename ?? "";
+  const local = filename ? localMediaPath(options.folder, filename) : null;
+  if (local) {
+    try {
+      return await fs.readFile(local);
+    } catch {
+      /* A private Blob copy may exist instead. */
+    }
+  }
+  if (!options.storageUrl || !isRemoteMediaUrl(options.storageUrl) || !blobStoreEnabled()) return null;
+  const result = await get(options.storageUrl, {
+    access: "private",
+    token: process.env.BLOB_READ_WRITE_TOKEN,
+  });
+  if (!result || result.statusCode === 304 || !result.stream) return null;
+  const reader = result.stream.getReader();
+  const chunks: Buffer[] = [];
+  for (;;) {
+    const next = await reader.read();
+    if (next.done) break;
+    if (next.value?.byteLength) chunks.push(Buffer.from(next.value));
+  }
+  return Buffer.concat(chunks);
 }
 
 export async function deleteMediaReference(options: {

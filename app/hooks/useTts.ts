@@ -4,23 +4,37 @@ import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } fro
 import { getErrorMessage } from "@/lib/errors";
 import { clientJson } from "@/lib/auth/clientApi";
 import { redirectIfUnsigned } from "@/lib/auth/redirectIfUnsigned";
-import { clearStoredClonedVoices, readStoredClonedVoices } from "@/lib/voices/clonedVoiceStorage";
-import { isCloneVoiceId, makeCloneVoiceId } from "@/lib/voices/voices";
+import { readVoicePreference, writeVoicePreference } from "@/lib/voices/preference";
 
 export type VoiceItem = {
   id: string;
   name?: string;
+  description?: string;
   language?: string;
+  languages?: string[];
+  group?: "story" | "mine";
+  kind?: "default" | "personal";
+  status?: string;
+  selectable?: boolean;
   isDefault?: boolean;
+  nonNativeRisk?: boolean;
 };
 
 type VoiceApiItem = {
   id?: unknown;
-  voiceId?: unknown;
   name?: unknown;
+  description?: unknown;
   language?: unknown;
+  languages?: unknown;
+  group?: unknown;
+  kind?: unknown;
+  status?: unknown;
+  selectable?: unknown;
   isDefault?: unknown;
+  nonNativeRisk?: unknown;
 };
+
+export type PersonalVoiceAccess = "available" | "sign-in-required";
 
 function languageGroup(language: string) {
   return language.toLowerCase().startsWith("zh") ? "zh-Hant" : "en";
@@ -28,13 +42,11 @@ function languageGroup(language: string) {
 
 function pickDefaultVoice(voices: VoiceItem[], language: string) {
   const normalizedLanguage = languageGroup(language);
-  return (
-    voices.find((v) => v.language === normalizedLanguage && v.isDefault) ??
-    voices.find((v) => v.language === normalizedLanguage) ??
-    voices.find((v) => v.isDefault) ??
-    voices[0] ??
-    null
-  );
+  const compatible = voices.filter((voice) => {
+    const langs = voice.languages?.length ? voice.languages : [voice.language || "en"];
+    return langs.some((item) => languageGroup(item) === normalizedLanguage) && voice.selectable !== false && voice.group !== "mine";
+  });
+  return compatible.find((voice) => voice.isDefault) ?? compatible[0] ?? voices.find((voice) => voice.isDefault) ?? null;
 }
 
 function savedAudioUrlFromHeader(value: string): string | null {
@@ -47,7 +59,7 @@ function savedAudioUrlFromHeader(value: string): string | null {
 function isVoiceApiItem(value: unknown): value is VoiceApiItem {
   if (!value || typeof value !== "object") return false;
   const item = value as VoiceApiItem;
-  return Boolean(item.id || item.voiceId);
+  return typeof item.id === "string" && item.id.length > 0;
 }
 
 export function useTts(language: string, externalAudioRef?: RefObject<HTMLAudioElement | null>) {
@@ -57,6 +69,7 @@ export function useTts(language: string, externalAudioRef?: RefObject<HTMLAudioE
   const [isMakingMp3, setIsMakingMp3] = useState(false);
   const [isLoadingVoices, setIsLoadingVoices] = useState(false);
   const [voicesError, setVoicesError] = useState("");
+  const [personalVoices, setPersonalVoices] = useState<PersonalVoiceAccess>("sign-in-required");
   const internalAudioRef = useRef<HTMLAudioElement | null>(null);
   const audioRef = externalAudioRef ?? internalAudioRef;
 
@@ -64,60 +77,32 @@ export function useTts(language: string, externalAudioRef?: RefObject<HTMLAudioE
     setIsLoadingVoices(true);
     setVoicesError("");
     try {
-      const data = await clientJson<{ voices?: unknown[] } | unknown[]>("/api/voices");
-
-      const list: unknown[] = Array.isArray(data)
-        ? data
-        : Array.isArray(data?.voices)
-          ? data.voices
-          : [];
-      const toVoiceItems = (rows: unknown[]): VoiceItem[] =>
-        rows.filter(isVoiceApiItem).map((v) => ({
-          id: String(v.id ?? v.voiceId),
-          name: typeof v.name === "string" ? v.name : undefined,
-          language: typeof v.language === "string" ? v.language : undefined,
-          isDefault: Boolean(v.isDefault),
-        }));
-
-      let normalized = toVoiceItems(list);
-      const localClones = readStoredClonedVoices();
-      const knownIds = new Set(normalized.map((voice) => voice.id));
-      const pending = localClones.filter(
-        (entry) => !knownIds.has(makeCloneVoiceId(entry.elevenVoiceId))
+      const data = await clientJson<{ voices?: unknown[]; personalVoices?: unknown }>(
+        `/api/voices?language=${encodeURIComponent(language)}`
       );
-      if (pending.length) {
-        let claimFailed = false;
-        for (const entry of pending) {
-          try {
-            await clientJson("/api/voices", {
-              method: "POST",
-              body: JSON.stringify({
-                elevenVoiceId: entry.elevenVoiceId,
-                label: entry.label,
-                language: entry.language,
-              }),
-            });
-          } catch (error: unknown) {
-            const message = getErrorMessage(error, "");
-            if (!message.includes("another account")) claimFailed = true;
-          }
-        }
-        if (!claimFailed) {
-          clearStoredClonedVoices();
-          const refreshed = await clientJson<{ voices?: unknown[] }>("/api/voices");
-          normalized = toVoiceItems(Array.isArray(refreshed.voices) ? refreshed.voices : []);
-        }
-      } else if (localClones.length) {
-        clearStoredClonedVoices();
-      }
-
-      const merged = normalized;
-      setVoices(merged);
+      const list: unknown[] = Array.isArray(data?.voices) ? data.voices : [];
+      const normalized = list.filter(isVoiceApiItem).map((v) => ({
+        id: String(v.id),
+        name: typeof v.name === "string" ? v.name : undefined,
+        description: typeof v.description === "string" ? v.description : undefined,
+        language: typeof v.language === "string" ? v.language : undefined,
+        languages: Array.isArray(v.languages) ? v.languages.filter((item): item is string => typeof item === "string") : undefined,
+        group: v.group === "mine" ? ("mine" as const) : ("story" as const),
+        kind: v.kind === "personal" ? ("personal" as const) : ("default" as const),
+        status: typeof v.status === "string" ? v.status : undefined,
+        selectable: v.selectable !== false,
+        isDefault: Boolean(v.isDefault),
+        nonNativeRisk: v.nonNativeRisk === true,
+      }));
+      setPersonalVoices(data.personalVoices === "available" ? "available" : "sign-in-required");
+      setVoices(normalized);
       setSelectedVoiceId((prev) => {
-        if (prev && merged.some((v) => v.id === prev)) return prev;
-        return pickDefaultVoice(merged, language)?.id || "";
+        const saved = readVoicePreference();
+        const preferred = prev || saved?.voiceId || "";
+        if (preferred && normalized.some((voice) => voice.id === preferred)) return preferred;
+        return pickDefaultVoice(normalized, language)?.id || "";
       });
-      return merged;
+      return normalized;
     } catch (e: unknown) {
       setVoicesError(getErrorMessage(e, "Could not load voices."));
       return [];
@@ -241,21 +226,28 @@ export function useTts(language: string, externalAudioRef?: RefObject<HTMLAudioE
     }
   }
 
+  const chooseVoice = useCallback((voiceId: string) => {
+    setSelectedVoiceId(voiceId);
+    writeVoicePreference({ voiceId, language });
+    void clientJson("/api/voice-preference", {
+      method: "PUT",
+      body: JSON.stringify({ voiceId, language }),
+    }).catch(() => {});
+  }, [language]);
+
   const registerClonedVoice = useCallback(
-    async (elevenVoiceId: string) => {
+    async (voiceId: string) => {
       await fetchVoices();
-      setSelectedVoiceId(makeCloneVoiceId(elevenVoiceId));
+      chooseVoice(voiceId);
     },
-    [fetchVoices]
+    [chooseVoice, fetchVoices]
   );
 
   const clearClonedVoice = useCallback(async () => {
-    clearStoredClonedVoices();
-    await clientJson("/api/voices", { method: "DELETE" });
     await fetchVoices();
   }, [fetchVoices]);
 
-  const hasClonedVoice = useMemo(() => voices.some((v) => isCloneVoiceId(v.id)), [voices]);
+  const hasClonedVoice = useMemo(() => voices.some((voice) => voice.kind === "personal"), [voices]);
 
   return {
     voices,
@@ -267,6 +259,8 @@ export function useTts(language: string, externalAudioRef?: RefObject<HTMLAudioE
     isLoadingVoices,
     voicesError,
     fetchVoices,
+    personalVoices,
+    chooseVoice,
     makeMp3,
     playSavedAudio,
     clearAudio,

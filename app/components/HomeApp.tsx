@@ -31,6 +31,8 @@ import {
   type OnboardingIntent,
 } from "@/lib/profiles/localProfilesStorage";
 import { useAuthUser } from "@/app/components/RequireAuth";
+import { selectionAfterLanguageChange } from "@/lib/voices/decisions";
+import { formatSwitchNotice, voiceCopy } from "@/lib/voices/uiCopy";
 
 export type HomeUiMode = "responsive" | "mobile" | "desktop";
 
@@ -131,6 +133,9 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
   const { user, authEnabled } = useAuthUser();
   const [age, setAge] = useState("6 months");
   const [language, setLanguage] = useState("zh-Hant");
+  const [voiceNotice, setVoiceNotice] = useState("");
+  const [personalNote, setPersonalNote] = useState("");
+  const [switchPair, setSwitchPair] = useState<{ from: string; to: string } | null>(null);
   const [mainCharacterName, setMainCharacterName] = useState("嚕嚕");
   const [characterPick, setCharacterPick] = useState<NonNullable<StoryGenerationInput["character"]> | null>(null);
   const [childGender, setChildGender] = useState("any");
@@ -170,6 +175,9 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
     isLoadingVoices,
     voicesError,
     fetchVoices,
+    personalVoices,
+    chooseVoice,
+    registerClonedVoice,
   } = useTts(language);
 
   const { profiles: kids, add: addKid } = useKidProfiles();
@@ -287,12 +295,58 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
     router.push(play ? `/story/${id}?play=1` : `/story/${id}`);
   }
 
+  useEffect(() => {
+    void fetchVoices();
+  }, [fetchVoices]);
+
+  function onVoicePick(voiceId: string) {
+    chooseVoice(voiceId);
+    setSwitchPair(null);
+    setVoiceNotice("");
+    setPersonalNote("");
+  }
+
   function onLanguagePick(next: string) {
     setLanguage(next);
-    const group = next.toLowerCase().startsWith("zh") ? "zh" : "en";
-    const match = voices.find((voice) => (voice.language ?? "en").toLowerCase().startsWith(group));
-    if (match) setSelectedVoiceId(match.id);
+    const current = voices.find((voice) => voice.id === selectedVoiceId);
+    const nextPick = selectionAfterLanguageChange({
+      previousId: selectedVoiceId,
+      previousKind: current?.kind === "personal" ? "personal" : current ? "default" : "unknown",
+      language: next,
+      voices: voices.map((voice) => ({
+        id: voice.id,
+        name: voice.name || voice.id,
+        description: voice.description || "",
+        language: (voice.language === "zh-Hant" ? "zh-Hant" : "en") as "en" | "zh-Hant",
+        languages: (voice.languages || [voice.language || "en"]).map((item) =>
+          item.toLowerCase().startsWith("zh") ? "zh-Hant" : "en"
+        ) as ("en" | "zh-Hant")[],
+        group: voice.group === "mine" ? "mine" : "story",
+        kind: voice.kind === "personal" ? "personal" : "default",
+        status:
+          voice.status === "pending_verification" || voice.status === "deleting" || voice.status === "delete_failed"
+            ? voice.status
+            : voice.status === "pending_audition"
+              ? "pending_audition"
+              : "ready",
+        selectable: voice.selectable !== false,
+        isDefault: voice.isDefault,
+        nonNativeRisk: voice.nonNativeRisk,
+      })),
+    });
+    chooseVoice(nextPick.voiceId);
+    setPersonalNote(nextPick.personalNote);
+    setSwitchPair(nextPick.replaced ? { from: selectedVoiceId, to: nextPick.voiceId } : null);
+    setVoiceNotice("");
   }
+
+  useEffect(() => {
+    if (!switchPair) return;
+    const from = voices.find((voice) => voice.id === switchPair.from);
+    const to = voices.find((voice) => voice.id === switchPair.to);
+    if (!from?.name || !to?.name) return;
+    setVoiceNotice(formatSwitchNotice(from.name, to.name, language));
+  }, [language, switchPair, voices]);
 
   const applyKidProfile = useCallback((k: KidProfile) => {
     setAge(k.age);
@@ -595,11 +649,14 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
                 moralLesson={moralLesson}
                 voices={voices}
                 selectedVoiceId={selectedVoiceId}
+                personalVoices={personalVoices}
+                voiceNotice={voiceNotice}
+                personalNote={personalNote}
                 isLoadingVoices={isLoadingVoices}
                 voicesError={voicesError}
                 isGenerating={isGenerating || isSaving}
                 submitLabel={
-                  isSaving ? "Saving your story" : isGenerating ? "Writing your story" : "Create story"
+                  isSaving ? voiceCopy(language).saving : isGenerating ? voiceCopy(language).writing : voiceCopy(language).createStory
                 }
                 onAgeChange={setAge}
                 onLanguageChange={onLanguagePick}
@@ -613,7 +670,8 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
                 onSeriesModeChange={setSeriesMode}
                 onEducationalGoalChange={setEducationalGoal}
                 onMoralLessonChange={setMoralLesson}
-                onVoiceChange={setSelectedVoiceId}
+                onVoiceChange={onVoicePick}
+                onVoiceCreated={(voiceId) => void registerClonedVoice(voiceId)}
                 onRetryVoices={() => void fetchVoices()}
                 onAddKid={() => setKidModalOpen(true)}
                 onAddCharacter={() => setCharModalOpen(true)}

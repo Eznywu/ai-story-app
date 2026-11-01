@@ -3401,6 +3401,291 @@ textarea::placeholder {
   border-color: #d6be91;
 }
 
+.voiceGroup {
+  margin-top: 14px;
+}
+
+.voiceCard {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border-radius: 14px;
+  border: 1px solid rgba(186, 198, 255, 0.18);
+  background: rgba(22, 32, 70, 0.88);
+}
+
+.voiceCard--on {
+  border-color: #d6be91;
+  background: rgba(214, 190, 145, 0.2);
+  box-shadow: inset 6px 0 0 #d6be91;
+}
+
+.voiceCard__mark {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-right: 8px;
+  border-radius: 999px;
+  background: #d6be91;
+  color: #141c3d;
+  font-weight: 800;
+}
+
+.voiceNote {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  color: #f4f1eb;
+  background: rgba(168, 196, 181, 0.16);
+  border: 1px solid rgba(168, 196, 181, 0.5);
+}
+
+.hhCheck {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  width: 100%;
+  cursor: pointer;
+}
+
+.hhCheck input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 22px;
+  min-width: 22px;
+  height: 22px;
+  min-height: 22px;
+  margin: 0;
+  padding: 0;
+  flex: 0 0 22px;
+  border-radius: 6px;
+  border: 2px solid var(--color-lavender, #b9aedc);
+  background: transparent;
+}
+
+.hhCheck input[type="checkbox"]:checked {
+  background: var(--color-lavender, #b9aedc);
+  box-shadow: inset 0 0 0 4px #141c3d;
+}
+
+.hhCheck input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--color-lavender, #b9aedc);
+  outline-offset: 3px;
+}
+
+.hhCheck span {
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.voiceManage {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.clipPlayer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+}
+
+.clipPlayer__play {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border: 0;
+  border-radius: 50%;
+  background: #d6be91;
+  color: #11182b;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.clipPlayer__play:focus-visible {
+  outline: 2px solid #b9aedc;
+  outline-offset: 3px;
+}
+
+.clipPlayer__triangle {
+  width: 0;
+  height: 0;
+  margin-left: 3px;
+  border-style: solid;
+  border-width: 7px 0 7px 12px;
+  border-color: transparent transparent transparent #d6be91;
+}
+
+.clipPlayer__pause {
+  width: 12px;
+  height: 14px;
+  border-left: 4px solid #d6be91;
+  border-right: 4px solid #d6be91;
+  box-sizing: border-box;
+}
+
+.clipPlayer__range {
+  flex: 1;
+  width: auto;
+  min-height: 44px;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  accent-color: #d6be91;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.clipPlayer__range::-webkit-slider-runnable-track {
+  height: 6px;
+  background: rgba(186, 198, 255, 0.35);
+  border-radius: 999px;
+}
+
+.clipPlayer__range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: #d6be91;
+}
+
+.clipPlayer__range::-moz-range-track {
+  height: 6px;
+  background: rgba(186, 198, 255, 0.35);
+  border-radius: 999px;
+  border: 0;
+}
+
+.clipPlayer__range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border: 0;
+  border-radius: 50%;
+  background: #d6be91;
+}
+
+.voiceCard__main {
+  display: grid;
+  gap: 2px;
+  flex: 1 1 180px;
+  min-height: 48px;
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.voiceCard__main:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.voiceCard__name {
+  font-weight: 700;
+}
+
+.voiceCard__desc,
+.voiceCard__selected {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.92rem;
+}
+
+.voiceCard__preview,
+.voiceFlow button {
+  min-height: 44px;
+  border-radius: 999px;
+  border: 1px solid rgba(214, 190, 145, 0.8);
+  background: transparent;
+  color: #d6be91;
+  font-weight: 700;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+/* Wins over `.voiceFlow button`. Icon is champagne on the navy sheet (>=3:1). */
+.voiceFlow .clipPlayer__play {
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid #d6be91;
+  background: #141c3d;
+  color: #d6be91;
+}
+
+.voiceFlow .clipPlayer__play:focus-visible {
+  outline: 2px solid #b9aedc;
+  outline-offset: 3px;
+}
+
+.voiceFlow .clipPlayer__triangle {
+  border-color: transparent transparent transparent #d6be91;
+}
+
+.voiceFlow .clipPlayer__pause {
+  border-left-color: #d6be91;
+  border-right-color: #d6be91;
+}
+
+.voiceFlow {
+  display: grid;
+  gap: 12px;
+}
+
+.voiceFlow__title {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.voiceFlow__passage {
+  line-height: 1.5;
+}
+
+.voiceFlow__timer {
+  font-variant-numeric: tabular-nums;
+  font-size: 1.4rem;
+}
+
+.voiceFlow__bar {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.voiceFlow__bar span {
+  display: block;
+  height: 100%;
+  background: #d6be91;
+}
+
+.voiceFlow__check {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-height: 44px;
+}
+
+.voiceFlow__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 dialog.quietSheet {
   display: none;
   position: fixed;
@@ -3429,7 +3714,7 @@ dialog.quietSheet::backdrop {
 
 .quietSheet__panel {
   width: min(100%, 480px);
-  max-height: min(86dvh, 740px);
+  max-height: min(94dvh, 820px);
   overflow: auto;
   background: #141c3d;
   color: #fff;

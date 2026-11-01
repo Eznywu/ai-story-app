@@ -169,6 +169,7 @@ export type UserWhereInput = {
   sessions?: Prisma.SessionListRelationFilter
   stories?: Prisma.StoryListRelationFilter
   voices?: Prisma.VoiceListRelationFilter
+  voicePreference?: Prisma.XOR<Prisma.VoicePreferenceNullableScalarRelationFilter, Prisma.VoicePreferenceWhereInput> | null
   kids?: Prisma.KidProfileListRelationFilter
   characters?: Prisma.StoryCharacterListRelationFilter
   readingStats?: Prisma.XOR<Prisma.ReadingStatsNullableScalarRelationFilter, Prisma.ReadingStatsWhereInput> | null
@@ -181,6 +182,7 @@ export type UserOrderByWithRelationInput = {
   sessions?: Prisma.SessionOrderByRelationAggregateInput
   stories?: Prisma.StoryOrderByRelationAggregateInput
   voices?: Prisma.VoiceOrderByRelationAggregateInput
+  voicePreference?: Prisma.VoicePreferenceOrderByWithRelationInput
   kids?: Prisma.KidProfileOrderByRelationAggregateInput
   characters?: Prisma.StoryCharacterOrderByRelationAggregateInput
   readingStats?: Prisma.ReadingStatsOrderByWithRelationInput
@@ -196,6 +198,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   sessions?: Prisma.SessionListRelationFilter
   stories?: Prisma.StoryListRelationFilter
   voices?: Prisma.VoiceListRelationFilter
+  voicePreference?: Prisma.XOR<Prisma.VoicePreferenceNullableScalarRelationFilter, Prisma.VoicePreferenceWhereInput> | null
   kids?: Prisma.KidProfileListRelationFilter
   characters?: Prisma.StoryCharacterListRelationFilter
   readingStats?: Prisma.XOR<Prisma.ReadingStatsNullableScalarRelationFilter, Prisma.ReadingStatsWhereInput> | null
@@ -226,6 +229,7 @@ export type UserCreateInput = {
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
   stories?: Prisma.StoryCreateNestedManyWithoutUserInput
   voices?: Prisma.VoiceCreateNestedManyWithoutUserInput
+  voicePreference?: Prisma.VoicePreferenceCreateNestedOneWithoutUserInput
   kids?: Prisma.KidProfileCreateNestedManyWithoutUserInput
   characters?: Prisma.StoryCharacterCreateNestedManyWithoutUserInput
   readingStats?: Prisma.ReadingStatsCreateNestedOneWithoutUserInput
@@ -238,6 +242,7 @@ export type UserUncheckedCreateInput = {
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
   stories?: Prisma.StoryUncheckedCreateNestedManyWithoutUserInput
   voices?: Prisma.VoiceUncheckedCreateNestedManyWithoutUserInput
+  voicePreference?: Prisma.VoicePreferenceUncheckedCreateNestedOneWithoutUserInput
   kids?: Prisma.KidProfileUncheckedCreateNestedManyWithoutUserInput
   characters?: Prisma.StoryCharacterUncheckedCreateNestedManyWithoutUserInput
   readingStats?: Prisma.ReadingStatsUncheckedCreateNestedOneWithoutUserInput
@@ -250,6 +255,7 @@ export type UserUpdateInput = {
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
   stories?: Prisma.StoryUpdateManyWithoutUserNestedInput
   voices?: Prisma.VoiceUpdateManyWithoutUserNestedInput
+  voicePreference?: Prisma.VoicePreferenceUpdateOneWithoutUserNestedInput
   kids?: Prisma.KidProfileUpdateManyWithoutUserNestedInput
   characters?: Prisma.StoryCharacterUpdateManyWithoutUserNestedInput
   readingStats?: Prisma.ReadingStatsUpdateOneWithoutUserNestedInput
@@ -262,6 +268,7 @@ export type UserUncheckedUpdateInput = {
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
   stories?: Prisma.StoryUncheckedUpdateManyWithoutUserNestedInput
   voices?: Prisma.VoiceUncheckedUpdateManyWithoutUserNestedInput
+  voicePreference?: Prisma.VoicePreferenceUncheckedUpdateOneWithoutUserNestedInput
   kids?: Prisma.KidProfileUncheckedUpdateManyWithoutUserNestedInput
   characters?: Prisma.StoryCharacterUncheckedUpdateManyWithoutUserNestedInput
   readingStats?: Prisma.ReadingStatsUncheckedUpdateOneWithoutUserNestedInput
@@ -367,6 +374,20 @@ export type UserUpdateOneWithoutVoicesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutVoicesInput, Prisma.UserUpdateWithoutVoicesInput>, Prisma.UserUncheckedUpdateWithoutVoicesInput>
 }
 
+export type UserCreateNestedOneWithoutVoicePreferenceInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutVoicePreferenceInput, Prisma.UserUncheckedCreateWithoutVoicePreferenceInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutVoicePreferenceInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutVoicePreferenceNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutVoicePreferenceInput, Prisma.UserUncheckedCreateWithoutVoicePreferenceInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutVoicePreferenceInput
+  upsert?: Prisma.UserUpsertWithoutVoicePreferenceInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutVoicePreferenceInput, Prisma.UserUpdateWithoutVoicePreferenceInput>, Prisma.UserUncheckedUpdateWithoutVoicePreferenceInput>
+}
+
 export type UserCreateNestedOneWithoutKidsInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutKidsInput, Prisma.UserUncheckedCreateWithoutKidsInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutKidsInput
@@ -415,6 +436,7 @@ export type UserCreateWithoutSessionsInput = {
   createdAt?: Date | string
   stories?: Prisma.StoryCreateNestedManyWithoutUserInput
   voices?: Prisma.VoiceCreateNestedManyWithoutUserInput
+  voicePreference?: Prisma.VoicePreferenceCreateNestedOneWithoutUserInput
   kids?: Prisma.KidProfileCreateNestedManyWithoutUserInput
   characters?: Prisma.StoryCharacterCreateNestedManyWithoutUserInput
   readingStats?: Prisma.ReadingStatsCreateNestedOneWithoutUserInput
@@ -426,6 +448,7 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   createdAt?: Date | string
   stories?: Prisma.StoryUncheckedCreateNestedManyWithoutUserInput
   voices?: Prisma.VoiceUncheckedCreateNestedManyWithoutUserInput
+  voicePreference?: Prisma.VoicePreferenceUncheckedCreateNestedOneWithoutUserInput
   kids?: Prisma.KidProfileUncheckedCreateNestedManyWithoutUserInput
   characters?: Prisma.StoryCharacterUncheckedCreateNestedManyWithoutUserInput
   readingStats?: Prisma.ReadingStatsUncheckedCreateNestedOneWithoutUserInput
@@ -453,6 +476,7 @@ export type UserUpdateWithoutSessionsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   stories?: Prisma.StoryUpdateManyWithoutUserNestedInput
   voices?: Prisma.VoiceUpdateManyWithoutUserNestedInput
+  voicePreference?: Prisma.VoicePreferenceUpdateOneWithoutUserNestedInput
   kids?: Prisma.KidProfileUpdateManyWithoutUserNestedInput
   characters?: Prisma.StoryCharacterUpdateManyWithoutUserNestedInput
   readingStats?: Prisma.ReadingStatsUpdateOneWithoutUserNestedInput
@@ -464,6 +488,7 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   stories?: Prisma.StoryUncheckedUpdateManyWithoutUserNestedInput
   voices?: Prisma.VoiceUncheckedUpdateManyWithoutUserNestedInput
+  voicePreference?: Prisma.VoicePreferenceUncheckedUpdateOneWithoutUserNestedInput
   kids?: Prisma.KidProfileUncheckedUpdateManyWithoutUserNestedInput
   characters?: Prisma.StoryCharacterUncheckedUpdateManyWithoutUserNestedInput
   readingStats?: Prisma.ReadingStatsUncheckedUpdateOneWithoutUserNestedInput
@@ -475,6 +500,7 @@ export type UserCreateWithoutStoriesInput = {
   createdAt?: Date | string
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
   voices?: Prisma.VoiceCreateNestedManyWithoutUserInput
+  voicePreference?: Prisma.VoicePreferenceCreateNestedOneWithoutUserInput
   kids?: Prisma.KidProfileCreateNestedManyWithoutUserInput
   characters?: Prisma.StoryCharacterCreateNestedManyWithoutUserInput
   readingStats?: Prisma.ReadingStatsCreateNestedOneWithoutUserInput
@@ -486,6 +512,7 @@ export type UserUncheckedCreateWithoutStoriesInput = {
   createdAt?: Date | string
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
   voices?: Prisma.VoiceUncheckedCreateNestedManyWithoutUserInput
+  voicePreference?: Prisma.VoicePreferenceUncheckedCreateNestedOneWithoutUserInput
   kids?: Prisma.KidProfileUncheckedCreateNestedManyWithoutUserInput
   characters?: Prisma.StoryCharacterUncheckedCreateNestedManyWithoutUserInput
   readingStats?: Prisma.ReadingStatsUncheckedCreateNestedOneWithoutUserInput
@@ -513,6 +540,7 @@ export type UserUpdateWithoutStoriesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
   voices?: Prisma.VoiceUpdateManyWithoutUserNestedInput
+  voicePreference?: Prisma.VoicePreferenceUpdateOneWithoutUserNestedInput
   kids?: Prisma.KidProfileUpdateManyWithoutUserNestedInput
   characters?: Prisma.StoryCharacterUpdateManyWithoutUserNestedInput
   readingStats?: Prisma.ReadingStatsUpdateOneWithoutUserNestedInput
@@ -524,6 +552,7 @@ export type UserUncheckedUpdateWithoutStoriesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
   voices?: Prisma.VoiceUncheckedUpdateManyWithoutUserNestedInput
+  voicePreference?: Prisma.VoicePreferenceUncheckedUpdateOneWithoutUserNestedInput
   kids?: Prisma.KidProfileUncheckedUpdateManyWithoutUserNestedInput
   characters?: Prisma.StoryCharacterUncheckedUpdateManyWithoutUserNestedInput
   readingStats?: Prisma.ReadingStatsUncheckedUpdateOneWithoutUserNestedInput
@@ -535,6 +564,7 @@ export type UserCreateWithoutVoicesInput = {
   createdAt?: Date | string
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
   stories?: Prisma.StoryCreateNestedManyWithoutUserInput
+  voicePreference?: Prisma.VoicePreferenceCreateNestedOneWithoutUserInput
   kids?: Prisma.KidProfileCreateNestedManyWithoutUserInput
   characters?: Prisma.StoryCharacterCreateNestedManyWithoutUserInput
   readingStats?: Prisma.ReadingStatsCreateNestedOneWithoutUserInput
@@ -546,6 +576,7 @@ export type UserUncheckedCreateWithoutVoicesInput = {
   createdAt?: Date | string
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
   stories?: Prisma.StoryUncheckedCreateNestedManyWithoutUserInput
+  voicePreference?: Prisma.VoicePreferenceUncheckedCreateNestedOneWithoutUserInput
   kids?: Prisma.KidProfileUncheckedCreateNestedManyWithoutUserInput
   characters?: Prisma.StoryCharacterUncheckedCreateNestedManyWithoutUserInput
   readingStats?: Prisma.ReadingStatsUncheckedCreateNestedOneWithoutUserInput
@@ -573,6 +604,7 @@ export type UserUpdateWithoutVoicesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
   stories?: Prisma.StoryUpdateManyWithoutUserNestedInput
+  voicePreference?: Prisma.VoicePreferenceUpdateOneWithoutUserNestedInput
   kids?: Prisma.KidProfileUpdateManyWithoutUserNestedInput
   characters?: Prisma.StoryCharacterUpdateManyWithoutUserNestedInput
   readingStats?: Prisma.ReadingStatsUpdateOneWithoutUserNestedInput
@@ -584,6 +616,71 @@ export type UserUncheckedUpdateWithoutVoicesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
   stories?: Prisma.StoryUncheckedUpdateManyWithoutUserNestedInput
+  voicePreference?: Prisma.VoicePreferenceUncheckedUpdateOneWithoutUserNestedInput
+  kids?: Prisma.KidProfileUncheckedUpdateManyWithoutUserNestedInput
+  characters?: Prisma.StoryCharacterUncheckedUpdateManyWithoutUserNestedInput
+  readingStats?: Prisma.ReadingStatsUncheckedUpdateOneWithoutUserNestedInput
+}
+
+export type UserCreateWithoutVoicePreferenceInput = {
+  id?: string
+  email: string
+  createdAt?: Date | string
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  stories?: Prisma.StoryCreateNestedManyWithoutUserInput
+  voices?: Prisma.VoiceCreateNestedManyWithoutUserInput
+  kids?: Prisma.KidProfileCreateNestedManyWithoutUserInput
+  characters?: Prisma.StoryCharacterCreateNestedManyWithoutUserInput
+  readingStats?: Prisma.ReadingStatsCreateNestedOneWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutVoicePreferenceInput = {
+  id?: string
+  email: string
+  createdAt?: Date | string
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  stories?: Prisma.StoryUncheckedCreateNestedManyWithoutUserInput
+  voices?: Prisma.VoiceUncheckedCreateNestedManyWithoutUserInput
+  kids?: Prisma.KidProfileUncheckedCreateNestedManyWithoutUserInput
+  characters?: Prisma.StoryCharacterUncheckedCreateNestedManyWithoutUserInput
+  readingStats?: Prisma.ReadingStatsUncheckedCreateNestedOneWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutVoicePreferenceInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutVoicePreferenceInput, Prisma.UserUncheckedCreateWithoutVoicePreferenceInput>
+}
+
+export type UserUpsertWithoutVoicePreferenceInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutVoicePreferenceInput, Prisma.UserUncheckedUpdateWithoutVoicePreferenceInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutVoicePreferenceInput, Prisma.UserUncheckedCreateWithoutVoicePreferenceInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutVoicePreferenceInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutVoicePreferenceInput, Prisma.UserUncheckedUpdateWithoutVoicePreferenceInput>
+}
+
+export type UserUpdateWithoutVoicePreferenceInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  stories?: Prisma.StoryUpdateManyWithoutUserNestedInput
+  voices?: Prisma.VoiceUpdateManyWithoutUserNestedInput
+  kids?: Prisma.KidProfileUpdateManyWithoutUserNestedInput
+  characters?: Prisma.StoryCharacterUpdateManyWithoutUserNestedInput
+  readingStats?: Prisma.ReadingStatsUpdateOneWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutVoicePreferenceInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  stories?: Prisma.StoryUncheckedUpdateManyWithoutUserNestedInput
+  voices?: Prisma.VoiceUncheckedUpdateManyWithoutUserNestedInput
   kids?: Prisma.KidProfileUncheckedUpdateManyWithoutUserNestedInput
   characters?: Prisma.StoryCharacterUncheckedUpdateManyWithoutUserNestedInput
   readingStats?: Prisma.ReadingStatsUncheckedUpdateOneWithoutUserNestedInput
@@ -596,6 +693,7 @@ export type UserCreateWithoutKidsInput = {
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
   stories?: Prisma.StoryCreateNestedManyWithoutUserInput
   voices?: Prisma.VoiceCreateNestedManyWithoutUserInput
+  voicePreference?: Prisma.VoicePreferenceCreateNestedOneWithoutUserInput
   characters?: Prisma.StoryCharacterCreateNestedManyWithoutUserInput
   readingStats?: Prisma.ReadingStatsCreateNestedOneWithoutUserInput
 }
@@ -607,6 +705,7 @@ export type UserUncheckedCreateWithoutKidsInput = {
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
   stories?: Prisma.StoryUncheckedCreateNestedManyWithoutUserInput
   voices?: Prisma.VoiceUncheckedCreateNestedManyWithoutUserInput
+  voicePreference?: Prisma.VoicePreferenceUncheckedCreateNestedOneWithoutUserInput
   characters?: Prisma.StoryCharacterUncheckedCreateNestedManyWithoutUserInput
   readingStats?: Prisma.ReadingStatsUncheckedCreateNestedOneWithoutUserInput
 }
@@ -634,6 +733,7 @@ export type UserUpdateWithoutKidsInput = {
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
   stories?: Prisma.StoryUpdateManyWithoutUserNestedInput
   voices?: Prisma.VoiceUpdateManyWithoutUserNestedInput
+  voicePreference?: Prisma.VoicePreferenceUpdateOneWithoutUserNestedInput
   characters?: Prisma.StoryCharacterUpdateManyWithoutUserNestedInput
   readingStats?: Prisma.ReadingStatsUpdateOneWithoutUserNestedInput
 }
@@ -645,6 +745,7 @@ export type UserUncheckedUpdateWithoutKidsInput = {
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
   stories?: Prisma.StoryUncheckedUpdateManyWithoutUserNestedInput
   voices?: Prisma.VoiceUncheckedUpdateManyWithoutUserNestedInput
+  voicePreference?: Prisma.VoicePreferenceUncheckedUpdateOneWithoutUserNestedInput
   characters?: Prisma.StoryCharacterUncheckedUpdateManyWithoutUserNestedInput
   readingStats?: Prisma.ReadingStatsUncheckedUpdateOneWithoutUserNestedInput
 }
@@ -656,6 +757,7 @@ export type UserCreateWithoutCharactersInput = {
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
   stories?: Prisma.StoryCreateNestedManyWithoutUserInput
   voices?: Prisma.VoiceCreateNestedManyWithoutUserInput
+  voicePreference?: Prisma.VoicePreferenceCreateNestedOneWithoutUserInput
   kids?: Prisma.KidProfileCreateNestedManyWithoutUserInput
   readingStats?: Prisma.ReadingStatsCreateNestedOneWithoutUserInput
 }
@@ -667,6 +769,7 @@ export type UserUncheckedCreateWithoutCharactersInput = {
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
   stories?: Prisma.StoryUncheckedCreateNestedManyWithoutUserInput
   voices?: Prisma.VoiceUncheckedCreateNestedManyWithoutUserInput
+  voicePreference?: Prisma.VoicePreferenceUncheckedCreateNestedOneWithoutUserInput
   kids?: Prisma.KidProfileUncheckedCreateNestedManyWithoutUserInput
   readingStats?: Prisma.ReadingStatsUncheckedCreateNestedOneWithoutUserInput
 }
@@ -694,6 +797,7 @@ export type UserUpdateWithoutCharactersInput = {
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
   stories?: Prisma.StoryUpdateManyWithoutUserNestedInput
   voices?: Prisma.VoiceUpdateManyWithoutUserNestedInput
+  voicePreference?: Prisma.VoicePreferenceUpdateOneWithoutUserNestedInput
   kids?: Prisma.KidProfileUpdateManyWithoutUserNestedInput
   readingStats?: Prisma.ReadingStatsUpdateOneWithoutUserNestedInput
 }
@@ -705,6 +809,7 @@ export type UserUncheckedUpdateWithoutCharactersInput = {
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
   stories?: Prisma.StoryUncheckedUpdateManyWithoutUserNestedInput
   voices?: Prisma.VoiceUncheckedUpdateManyWithoutUserNestedInput
+  voicePreference?: Prisma.VoicePreferenceUncheckedUpdateOneWithoutUserNestedInput
   kids?: Prisma.KidProfileUncheckedUpdateManyWithoutUserNestedInput
   readingStats?: Prisma.ReadingStatsUncheckedUpdateOneWithoutUserNestedInput
 }
@@ -716,6 +821,7 @@ export type UserCreateWithoutReadingStatsInput = {
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
   stories?: Prisma.StoryCreateNestedManyWithoutUserInput
   voices?: Prisma.VoiceCreateNestedManyWithoutUserInput
+  voicePreference?: Prisma.VoicePreferenceCreateNestedOneWithoutUserInput
   kids?: Prisma.KidProfileCreateNestedManyWithoutUserInput
   characters?: Prisma.StoryCharacterCreateNestedManyWithoutUserInput
 }
@@ -727,6 +833,7 @@ export type UserUncheckedCreateWithoutReadingStatsInput = {
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
   stories?: Prisma.StoryUncheckedCreateNestedManyWithoutUserInput
   voices?: Prisma.VoiceUncheckedCreateNestedManyWithoutUserInput
+  voicePreference?: Prisma.VoicePreferenceUncheckedCreateNestedOneWithoutUserInput
   kids?: Prisma.KidProfileUncheckedCreateNestedManyWithoutUserInput
   characters?: Prisma.StoryCharacterUncheckedCreateNestedManyWithoutUserInput
 }
@@ -754,6 +861,7 @@ export type UserUpdateWithoutReadingStatsInput = {
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
   stories?: Prisma.StoryUpdateManyWithoutUserNestedInput
   voices?: Prisma.VoiceUpdateManyWithoutUserNestedInput
+  voicePreference?: Prisma.VoicePreferenceUpdateOneWithoutUserNestedInput
   kids?: Prisma.KidProfileUpdateManyWithoutUserNestedInput
   characters?: Prisma.StoryCharacterUpdateManyWithoutUserNestedInput
 }
@@ -765,6 +873,7 @@ export type UserUncheckedUpdateWithoutReadingStatsInput = {
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
   stories?: Prisma.StoryUncheckedUpdateManyWithoutUserNestedInput
   voices?: Prisma.VoiceUncheckedUpdateManyWithoutUserNestedInput
+  voicePreference?: Prisma.VoicePreferenceUncheckedUpdateOneWithoutUserNestedInput
   kids?: Prisma.KidProfileUncheckedUpdateManyWithoutUserNestedInput
   characters?: Prisma.StoryCharacterUncheckedUpdateManyWithoutUserNestedInput
 }
@@ -843,6 +952,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   sessions?: boolean | Prisma.User$sessionsArgs<ExtArgs>
   stories?: boolean | Prisma.User$storiesArgs<ExtArgs>
   voices?: boolean | Prisma.User$voicesArgs<ExtArgs>
+  voicePreference?: boolean | Prisma.User$voicePreferenceArgs<ExtArgs>
   kids?: boolean | Prisma.User$kidsArgs<ExtArgs>
   characters?: boolean | Prisma.User$charactersArgs<ExtArgs>
   readingStats?: boolean | Prisma.User$readingStatsArgs<ExtArgs>
@@ -872,6 +982,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   sessions?: boolean | Prisma.User$sessionsArgs<ExtArgs>
   stories?: boolean | Prisma.User$storiesArgs<ExtArgs>
   voices?: boolean | Prisma.User$voicesArgs<ExtArgs>
+  voicePreference?: boolean | Prisma.User$voicePreferenceArgs<ExtArgs>
   kids?: boolean | Prisma.User$kidsArgs<ExtArgs>
   characters?: boolean | Prisma.User$charactersArgs<ExtArgs>
   readingStats?: boolean | Prisma.User$readingStatsArgs<ExtArgs>
@@ -886,6 +997,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     sessions: Prisma.$SessionPayload<ExtArgs>[]
     stories: Prisma.$StoryPayload<ExtArgs>[]
     voices: Prisma.$VoicePayload<ExtArgs>[]
+    voicePreference: Prisma.$VoicePreferencePayload<ExtArgs> | null
     kids: Prisma.$KidProfilePayload<ExtArgs>[]
     characters: Prisma.$StoryCharacterPayload<ExtArgs>[]
     readingStats: Prisma.$ReadingStatsPayload<ExtArgs> | null
@@ -1291,6 +1403,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   sessions<T extends Prisma.User$sessionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$sessionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   stories<T extends Prisma.User$storiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$storiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$StoryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   voices<T extends Prisma.User$voicesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$voicesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$VoicePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  voicePreference<T extends Prisma.User$voicePreferenceArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$voicePreferenceArgs<ExtArgs>>): Prisma.Prisma__VoicePreferenceClient<runtime.Types.Result.GetResult<Prisma.$VoicePreferencePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   kids<T extends Prisma.User$kidsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$kidsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$KidProfilePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   characters<T extends Prisma.User$charactersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$charactersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$StoryCharacterPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   readingStats<T extends Prisma.User$readingStatsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$readingStatsArgs<ExtArgs>>): Prisma.Prisma__ReadingStatsClient<runtime.Types.Result.GetResult<Prisma.$ReadingStatsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
@@ -1783,6 +1896,25 @@ export type User$voicesArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
   take?: number
   skip?: number
   distinct?: Prisma.VoiceScalarFieldEnum | Prisma.VoiceScalarFieldEnum[]
+}
+
+/**
+ * User.voicePreference
+ */
+export type User$voicePreferenceArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the VoicePreference
+   */
+  select?: Prisma.VoicePreferenceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the VoicePreference
+   */
+  omit?: Prisma.VoicePreferenceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.VoicePreferenceInclude<ExtArgs> | null
+  where?: Prisma.VoicePreferenceWhereInput
 }
 
 /**

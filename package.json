@@ -10,7 +10,8 @@
     "start": "next start",
     "postinstall": "prisma generate",
     "lint": "eslint",
-    "test": "tsx --test tests/*.test.ts tests/narration/*.test.ts",
+    "test": "tsx --test tests/*.test.ts tests/narration/*.test.ts tests/voices/*.test.ts",
+    "test:ui": "playwright test",
     "narration:benchmark": "tsx scripts/run-narration-benchmark.ts",
     "narration:compare": "tsx scripts/compare-tts-configs.ts",
     "narration:weekly": "tsx scripts/narration-weekly-review.ts",
@@ -40,6 +41,7 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^8.3.0",
+    "@playwright/test": "^1.64.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
