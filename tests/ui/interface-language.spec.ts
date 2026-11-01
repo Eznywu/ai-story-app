@@ -78,6 +78,53 @@ test("welcome screen keeps the language button clear of the logo", async ({ page
   expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(375);
 });
 
+const storyRecord = {
+  id: "story-1",
+  title: "The Little Lantern",
+  genre: "Animals",
+  length: "short",
+  text: "The little horse walked home under a thin moon.",
+  age: "4 years",
+  language: "en",
+  mainCharacterName: "Lulu",
+  posterUrl: "/brand/icon-192.png",
+  coverUrl: "/brand/icon-192.png",
+  illustrationUrl: "/brand/icon-192.png",
+  artworkStatus: "illustrated",
+  posterCaption: "A quiet meadow",
+  dedication: "For Lulu",
+  audioUrl: null,
+};
+
+async function openStory(page: Page, locale: string) {
+  await installRoutes(page);
+  await page.route("**/api/stories/story-1", (route) => route.fulfill({ json: { story: storyRecord } }));
+  await page.context().addCookies([{ name: "hh_ui_locale", value: locale, url: "http://127.0.0.1:3456" }]);
+  await page.addInitScript((code) => {
+    localStorage.setItem("hh_ui_locale", code);
+    localStorage.setItem(
+      "emrsy.onboarding.v1.user-test",
+      JSON.stringify({ completed: true, selectedIntent: null, consentedToVoice: false })
+    );
+  }, locale);
+  await page.goto("/story/story-1");
+}
+
+test("MOCK story reader in Japanese and poster card in Spanish", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openStory(page, "ja");
+  await expect(page.getByRole("button", { name: "読み聞かせを準備" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "わたしの物語" })).toBeVisible();
+  await page.getByRole("button", { name: "読み聞かせを準備" }).scrollIntoViewIfNeeded();
+  await page.screenshot({ path: path.join(outDir, "MOCK-story-reader-ja-390x844.png") });
+
+  await openStory(page, "es");
+  const save = page.getByRole("button", { name: "Guardar mi póster" }).first();
+  await expect(save).toBeVisible();
+  await save.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: path.join(outDir, "MOCK-poster-card-es-390x844.png") });
+});
+
 test.beforeAll(() => {
   fs.mkdirSync(outDir, { recursive: true });
 });
