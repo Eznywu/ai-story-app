@@ -407,4 +407,8 @@ export const messages = {
     choose: "कहानी की आवाज़ चुनें",
     refresh: "सूची रीफ़्रेश करें",
   },
+  localTest: {
+    label: "स्थानीय परीक्षण अभिभावक",
+    voice: "परीक्षण आवाज़",
+  },
 } satisfies Messages;

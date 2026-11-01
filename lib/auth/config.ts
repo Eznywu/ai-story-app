@@ -19,8 +19,38 @@ const DEV_AUTH_SECRET = "dev-only-auth-secret";
  */
 export const GUEST_EMAIL = "guest@local.invalid";
 
+/**
+ * Reserved account for `LOCAL_TEST_PARENT` on a local dev server.
+ * Not a deliverable address. Sign-in routes refuse it, same as the guest.
+ */
+export const LOCAL_TEST_PARENT_EMAIL = "local-test-parent@local.invalid";
+
 export function isGuestEmail(email: string): boolean {
   return email.trim().toLowerCase() === GUEST_EMAIL;
+}
+
+export function isLocalTestParentEmail(email: string): boolean {
+  return email.trim().toLowerCase() === LOCAL_TEST_PARENT_EMAIL;
+}
+
+/** Guest and the local test parent cannot be used as a sign-in address. */
+export function isReservedLoginEmail(email: string): boolean {
+  return isGuestEmail(email) || isLocalTestParentEmail(email);
+}
+
+function envFlagOn(raw: string | undefined): boolean {
+  const value = (raw ?? "").trim().toLowerCase();
+  return value === "1" || value === "true" || value === "yes" || value === "on";
+}
+
+/**
+ * Local parent-voice testing. Active only for a non-production process that is
+ * not running on Vercel. Any `VERCEL_ENV` value keeps this off.
+ */
+export function localTestParentEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
+  if ((env.VERCEL_ENV ?? "").trim() !== "") return false;
+  if (env.NODE_ENV === "production") return false;
+  return envFlagOn(env.LOCAL_TEST_PARENT);
 }
 
 /**

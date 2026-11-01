@@ -66,4 +66,5 @@ ios/**/xcuserdata
 /el_test.mp3
 /test.mp3
 /uploads/audio/
+/uploads/voices/
 /uploads/*.webm
