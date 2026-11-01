@@ -16,7 +16,7 @@ import {
   readCharacterSnapshot,
   type CharacterSnapshot,
 } from "@/lib/posters/characterSnapshot";
-import { posterFooter } from "@/lib/posters/posterFooter";
+import { listenerNameFromSnapshot, posterFooter } from "@/lib/posters/posterFooter";
 import { deriveVisualBrief, validateVisualBrief, type VisualBrief } from "@/lib/posters/visualBrief";
 
 export type ArtworkIntent = "create" | "read" | "download" | "reload" | "regenerate";
@@ -157,13 +157,6 @@ function captionFrom(brief: VisualBrief, story: ArtworkStoryRow): string {
   return (story.posterCaption ?? "").trim() || brief.moment;
 }
 
-function dedicationFrom(story: ArtworkStoryRow): string {
-  const saved = (story.dedication ?? "").trim();
-  if (saved) return saved;
-  const name = story.mainCharacterName?.trim();
-  return name ? `For ${name}` : "";
-}
-
 function possiblyBillable(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
   if (/missing api key|not configured|poster_image_provider/i.test(message)) return false;
@@ -288,25 +281,18 @@ export async function runArtworkRequest(
   const character = characterFor(story);
   const audience = parseAudienceAge(story.age);
   const brief = await resolveBrief(story, character, deps);
-  const zh = (story.language ?? "").toLowerCase().includes("zh");
   const footer = posterFooter({
     audienceBand: audience.band,
     language: story.language,
-    childName: story.mainCharacterName,
+    listenerName: listenerNameFromSnapshot(story.characterSnapshot),
+    characterName: character.name,
     title,
-    moment: (input.caption ?? "").trim() || captionFrom(brief, story),
+    moment: (input.caption ?? "").trim() || brief.moment || captionFrom(brief, story),
   });
   const caption = footer.note;
-  const dedication =
-    input.dedication !== undefined
-      ? input.dedication.trim()
-      : footer.parentFacing
-        ? zh
-          ? "給爸爸媽媽"
-          : "For you"
-        : footer.childName || dedicationFrom(story);
+  const dedication = input.dedication !== undefined ? input.dedication.trim() : footer.childLine;
   const composeLabels = {
-    childName: footer.childName,
+    childName: footer.childLine,
     audienceBand: audience.band,
     language: story.language,
   };

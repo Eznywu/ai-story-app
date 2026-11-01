@@ -6,6 +6,7 @@ import { artworkCacheKey } from "../lib/posters/artworkCacheKey.ts";
 import { artworkScopeKey } from "../lib/posters/artworkLimits.ts";
 import { buildArtworkPrompt } from "../lib/posters/artworkPrompt.ts";
 import { luluReferencePrompt } from "../lib/posters/luluReference.ts";
+import { keepsakePhonePx, keepsakeTextLayout } from "../lib/posters/composeArtwork.ts";
 import { posterFooter, savePosterLabel } from "../lib/posters/posterFooter.ts";
 import {
   runArtworkRequest,
@@ -16,7 +17,7 @@ import {
 } from "../lib/posters/artworkService.ts";
 import { sniffImageMime } from "../lib/posters/imageBytes.ts";
 import { mockIllustrationPng } from "../lib/posters/posterImage.ts";
-import { keepsakeArtRatio, posterCopy, wrapPosterText } from "../lib/posters/posterLayout.ts";
+import { KEEPSAKE_HEIGHT, keepsakeArtRatio, posterCopy, wrapPosterText } from "../lib/posters/posterLayout.ts";
 import { encodeRgbaPng } from "../lib/posters/pngEncode.ts";
 import { buildCharacterSnapshot } from "../lib/posters/characterSnapshot.ts";
 import {
@@ -263,36 +264,112 @@ test("the Lulu reference prompt is the committed fixture", () => {
   assert.match(prompt, /gpt-image|1024 by 1024|No text/);
 });
 
-test("ages 0–2 keepsakes speak to the parent, and the save label is localised", () => {
+test("the child line is separate from the character, and phone type is large enough", async () => {
+  const older = posterFooter({
+    audienceBand: "3-5",
+    language: "en",
+    listenerName: "Mia",
+    characterName: "Lulu",
+    title: "Lulu and the Lantern Path",
+    moment: "Lulu discovers a lantern path and hops toward the first glowing lantern.",
+  });
+  assert.equal(older.childLine, "A story for Mia");
+  assert.equal(older.parentFacing, false);
+  assert.doesNotMatch(older.childLine, /^Lulu$/);
+  assert.ok(older.note.length <= 48);
+  const zh = posterFooter({
+    audienceBand: "3-5",
+    language: "zh-Hant",
+    listenerName: "Mia",
+    characterName: "露露",
+    title: "露露與燈籠小路",
+    moment: "露露發現燈籠小路",
+  });
+  assert.equal(zh.childLine, "給 Mia 的故事");
   const baby = posterFooter({
     audienceBand: "0-2",
     language: "en",
-    childName: "Mei",
+    listenerName: "Mei",
+    characterName: "Mei",
     title: "Moon",
     moment: "Mei smiles",
   });
   assert.equal(baby.parentFacing, true);
-  assert.match(baby.note, /for you/i);
-  assert.match(baby.note, /Mei/);
-  const babyZh = posterFooter({
-    audienceBand: "0-2",
-    language: "zh-Hant",
-    childName: "安安",
-    title: "月亮",
-    moment: "安安笑了",
-  });
-  assert.match(babyZh.note, /給你/);
-  const older = posterFooter({
+  assert.equal(baby.note, "For you to keep");
+  assert.equal(baby.childLine, "A story for Mei");
+  const noListener = posterFooter({
     audienceBand: "3-5",
     language: "en",
-    childName: "Lulu",
+    characterName: "Lulu",
     title: "Lulu and the Lantern Path",
-    moment: "Lulu finds the lantern path",
+    moment: "A path",
   });
-  assert.equal(older.parentFacing, false);
-  assert.equal(older.note, "Lulu finds the lantern path");
+  assert.equal(noListener.childLine, "");
   assert.equal(savePosterLabel("en"), "Save my poster");
   assert.equal(savePosterLabel("zh-Hant"), "儲存我的海報");
+
+  const hero = keepsakeTextLayout({
+    title: older.title,
+    childLine: older.childLine,
+    caption: older.note,
+  });
+  assert.equal(hero.titleLines.length, 1);
+  assert.equal(hero.childLines[0], "A story for Mia");
+  assert.ok(keepsakePhonePx(hero.titlePx) >= 22);
+  assert.ok(keepsakePhonePx(hero.childPx) >= 16);
+  assert.ok(hero.gap >= 12);
+  assert.ok(hero.childBaseline > hero.titleBaseline);
+  assert.ok(hero.markY > hero.childBaseline);
+  assert.ok(hero.markY + hero.markSize <= KEEPSAKE_HEIGHT);
+
+  const zhLayout = keepsakeTextLayout({
+    title: zh.title,
+    childLine: zh.childLine,
+    caption: zh.note,
+  });
+  assert.equal(zhLayout.titleLines.length, 1);
+  assert.equal(zhLayout.childLines[0], "給 Mia 的故事");
+  assert.ok(keepsakePhonePx(zhLayout.titlePx) >= 22);
+
+  const wrapped = keepsakeTextLayout({
+    title: "Lulu and the Very Long Lantern Path Through the Dark Woods",
+    childLine: "A story for Mia",
+    caption: "A caption that should drop before it collides with the logo.",
+  });
+  assert.ok(wrapped.titleLines.length >= 1);
+  assert.ok(keepsakePhonePx(wrapped.titlePx) >= 22);
+  assert.ok(wrapped.markY + wrapped.markSize <= KEEPSAKE_HEIGHT);
+  assert.ok(wrapped.childBaseline + 8 < wrapped.markY);
+
+  const { composeArtworkPng } = await import("../lib/posters/composeArtwork.ts");
+  const sharp = (await import("sharp")).default;
+  const illustration = await sharp({
+    create: { width: 32, height: 32, channels: 3, background: { r: 120, g: 140, b: 160 } },
+  })
+    .png()
+    .toBuffer();
+  const poster = await composeArtworkPng({
+    illustration,
+    kind: "keepsake",
+    title: "Lulu and the Lantern Path",
+    caption: "Lulu discovers a lantern path.",
+    dedication: "A story for Mia",
+    childName: "A story for Mia",
+  });
+  const meta = await sharp(poster).metadata();
+  assert.equal(meta.width, 1080);
+  assert.equal(meta.height, 1350);
+  const { data, info } = await sharp(poster).raw().toBuffer({ resolveWithObject: true });
+  let titleRight = 0;
+  for (let y = 1080; y < 1165; y += 1) {
+    for (let x = 0; x < info.width; x += 1) {
+      const i = (y * info.width + x) * info.channels;
+      const ink = Math.abs(data[i] - 246) + Math.abs(data[i + 1] - 241) + Math.abs(data[i + 2] - 233);
+      if (ink > 36 && x > titleRight) titleRight = x;
+    }
+  }
+  assert.ok(titleRight > 400, "title should paint");
+  assert.ok(titleRight < info.width - 40, `title runs to x ${titleRight}`);
 });
 
 test("a six-month-old listener can keep a rabbit protagonist", () => {

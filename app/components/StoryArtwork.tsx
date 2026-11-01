@@ -58,8 +58,8 @@ export function StoryArtwork({
       </div>
       <figcaption className="artworkFrame__copy">
         <p className="artworkFrame__title">{title.trim() || "Happy Horse"}</p>
+        {dedication?.trim() ? <p className="artworkFrame__child">{dedication.trim()}</p> : null}
         {caption?.trim() ? <p className="artworkFrame__caption">{caption.trim()}</p> : null}
-        {dedication?.trim() ? <p className="artworkFrame__dedication">{dedication.trim()}</p> : null}
         <p className="artworkFrame__brand">
           <BrandMark variant="light" className="artworkFrame__logo" label={null} />
           <span>{BRAND_NAME}</span>
