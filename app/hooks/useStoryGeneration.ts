@@ -18,7 +18,6 @@ export type StoryGenerationForm = {
 };
 
 export function useStoryGeneration() {
-  const [story, setStory] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
 
   async function generateStory(form: StoryGenerationForm) {
@@ -46,10 +45,8 @@ export function useStoryGeneration() {
       if (!res.ok) {
         throw new Error(data?.error || `Story API failed (${res.status})`);
       }
-      const nextStory = String(data?.story ?? "");
-      setStory(nextStory);
       return {
-        text: nextStory,
+        text: String(data?.story ?? ""),
         visualBrief: data?.visualBrief ?? null,
       };
     } catch (e: unknown) {
@@ -60,8 +57,6 @@ export function useStoryGeneration() {
   }
 
   return {
-    story,
-    setStory,
     isGenerating,
     generateStory,
   };

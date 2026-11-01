@@ -454,7 +454,8 @@ test("story generation returns text from one call when the brief is invalid", as
   );
   assert.equal(calls, 1);
   assert.match(generated.text, /lantern path/);
-  assert.equal(generated.visualBrief, null);
+  // The brief is derived from the story locally rather than requested again.
+  assert.equal(generated.visualBrief?.moment, "Lulu walked the lantern path and went to sleep.");
 });
 
 test("cache key ignores title, caption, and dedication", () => {

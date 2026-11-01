@@ -6,6 +6,7 @@ import type { StoryLibraryItem } from "@/app/hooks/useStoryLibrary";
 import { AppStateCard } from "@/app/components/AppStateCard";
 import { useInterfaceLocale } from "@/app/components/LocaleProvider";
 import { QuietSheet } from "@/app/components/QuietSheet";
+import { StoryCover } from "@/app/components/StoryCover";
 import { fill } from "@/lib/i18n/locales";
 
 type Props = {
@@ -132,11 +133,7 @@ export function LibraryPanel({
               <article key={story.id} className="storyCard">
                 <button type="button" className="storyCard__open" onClick={() => onLoadStory(story)}>
                   <span className="storyCard__cover">
-                    {story.coverUrl || story.posterUrl ? (
-                      <Image src={story.coverUrl || story.posterUrl || ""} alt="" width={320} height={320} unoptimized className="storyCard__img" />
-                    ) : (
-                      <span className="storyCard__fallback" aria-hidden />
-                    )}
+                    <StoryCover coverUrl={story.coverUrl} illustrationUrl={story.illustrationUrl} posterUrl={story.posterUrl} />
                   </span>
                   <span className="storyCard__title">{title}</span>
                   <span className="storyCard__meta">

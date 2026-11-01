@@ -40,53 +40,51 @@ To exercise story, narration, and poster **without provider keys**, set `MOCK_PR
 
 ### Story Creation and Library
 - `app/components/HomeApp.tsx` - main orchestration UI
-- `app/components/StoryForm.tsx` - story input form
-- `app/components/StoryOutput.tsx` - rendered generated story
+- `app/components/CreateStoryPicker.tsx` - story setup, voice picker, and voice rename/delete
+- `app/components/LibraryPanel.tsx` - saved stories
+- `app/story/[id]/StoryReader.tsx` - story reader and player
 - `app/hooks/useStoryGeneration.ts` - story generation flow
 - `app/hooks/useStoryLibrary.ts` - library loading and state
 - `app/api/story/route.ts` - single story generation API
 - `app/api/stories/route.ts` - stories listing/storage API
+- `lib/stories/storyForClient.ts` - the story fields the browser may see
 - `lib/stories/storyGenerator.ts` - story generation logic
 - `lib/stories/dailyAutomatedStories.ts` - scheduled daily story generation
 - `lib/stories/storyAgeOptions.ts` - age range options
 
 ### Poster Generation
-- `app/components/PosterFlashCard.tsx` - poster preview card
-- `app/api/poster/route.ts` - poster generation endpoint
-- `app/api/posters/save/route.ts` - persist generated posters
+- `app/components/StoryArtwork.tsx` - cover and keepsake artwork
+- `app/api/poster/route.ts` - artwork generation endpoint (saves on the server)
 - `app/api/posters/[filename]/route.ts` - poster file serving
+- `lib/posters/artworkService.ts` - artwork jobs, reuse, and daily spend caps
 - `lib/posters/poster.ts` - poster pipeline entry point
 - `lib/posters/openaiPoster.ts` - OpenAI poster provider
 - `lib/posters/geminiPoster.ts` - Gemini poster provider
 - `lib/posters/posterImage.ts` - poster image handling
 - `lib/posters/posterDiagnostics.ts` - poster diagnostics helpers
-- `lib/posters/posterGenreArt.ts` - fallback genre artwork
-- `lib/posters/posterPromptConfig.ts` - poster prompt config
 
 ### Voice and Audio (TTS + Cloned Voices)
 - `app/components/TtsControls.tsx` - TTS controls in UI
-- `app/components/VoiceRecorder.tsx` - voice sample recorder
-- `app/components/VoiceRecordingFlashCard.tsx` - voice capture card
-- `app/components/PlaybackPanel.tsx` - audio playback UI
-- `app/api/tts/route.ts` - TTS endpoint
-- `app/api/tts-save/route.ts` - save TTS output
-- `app/api/eleven-tts/route.ts` - ElevenLabs TTS route
-- `app/api/voice-sample/route.ts` - upload/list voice samples
+- `app/components/AddMyVoiceFlow.tsx` - parent voice consent and recording
+- `app/api/eleven-tts/route.ts` - story narration (the only TTS route)
+- `app/api/voice-preview/route.ts` - short voice previews
+- `app/api/voice-sample/[filename]/route.ts` - serves a parent's own voice sample
 - `app/api/voice-clone/route.ts` - voice cloning operations
 - `app/api/voices/route.ts` - available voices route
 - `app/api/audio/[filename]/route.ts` - audio file serving
 - `app/hooks/useTts.ts` - TTS client-side flow
-- `lib/tts/openai.ts` - OpenAI TTS adapter
 - `lib/tts/eleven.ts` - ElevenLabs TTS adapter
 - `lib/voices/voices.ts` - voice metadata and resolution
-- `lib/voices/clonedVoiceStorage.ts` - cloned voice persistence
+- `lib/voices/personalVoice.ts` - personal voice consent, creation, and deletion
+- `lib/voices/accountVoices.ts` - personal voice database and storage
 
 ### Profiles, Kids, and Characters
 - `app/components/KidProfileFormModal.tsx` - kid profile creation/edit
 - `app/components/CharacterFormModal.tsx` - custom character setup
 - `app/hooks/useKidProfiles.ts` - kid profile state management
 - `app/hooks/useStoryCharacters.ts` - character state management
-- `lib/profiles/localProfilesStorage.ts` - profile local storage layer
+- `app/hooks/useAccountRecord.ts` - shared account sync for kids, characters, and reading stats
+- `lib/profiles/localProfilesStorage.ts` - moves lists from older browser-only builds to the account
 - `lib/profiles/profilesTypes.ts` - profile data types
 - `lib/profiles/childGender.ts` - child gender helpers
 

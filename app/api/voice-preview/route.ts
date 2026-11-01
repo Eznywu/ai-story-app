@@ -3,34 +3,46 @@ import { requireUser } from "@/lib/auth/requireUser";
 import { accountCanOwnVoices, findOwnedVoice, listOwnedVoices } from "@/lib/voices/accountVoices";
 import { authorizeSynthesis } from "@/lib/voices/decisions";
 import { normalizeAppLanguage } from "@/lib/voices/language";
+import { previewSpendAllowed } from "@/lib/voices/limits";
 import { planVoicePreview, type PreviewPlan } from "@/lib/voices/previewPlan";
-import { mockNarrationMp3Buffer } from "@/lib/providers/mockProviders";
-import { prisma } from "@/lib/prisma";
-import { readPrivateMedia, saveMediaBytes } from "@/lib/media/objectStore";
-import { defaultNarratorById } from "@/lib/voices/registry";
+import { checkPreviewAudio, PREVIEW_MAX_BYTES, type ServablePreviewSource } from "@/lib/voices/previewAudio";
+import { previewSpendTodayUsd, readCachedPreview, recordPreviewAttempt, rememberPreview } from "@/lib/voices/previewStore";
+import { defaultNarratorById, isLibrarySampleUrl } from "@/lib/voices/registry";
+import { audioResponse } from "@/lib/audio/audioResponse";
 import { buildElevenSpeechRequest } from "@/lib/tts/elevenRequest";
 import { speakWithElevenRequest } from "@/lib/tts/eleven";
-import { resolveTtsModelId } from "@/lib/tts/modelCapabilities";
+import { getModelCapability, resolveTtsModelId } from "@/lib/tts/modelCapabilities";
 import { activeTtsConfig, settingsForSelectedModel } from "@/lib/tts/config";
-import { getModelCapability } from "@/lib/tts/modelCapabilities";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function audioResponse(bytes: Uint8Array | Buffer, source: string, cache: string) {
-  return new NextResponse(new Uint8Array(bytes), {
-    headers: {
-      "Content-Type": "audio/mpeg",
-      "Cache-Control": "private, no-store",
-      "X-Preview-Source": source,
-      "X-Preview-Cache": cache,
-    },
-  });
+const SAMPLE_TIMEOUT_MS = 10_000;
+
+type Produced =
+  | { ok: true; bytes: Buffer; source: ServablePreviewSource }
+  | { ok: false; status: number; reason: string; error: string };
+
+/** Two taps, or two tabs, asking for the same preview share one download or one paid call. */
+const inflight = new Map<string, Promise<Produced>>();
+
+const UNAVAILABLE: Record<string, { status: number; error: string }> = {
+  live_preview_off: { status: 503, error: "A preview of this voice isn't available right now." },
+  no_provider_voice: { status: 503, error: "A preview of this voice isn't available right now." },
+  daily_cap_reached: { status: 429, error: "Voice previews have reached today's limit. Try again tomorrow." },
+};
+
+function previewError(status: number, reason: string, error: string) {
+  return NextResponse.json({ error, reason }, { status, headers: { "Cache-Control": "no-store" } });
 }
 
-function cacheKeyOf(plan: PreviewPlan): string | null {
-  if (plan.action === "forbidden") return null;
-  return plan.cacheKey;
+async function fetchLibrarySample(url: string): Promise<Buffer> {
+  if (!isLibrarySampleUrl(url)) throw new Error("That sample address is not a Voice Library address.");
+  const response = await fetch(url, { signal: AbortSignal.timeout(SAMPLE_TIMEOUT_MS), cache: "no-store" });
+  if (!response.ok) throw new Error(`Voice Library sample returned ${response.status}.`);
+  const declared = Number(response.headers.get("content-length"));
+  if (Number.isFinite(declared) && declared > PREVIEW_MAX_BYTES) throw new Error("Voice Library sample is too large.");
+  return Buffer.from(await response.arrayBuffer());
 }
 
 export async function GET(req: Request) {
@@ -56,77 +68,92 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "That voice is not ready to preview." }, { status: 409 });
   }
   const narrator = decision.kind === "default" ? defaultNarratorById(decision.appVoiceId) : null;
-  const base = {
+  const spentTodayUsd = previewSpendAllowed().allow
+    ? await previewSpendTodayUsd().catch(() => Number.POSITIVE_INFINITY)
+    : 0;
+  const voiceVersion = personal?.voiceVersion ?? 1;
+  const plan = planVoicePreview({
     voiceAppId: decision.appVoiceId,
     language,
     ownerId: decision.ownerId,
-    voiceVersion: personal?.voiceVersion ?? 1,
+    voiceVersion,
     providerVoiceId: personal?.providerVoiceId ?? narrator?.providerVoiceId ?? null,
-    kind: decision.kind === "personal" ? ("personal" as const) : ("default" as const),
+    kind: decision.kind === "personal" ? "personal" : "default",
     selectable: true,
     narrator,
-  };
-  const probe = planVoicePreview({ ...base, cached: false });
-  const cacheKey = cacheKeyOf(probe);
-  const existing = cacheKey
-    ? await prisma.narrationPreview.findUnique({ where: { cacheKey } }).catch(() => null)
-    : null;
-  const plan = planVoicePreview({ ...base, cached: Boolean(existing?.filename || existing?.storageUrl) });
-  if (plan.action === "forbidden") return NextResponse.json({ error: plan.error }, { status: plan.status });
-  if (plan.action === "library") return NextResponse.redirect(plan.url, 302);
-  if (plan.action === "cache" && existing) {
-    const bytes = await readPrivateMedia({ folder: "voices", filename: existing.filename, storageUrl: existing.storageUrl });
-    if (bytes) return audioResponse(bytes, existing.source, "hit");
+    spentTodayUsd,
+  });
+  if (plan.action === "forbidden") return previewError(plan.status, "not_ready", plan.error);
+
+  const range = req.headers.get("range");
+  const cached = await readCachedPreview(plan.cacheKey);
+  if (cached) {
+    return audioResponse(cached.bytes, range, { "X-Preview-Source": cached.source, "X-Preview-Cache": "hit" });
   }
-  if (plan.action === "generate") {
-    const modelId = resolveTtsModelId();
-    const capability = getModelCapability(modelId);
-    const settings = settingsForSelectedModel(capability, language, undefined, activeTtsConfig().id);
-    const request = buildElevenSpeechRequest({ text: plan.script, modelId, language, voiceSettings: settings });
-    const audio = await speakWithElevenRequest(plan.providerVoiceId, request);
-    await rememberPreview(plan.cacheKey, decision.appVoiceId, decision.ownerId, language, modelId, personal?.voiceVersion ?? 1, "generated", audio);
-    return audioResponse(audio, "generated", "miss");
+  if (plan.action === "unavailable") {
+    const detail = UNAVAILABLE[plan.reason];
+    return previewError(detail.status, plan.reason, detail.error);
   }
-  const mock = mockNarrationMp3Buffer();
-  if (plan.action === "mock") {
-    await rememberPreview(plan.cacheKey, decision.appVoiceId, decision.ownerId, language, "mock", personal?.voiceVersion ?? 1, "mock", mock);
+
+  let job = inflight.get(plan.cacheKey);
+  if (!job) {
+    job = produce(plan, {
+      requesterId: auth.user.id,
+      voiceAppId: decision.appVoiceId,
+      ownerUserId: decision.ownerId,
+      language,
+      voiceVersion,
+    }).finally(() => inflight.delete(plan.cacheKey));
+    inflight.set(plan.cacheKey, job);
   }
-  return audioResponse(mock, "mock", existing ? "hit" : "miss");
+  const produced = await job;
+  if (!produced.ok) return previewError(produced.status, produced.reason, produced.error);
+  return audioResponse(produced.bytes, range, { "X-Preview-Source": produced.source, "X-Preview-Cache": "miss" });
 }
 
-async function rememberPreview(
-  cacheKey: string,
-  voiceAppId: string,
-  ownerUserId: string | null,
-  language: string,
-  modelId: string,
-  voiceVersion: number,
-  source: string,
-  audio: Buffer
-) {
-  const filename = `voice_preview_${cacheKey.slice(0, 24)}.mp3`;
-  const saved = await saveMediaBytes({
-    folder: "voices",
-    filename,
-    body: audio,
-    contentType: "audio/mpeg",
-    access: "private",
-  }).catch(() => null);
-  await prisma.narrationPreview
-    .upsert({
-      where: { cacheKey },
-      create: {
-        cacheKey,
-        voiceAppId,
-        ownerUserId,
-        language,
-        modelId,
-        voiceVersion,
-        source,
-        filename: saved?.filename ?? filename,
-        storageUrl: saved && saved.url.startsWith("http") ? saved.url : null,
-      },
-      update: { source, filename: saved?.filename ?? filename },
-    })
-    .catch(() => {});
+async function produce(
+  plan: Extract<PreviewPlan, { action: "library" | "generate" }>,
+  who: { requesterId: string; voiceAppId: string; ownerUserId: string | null; language: string; voiceVersion: number }
+): Promise<Produced> {
+  const unavailable: Produced = {
+    ok: false,
+    status: 502,
+    reason: plan.action === "library" ? "sample_unavailable" : "provider_failed",
+    error: "We couldn't load this preview. Try again in a moment.",
+  };
+  let bytes: Buffer;
+  let modelId: string;
+  try {
+    if (plan.action === "library") {
+      bytes = await fetchLibrarySample(plan.url);
+      modelId = plan.sampleModelId || "voice-library";
+    } else {
+      await recordPreviewAttempt(who.requesterId);
+      modelId = resolveTtsModelId();
+      const capability = getModelCapability(modelId);
+      const settings = settingsForSelectedModel(capability, plan.language, undefined, activeTtsConfig().id);
+      const request = buildElevenSpeechRequest({ text: plan.script, modelId, language: plan.language, voiceSettings: settings });
+      bytes = await speakWithElevenRequest(plan.providerVoiceId, request);
+    }
+  } catch (error) {
+    console.warn(`[voice-preview] ${plan.action} failed`, error instanceof Error ? error.message : error);
+    return unavailable;
+  }
+  const check = checkPreviewAudio(bytes);
+  if (!check.ok) {
+    console.warn(`[voice-preview] ${plan.action} audio refused: ${check.problem}`);
+    return { ...unavailable, reason: "invalid_audio" };
+  }
+  const source: ServablePreviewSource = plan.action === "library" ? "library" : "generated";
+  await rememberPreview({
+    cacheKey: plan.cacheKey,
+    voiceAppId: who.voiceAppId,
+    ownerUserId: who.ownerUserId,
+    language: who.language,
+    modelId,
+    voiceVersion: who.voiceVersion,
+    source,
+    bytes,
+  });
+  return { ok: true, bytes, source };
 }

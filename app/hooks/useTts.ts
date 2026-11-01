@@ -62,6 +62,17 @@ function isVoiceApiItem(value: unknown): value is VoiceApiItem {
   return typeof item.id === "string" && item.id.length > 0;
 }
 
+type Narration = {
+  savedAudioUrl: string | null;
+  audioCacheKey: string | null;
+  audioConfigVersion: string | null;
+  audioDictionaryVersion: string | null;
+  audioModelId: string | null;
+  audioVoiceId: string | null;
+  audioSpeed: number | null;
+  transcriptStatus: string | null;
+};
+
 export function useTts(language: string, externalAudioRef?: RefObject<HTMLAudioElement | null>) {
   const [voices, setVoices] = useState<VoiceItem[]>([]);
   const [selectedVoiceId, setSelectedVoiceId] = useState("");
@@ -70,16 +81,19 @@ export function useTts(language: string, externalAudioRef?: RefObject<HTMLAudioE
   const [isLoadingVoices, setIsLoadingVoices] = useState(false);
   const [voicesError, setVoicesError] = useState("");
   const [personalVoices, setPersonalVoices] = useState<PersonalVoiceAccess>("sign-in-required");
+  const [voiceLimit, setVoiceLimit] = useState<number | null>(null);
   const internalAudioRef = useRef<HTMLAudioElement | null>(null);
+  const narrationsInFlight = useRef(new Map<string, Promise<Narration>>());
   const audioRef = externalAudioRef ?? internalAudioRef;
 
   const fetchVoices = useCallback(async () => {
     setIsLoadingVoices(true);
     setVoicesError("");
     try {
-      const data = await clientJson<{ voices?: unknown[]; personalVoices?: unknown }>(
+      const data = await clientJson<{ voices?: unknown[]; personalVoices?: unknown; voiceLimit?: unknown }>(
         `/api/voices?language=${encodeURIComponent(language)}`
       );
+      setVoiceLimit(typeof data.voiceLimit === "number" && data.voiceLimit > 0 ? data.voiceLimit : null);
       const list: unknown[] = Array.isArray(data?.voices) ? data.voices : [];
       const normalized = list.filter(isVoiceApiItem).map((v) => ({
         id: String(v.id),
@@ -143,22 +157,25 @@ export function useTts(language: string, externalAudioRef?: RefObject<HTMLAudioE
     playCurrentAudio();
   }
 
-  async function makeMp3(
+  /** A second tap while the same narration is still being made waits for it instead of paying again. */
+  function makeMp3(text: string, speed: number, lang: string, storyId?: string, force = false): Promise<Narration> {
+    const key = JSON.stringify([text, speed, lang, selectedVoiceId, storyId ?? "", force]);
+    const running = narrationsInFlight.current.get(key);
+    if (running) return running;
+    const request = requestNarration(text, speed, lang, storyId, force).finally(() => {
+      narrationsInFlight.current.delete(key);
+    });
+    narrationsInFlight.current.set(key, request);
+    return request;
+  }
+
+  async function requestNarration(
     text: string,
     speed: number,
     lang: string,
     storyId?: string,
     force = false
-  ): Promise<{
-    savedAudioUrl: string | null;
-    audioCacheKey: string | null;
-    audioConfigVersion: string | null;
-    audioDictionaryVersion: string | null;
-    audioModelId: string | null;
-    audioVoiceId: string | null;
-    audioSpeed: number | null;
-    transcriptStatus: string | null;
-  }> {
+  ): Promise<Narration> {
     setIsMakingMp3(true);
     try {
       if (!text.trim()) throw new Error("Generate a story first.");
@@ -189,16 +206,20 @@ export function useTts(language: string, externalAudioRef?: RefObject<HTMLAudioE
         throw new Error("Narration did not come back as audio. Try again.");
       }
 
-      const blob = await res.blob();
-      if (!blob.size) {
-        throw new Error("Voice failed, try again.");
-      }
-
-      const objectUrl = URL.createObjectURL(blob);
       const savedHeader = res.headers.get("X-Audio-Url")?.trim() || "";
       const savedAudioUrl = savedAudioUrlFromHeader(savedHeader);
+      if (savedAudioUrl) {
+        // The player streams the saved copy, so do not download it twice.
+        void res.body?.cancel().catch(() => {});
+        replaceAudioUrl(savedAudioUrl);
+      } else {
+        const blob = await res.blob();
+        if (!blob.size) {
+          throw new Error("Voice failed, try again.");
+        }
+        replaceAudioUrl(URL.createObjectURL(blob));
+      }
       const speedHeader = Number(res.headers.get("X-Audio-Speed"));
-      replaceAudioUrl(savedAudioUrl || objectUrl);
       playCurrentAudio();
       return {
         savedAudioUrl,
@@ -260,6 +281,7 @@ export function useTts(language: string, externalAudioRef?: RefObject<HTMLAudioE
     voicesError,
     fetchVoices,
     personalVoices,
+    voiceLimit,
     chooseVoice,
     makeMp3,
     playSavedAudio,

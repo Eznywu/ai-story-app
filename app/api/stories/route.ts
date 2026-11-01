@@ -1,55 +1,17 @@
 import { prisma } from "@/lib/prisma";
 import type { StoryCreateInput } from "@/lib/types";
+import { STORY_TEXT_MAX_CHARS } from "@/lib/types";
 import { getErrorMessage } from "@/lib/errors";
 import { captureException } from "@/lib/monitoring";
 import { parseChildGenderFromClient } from "@/lib/profiles/childGender";
 import { isSafeStoryId } from "@/lib/stories/storyIds";
-import { removeStoryAudioFile, removeStoryMediaFiles } from "@/lib/audio/storyMediaFiles";
+import { storyForClient, storySummaryForClient } from "@/lib/stories/storyForClient";
+import { CLEARED_STORY_AUDIO, removeStoryAudioFile, removeStoryMediaFiles } from "@/lib/audio/storyMediaFiles";
 import { findOwnedStory } from "@/lib/auth/ownedStory";
 import { jsonNoStore, requireUser } from "@/lib/auth/requireUser";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-function withMedia<
-  T extends {
-    posterFilename: string | null;
-    audioFilename: string | null;
-    posterUrl: string | null;
-    audioUrl: string | null;
-    illustrationFilename?: string | null;
-    illustrationUrl?: string | null;
-    coverFilename?: string | null;
-    coverUrl?: string | null;
-  },
->(row: T) {
-  const {
-    posterFilename,
-    audioFilename,
-    posterUrl,
-    audioUrl,
-    illustrationFilename,
-    illustrationUrl,
-    coverFilename,
-    coverUrl,
-    ...rest
-  } = row;
-  const fileUrl = (filename: string | null | undefined) =>
-    filename ? `/api/posters/${encodeURIComponent(filename)}` : null;
-  return {
-    ...rest,
-    posterFilename,
-    audioFilename,
-    illustrationFilename: illustrationFilename ?? null,
-    coverFilename: coverFilename ?? null,
-    illustrationUrl: illustrationUrl?.trim() || fileUrl(illustrationFilename),
-    coverUrl: coverUrl?.trim() || fileUrl(coverFilename),
-    posterUrl: posterUrl?.trim() || fileUrl(posterFilename),
-    audioUrl:
-      audioUrl?.trim() ||
-      (audioFilename ? `/api/audio/${encodeURIComponent(audioFilename)}` : null),
-  };
-}
 
 function displayTitle(titleInput: string, mainCharacterName: string | null) {
   if (titleInput) return titleInput;
@@ -65,7 +27,7 @@ export async function GET() {
       where: { userId: auth.user.id },
       orderBy: { createdAt: "desc" },
     });
-    return jsonNoStore({ stories: stories.map(withMedia) });
+    return jsonNoStore({ stories: stories.map(storySummaryForClient) });
   } catch (error: unknown) {
     captureException(error, { route: "GET /api/stories" });
     console.error("[GET /api/stories] failed", getErrorMessage(error, "unknown error"));
@@ -103,6 +65,9 @@ export async function POST(req: Request) {
         400
       );
     }
+    if (text.length > STORY_TEXT_MAX_CHARS) {
+      return jsonNoStore({ error: "This story is too long to save." }, 400);
+    }
 
     const title = displayTitle(titleInput, mainCharacterName);
     const requestedId = typeof body.id === "string" ? body.id.trim() : "";
@@ -118,10 +83,7 @@ export async function POST(req: Request) {
           404
         );
       }
-      const textChanged = existing.text !== text;
-      if (textChanged && (existing.audioFilename || existing.audioUrl)) {
-        await removeStoryAudioFile(existing);
-      }
+      const staleAudio = existing.text !== text && Boolean(existing.audioFilename || existing.audioUrl);
       const story = await prisma.story.update({
         where: { id: requestedId },
         data: {
@@ -135,10 +97,15 @@ export async function POST(req: Request) {
           childGender,
           ...(characterSnapshot ? { characterId, characterSnapshot } : {}),
           ...(visualBrief ? { visualBrief } : {}),
-          ...(textChanged ? { audioFilename: null, audioUrl: null } : {}),
+          ...(staleAudio ? CLEARED_STORY_AUDIO : {}),
         },
       });
-      return jsonNoStore({ story: withMedia(story) });
+      if (staleAudio) {
+        await removeStoryAudioFile(existing).catch((err: unknown) => {
+          console.warn("[POST /api/stories] old narration was not deleted", getErrorMessage(err, "delete failed"));
+        });
+      }
+      return jsonNoStore({ story: storyForClient(story) });
     }
 
     const story = await prisma.story.create({
@@ -158,7 +125,7 @@ export async function POST(req: Request) {
       },
     });
 
-    return jsonNoStore({ story: withMedia(story) });
+    return jsonNoStore({ story: storyForClient(story) });
   } catch (error: unknown) {
     return jsonNoStore({ error: getErrorMessage(error, "Failed to save story") }, 500);
   }
@@ -177,7 +144,15 @@ export async function DELETE(req: Request) {
     if (!existing) {
       return jsonNoStore({ error: "Story not found." }, 404);
     }
-    await removeStoryMediaFiles(existing);
+    try {
+      await removeStoryMediaFiles(existing);
+    } catch (error: unknown) {
+      captureException(error, { route: "DELETE /api/stories" });
+      return jsonNoStore(
+        { error: "Some of this story's audio or pictures could not be deleted yet. The story is still in your library. Please try again." },
+        502
+      );
+    }
     await prisma.story.delete({ where: { id } });
     return jsonNoStore({ ok: true });
   } catch (error: unknown) {

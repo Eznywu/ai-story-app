@@ -1,4 +1,6 @@
+import { randomUUID } from "node:crypto";
 import { ElevenLabsClient, ElevenLabsError } from "@elevenlabs/elevenlabs-js";
+import { mockProvidersEnabled } from "@/lib/providers/mockProviders";
 import type { VoiceCloneProvider } from "./personalVoice";
 
 export function elevenVoiceProvider(apiKey: string): VoiceCloneProvider {
@@ -49,7 +51,21 @@ export function unavailableVoiceProvider(): VoiceCloneProvider {
   };
 }
 
+/** Local testing only: a clone that never leaves this machine. Its previews stay unavailable, not faked. */
+export function mockVoiceProvider(): VoiceCloneProvider {
+  return {
+    async createClone() {
+      return { providerVoiceId: `mock${randomUUID().replace(/-/g, "")}`, requiresVerification: false };
+    },
+    async deleteVoice() {},
+    async subscription() {
+      return { voiceLimit: null, slotsUsed: null };
+    },
+  };
+}
+
 export function voiceProviderFromEnv(env: NodeJS.ProcessEnv = process.env): VoiceCloneProvider {
+  if (mockProvidersEnabled()) return mockVoiceProvider();
   const key = env.ELEVENLABS_API_KEY?.trim();
   if (!key) return unavailableVoiceProvider();
   return elevenVoiceProvider(key);

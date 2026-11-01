@@ -1,6 +1,4 @@
-// app/api/eleven-tts/route.ts
 import { NextResponse } from "next/server";
-import fs from "fs/promises";
 import { narrateWithEleven } from "@/lib/tts/eleven";
 import { getPronunciationDictionary } from "@/lib/tts/dictionaryFile";
 import { planNarration } from "@/lib/tts/planNarration";
@@ -12,48 +10,52 @@ import { findOwnedStory } from "@/lib/auth/ownedStory";
 import { requireUser } from "@/lib/auth/requireUser";
 import { authorizeSynthesis } from "@/lib/voices/decisions";
 import { accountCanOwnVoices, findOwnedVoice, listOwnedVoices } from "@/lib/voices/accountVoices";
-import { isRemoteMediaUrl, localMediaPath, readPrivateMedia } from "@/lib/media/objectStore";
+import { isRemoteMediaUrl, readPrivateMedia } from "@/lib/media/objectStore";
 import { clampTtsSpeed } from "@/lib/tts/ttsLimits";
+import { STORY_TEXT_MAX_CHARS } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 // Literal required: Next.js segment config must be statically analyzable.
 export const maxDuration = 300;
 
-function audioHeaders(extra?: Record<string, string | number | null | undefined>) {
+type HeaderValues = Record<string, string | number | null | undefined>;
+
+type NarrationOutcome =
+  | { ok: true; audio: Buffer; headers: HeaderValues }
+  | { ok: false; status: number; body: Record<string, unknown> };
+
+/**
+ * Identical requests that arrive while one is still running (double taps, autoplay plus a tap)
+ * share that one paid provider call instead of starting another.
+ */
+const inflightNarrations = new Map<string, Promise<NarrationOutcome>>();
+
+function audioHeaders(values: HeaderValues) {
   const headers = new Headers({
     "Content-Type": "audio/mpeg",
     "Cache-Control": "no-store",
   });
-  if (!extra) return headers;
-  for (const [key, value] of Object.entries(extra)) {
+  for (const [key, value] of Object.entries(values)) {
     if (value == null || value === "") continue;
     headers.set(key, String(value));
   }
   return headers;
 }
 
-async function readSavedAudio(
-  filename: string | null,
-  url: string | null,
-  storageUrl?: string | null
-): Promise<Buffer | null> {
-  if (filename) {
-    const filePath = localMediaPath("audio", filename);
-    if (filePath) {
-      try {
-        return await fs.readFile(filePath);
-      } catch {
-        /* The file may live in Blob instead. */
-      }
-    }
-  }
-  if (storageUrl) {
-    const stored = await readPrivateMedia({ folder: "audio", filename, storageUrl });
-    if (stored?.length) return stored;
-  }
-  if (url && isRemoteMediaUrl(url)) {
-    const response = await fetch(url);
+async function readSavedAudio(story: {
+  audioFilename: string | null;
+  audioUrl: string | null;
+  audioStorageUrl: string | null;
+}): Promise<Buffer | null> {
+  const stored = await readPrivateMedia({
+    folder: "audio",
+    filename: story.audioFilename,
+    storageUrl: story.audioStorageUrl,
+  });
+  if (stored?.length) return stored;
+  if (story.audioUrl && isRemoteMediaUrl(story.audioUrl)) {
+    const response = await fetch(story.audioUrl);
     if (response.ok) return Buffer.from(await response.arrayBuffer());
   }
   return null;
@@ -83,41 +85,34 @@ export async function POST(req: Request) {
     }
 
     const storyId = typeof body?.storyId === "string" ? body.storyId.trim() : "";
-    let story: {
-      audioFilename: string | null;
-      audioUrl: string | null;
-      audioCacheKey: string | null;
-      audioPrivate: boolean;
-      audioStorageUrl: string | null;
-    } | null = null;
-    if (storyId) {
-      if (!isSafeStoryId(storyId)) {
-        return NextResponse.json({ error: "That story id is not valid." }, { status: 400 });
-      }
-      const owned = await findOwnedStory(auth.user.id, storyId);
-      if (!owned) {
-        return NextResponse.json({ error: "Story not found." }, { status: 404 });
-      }
-      story = owned;
+    if (storyId && !isSafeStoryId(storyId)) {
+      return NextResponse.json({ error: "That story id is not valid." }, { status: 400 });
+    }
+    const story = storyId ? await findOwnedStory(auth.user.id, storyId) : null;
+    if (storyId && !story) {
+      return NextResponse.json({ error: "Story not found." }, { status: 404 });
     }
 
-    const storyText = String(body?.text ?? "");
+    // A saved story is narrated from its saved text, so the recording always matches what is stored.
+    const storyText = story ? story.text : String(body?.text ?? "");
     if (!storyText.trim()) {
       return NextResponse.json({ error: "Add story text before making narration." }, { status: 400 });
     }
+    if (storyText.length > STORY_TEXT_MAX_CHARS) {
+      return NextResponse.json({ error: "This story is too long to narrate in one recording." }, { status: 400 });
+    }
     const speed = clampTtsSpeed(Number(body?.speed ?? NaN));
-    const dictionary = getPronunciationDictionary();
+    const voiceVersion = personal?.voiceVersion ?? decision.voiceVersion;
     const plan = planNarration({
       text: storyText,
       language,
       voiceId: decision.appVoiceId,
-      dictionary,
+      dictionary: getPronunciationDictionary(),
       speed,
       ownerId: decision.ownerId,
-      voiceVersion: personal?.voiceVersion ?? decision.voiceVersion,
+      voiceVersion,
       voiceKind: decision.voiceKind,
     });
-    const force = body?.force === true;
     const identityHeaders = {
       "X-Audio-Cache-Key": plan.cacheKey,
       "X-Audio-Config-Version": plan.configVersion,
@@ -128,15 +123,12 @@ export async function POST(req: Request) {
       "X-Audio-Config-Id": plan.configId,
     };
 
-    if (!force && story?.audioCacheKey && story.audioCacheKey === plan.cacheKey) {
-      const existing = await readSavedAudio(story.audioFilename, story.audioUrl, story.audioStorageUrl);
+    if (body?.force !== true && story?.audioCacheKey && story.audioCacheKey === plan.cacheKey) {
+      const existing = await readSavedAudio(story);
       if (existing?.length) {
-        const headers = audioHeaders({
-          ...identityHeaders,
-          "X-Audio-Url": story.audioUrl,
-          "X-Audio-Reused": "1",
+        return new NextResponse(new Uint8Array(existing), {
+          headers: audioHeaders({ ...identityHeaders, "X-Audio-Url": story.audioUrl, "X-Audio-Reused": "1" }),
         });
-        return new NextResponse(new Uint8Array(existing), { headers });
       }
     }
 
@@ -146,73 +138,84 @@ export async function POST(req: Request) {
         { status: 409 }
       );
     }
-    const result = await narrateWithEleven({
-      text: storyText,
-      speed,
-      language,
-      voiceId: decision.appVoiceId,
-      providerVoiceId: personal?.providerVoiceId || decision.providerVoiceId,
-      ownerId: decision.ownerId,
-      voiceVersion: personal?.voiceVersion ?? decision.voiceVersion,
-      voiceKind: decision.voiceKind === "legacy" ? "legacy" : decision.kind,
-      hadPreviousAudio: Boolean(story?.audioFilename || story?.audioUrl),
-    });
 
-    if (!result.ok) {
-      if (storyId) {
-        await recordNarrationFailure({
-          storyId,
-          message: result.message,
-          cacheKey: result.plan.cacheKey,
-        }).catch((err: unknown) => {
-          console.error("[/api/eleven-tts] failure log failed", getErrorMessage(err, "log failed"));
-        });
+    const narrate = async (): Promise<NarrationOutcome> => {
+      const result = await narrateWithEleven({
+        text: storyText,
+        speed,
+        language,
+        voiceId: decision.appVoiceId,
+        providerVoiceId: personal?.providerVoiceId || decision.providerVoiceId,
+        ownerId: decision.ownerId,
+        voiceVersion,
+        voiceKind: decision.voiceKind === "legacy" ? "legacy" : decision.kind,
+        hadPreviousAudio: Boolean(story?.audioFilename || story?.audioUrl),
+      });
+
+      if (!result.ok) {
+        if (story) {
+          await recordNarrationFailure({
+            storyId: story.id,
+            message: result.message,
+            cacheKey: result.plan.cacheKey,
+          }).catch((err: unknown) => {
+            console.error("[/api/eleven-tts] failure log failed", getErrorMessage(err, "log failed"));
+          });
+        }
+        return { ok: false, status: 502, body: { error: result.message, keptPreviousAudio: result.keptPrevious } };
       }
-      return NextResponse.json({ error: result.message, keptPreviousAudio: result.keptPrevious }, { status: 502 });
-    }
 
-    const headers = audioHeaders({
-      ...identityHeaders,
-      "X-Audio-Cache-Key": result.plan.cacheKey,
-      "X-Audio-Transcript": result.transcriptStatus,
-    });
-
-    if (storyId) {
-      try {
-        const savedUrl = await saveStoryAudioFile(storyId, result.audio, {
-          modelId: result.plan.modelId,
-          voiceId: result.plan.voiceId,
-          voiceSettings: result.plan.voiceSettings as Record<string, string | number | boolean | null>,
-          language: result.plan.language,
-          dictionaryVersion: result.plan.dictionaryVersion,
-          configVersion: result.plan.configVersion,
-          configId: result.plan.configId,
-          cacheKey: result.plan.cacheKey,
-          privateAccess: decision.kind === "personal",
-          voiceKind: decision.voiceKind,
-          voiceVersion: personal?.voiceVersion ?? decision.voiceVersion,
-        });
-        headers.set("X-Audio-Url", savedUrl);
-        await recordNarrationAssets({
-          storyId,
-          plan: result.plan,
-          url: savedUrl,
-          attempts: result.attempts,
-          validityStatus: result.validity.status,
-          validityNotes: result.validity.notes,
-          transcriptStatus: result.transcriptStatus,
-          transcriptNotes: result.transcriptNotes,
-          durationMs: result.validity.durationMs,
-        }).catch((err: unknown) => {
-          console.error("[/api/eleven-tts] review row failed", getErrorMessage(err, "review row failed"));
-        });
-      } catch (err: unknown) {
-        console.error("[/api/eleven-tts] save failed", getErrorMessage(err, "save failed"));
-        headers.set("X-Audio-Save-Error", "Narration could not be saved on the story.");
+      const headers: HeaderValues = {
+        ...identityHeaders,
+        "X-Audio-Cache-Key": result.plan.cacheKey,
+        "X-Audio-Transcript": result.transcriptStatus,
+      };
+      if (story) {
+        try {
+          const savedUrl = await saveStoryAudioFile(story.id, result.audio, {
+            modelId: result.plan.modelId,
+            voiceId: result.plan.voiceId,
+            voiceSettings: result.plan.voiceSettings as Record<string, string | number | boolean | null>,
+            language: result.plan.language,
+            dictionaryVersion: result.plan.dictionaryVersion,
+            configVersion: result.plan.configVersion,
+            configId: result.plan.configId,
+            cacheKey: result.plan.cacheKey,
+            privateAccess: decision.kind === "personal",
+            voiceKind: decision.voiceKind,
+            voiceVersion,
+          });
+          headers["X-Audio-Url"] = savedUrl;
+          await recordNarrationAssets({
+            storyId: story.id,
+            plan: result.plan,
+            url: savedUrl,
+            attempts: result.attempts,
+            validityStatus: result.validity.status,
+            validityNotes: result.validity.notes,
+            transcriptStatus: result.transcriptStatus,
+            transcriptNotes: result.transcriptNotes,
+            durationMs: result.validity.durationMs,
+          }).catch((err: unknown) => {
+            console.error("[/api/eleven-tts] review row failed", getErrorMessage(err, "review row failed"));
+          });
+        } catch (err: unknown) {
+          console.error("[/api/eleven-tts] save failed", getErrorMessage(err, "save failed"));
+          headers["X-Audio-Save-Error"] = "Narration could not be saved on the story.";
+        }
       }
-    }
+      return { ok: true, audio: result.audio, headers };
+    };
 
-    return new NextResponse(new Uint8Array(result.audio), { headers });
+    const inflightKey = `${auth.user.id}:${story?.id ?? "-"}:${plan.cacheKey}`;
+    let job = inflightNarrations.get(inflightKey);
+    if (!job) {
+      job = narrate().finally(() => inflightNarrations.delete(inflightKey));
+      inflightNarrations.set(inflightKey, job);
+    }
+    const outcome = await job;
+    if (!outcome.ok) return NextResponse.json(outcome.body, { status: outcome.status });
+    return new NextResponse(new Uint8Array(outcome.audio), { headers: audioHeaders(outcome.headers) });
   } catch (e: unknown) {
     return NextResponse.json(
       { error: getErrorMessage(e, "Voice failed, try again.") },

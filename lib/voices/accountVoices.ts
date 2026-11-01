@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { GUEST_EMAIL, authEnabled } from "@/lib/auth/config";
 import { deleteMediaReference, readPrivateMedia, saveMediaBytes } from "@/lib/media/objectStore";
+import { CLEARED_STORY_AUDIO, removeStoryAudioFile } from "@/lib/audio/storyMediaFiles";
 import { normalizeAppLanguage } from "@/lib/voices/language";
 import type { StoredVoice, VoiceStore } from "@/lib/voices/personalVoice";
 import type { VoiceStatus } from "@/lib/voices/decisions";
@@ -135,22 +136,23 @@ export function prismaVoiceStore(): VoiceStore {
         select: { id: true, audioFilename: true, audioUrl: true, audioStorageUrl: true },
       });
       for (const row of rows) {
-        await deleteMediaReference({ folder: "audio", filename: row.audioFilename, url: row.audioUrl });
-        if (row.audioStorageUrl && row.audioStorageUrl !== row.audioUrl) {
-          await deleteMediaReference({ folder: "audio", filename: row.audioFilename, url: row.audioStorageUrl });
-        }
+        await removeStoryAudioFile(row);
       }
       const result = await prisma.story.updateMany({
         where: { userId, audioVoiceId: appVoiceId },
-        data: {
-          audioFilename: null,
-          audioUrl: null,
-          audioStorageUrl: null,
-          audioPrivate: false,
-          audioCacheKey: null,
-        },
+        data: CLEARED_STORY_AUDIO,
       });
       return result.count;
+    },
+    async deletePreviews(userId, appVoiceId) {
+      const rows = await prisma.narrationPreview.findMany({
+        where: { ownerUserId: userId, voiceAppId: appVoiceId },
+        select: { id: true, filename: true, storageUrl: true },
+      });
+      for (const row of rows) {
+        await deleteMediaReference({ folder: "voices", filename: row.filename, url: row.storageUrl });
+        await prisma.narrationPreview.delete({ where: { id: row.id } });
+      }
     },
   };
 }

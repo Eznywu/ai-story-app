@@ -7,7 +7,7 @@ import { settingsActuallySent } from "../../lib/tts/config";
 import { buildWeeklyReport, selectWeeklyReviewSamples } from "../../lib/tts/review";
 import { PREVIEW_SCRIPT } from "../../lib/voices/passages";
 import { providerLanguageCode } from "../../lib/voices/language";
-import { DEFAULT_NARRATORS, defaultNarratorsFor, looksLikeProviderVoiceId } from "../../lib/voices/registry";
+import { DEFAULT_NARRATORS, defaultNarratorsFor, isLibrarySampleUrl, looksLikeProviderVoiceId } from "../../lib/voices/registry";
 import {
   authorizeOwnedVoice,
   authorizeSynthesis,
@@ -20,7 +20,12 @@ import {
   type PublicVoice,
 } from "../../lib/voices/decisions";
 import { checkVoiceUpload, preferredRecorderMime, recordingClipped, voicedDurationMs } from "../../lib/voices/recordingChecks";
-import { planVoicePreview } from "../../lib/voices/previewPlan";
+import {
+  PREVIEW_ATTEMPT_CEILING_USD,
+  planVoicePreview,
+  previewEstimateUsd,
+  voicePreviewCacheKey,
+} from "../../lib/voices/previewPlan";
 import { createPersonalVoice, deletePersonalVoice, type StoredVoice, type VoiceStore } from "../../lib/voices/personalVoice";
 import { V3_USD_PER_THOUSAND_CHARS } from "../../lib/tts/pricing";
 
@@ -212,54 +217,78 @@ test("upload checks reject silence, clipping, and odd formats", () => {
   assert.equal(recordingClipped(Array.from({ length: 100 }, (_, index) => (index < 5 ? 0.99 : 0.1))), true);
 });
 
-test("preview replay does not plan a paid request", () => {
-  const narrator = defaultNarratorsFor("en")[0];
-  const first = planVoicePreview({
-    voiceAppId: narrator.id,
-    language: "en",
+const testEnv = (extra: Record<string, string> = {}) => ({ NODE_ENV: "test", ...extra }) as NodeJS.ProcessEnv;
+
+test("every offered story voice previews its own Voice Library sample in the chosen language, for free", () => {
+  for (const language of ["en", "zh-Hant"] as const) {
+    const offered = defaultNarratorsFor(language);
+    assert.ok(offered.length >= 5, language);
+    for (const narrator of offered) {
+      const plan = planVoicePreview({
+        voiceAppId: narrator.id,
+        language,
+        ownerId: null,
+        voiceVersion: 1,
+        providerVoiceId: narrator.providerVoiceId,
+        kind: "default",
+        selectable: true,
+        narrator,
+        spentTodayUsd: 0,
+        env: testEnv(),
+      });
+      assert.equal(plan.action, "library", `${narrator.id} ${language}`);
+      if (plan.action !== "library") continue;
+      assert.equal(plan.paid, false);
+      assert.equal(plan.url, narrator.previewUrl[language]);
+      assert.ok(isLibrarySampleUrl(plan.url), plan.url);
+    }
+  }
+});
+
+test("a missing sample is not replaced by another language, and personal voices only generate within the cap", () => {
+  const grandpa = DEFAULT_NARRATORS.find((voice) => voice.id === "story-spuds");
+  assert.ok(grandpa && !grandpa.previewUrl["zh-Hant"]);
+  const noChinese = planVoicePreview({
+    voiceAppId: grandpa.id,
+    language: "zh-Hant",
     ownerId: null,
     voiceVersion: 1,
-    providerVoiceId: narrator.providerVoiceId,
+    providerVoiceId: grandpa.providerVoiceId,
     kind: "default",
     selectable: true,
-    cached: false,
-    narrator,
-    env: process.env,
+    narrator: grandpa,
+    spentTodayUsd: 0,
+    env: testEnv(),
   });
-  assert.equal(first.action, "mock");
-  assert.equal(first.paid, false);
-  const again = planVoicePreview({
+  assert.deepEqual([noChinese.action, noChinese.action === "unavailable" ? noChinese.reason : ""], ["unavailable", "live_preview_off"]);
+
+  const mom = {
     voiceAppId: "v_mom",
     language: "en",
     ownerId: "user-a",
     voiceVersion: 1,
     providerVoiceId: "provider-secret",
-    kind: "personal",
+    kind: "personal" as const,
     selectable: true,
-    cached: true,
-    env: { ...process.env, VOICE_PREVIEW_LIVE: "1", VOICE_PREVIEW_DAILY_CAP_USD: "1" },
-  });
-  assert.equal(again.action, "cache");
-  assert.equal(again.paid, false);
-  const replay = planVoicePreview({
-    voiceAppId: narrator.id,
-    language: "en",
-    ownerId: null,
-    voiceVersion: 1,
-    providerVoiceId: narrator.providerVoiceId,
-    kind: "default",
-    selectable: true,
-    cached: true,
-    narrator,
-    env: process.env,
-  });
-  assert.equal(replay.action, "cache");
-  if (first.action === "mock" && replay.action === "cache") assert.equal(replay.cacheKey, first.cacheKey);
-  const store = new Map<string, string>();
-  assert.equal(store.has(first.cacheKey), false);
-  store.set(first.cacheKey, "mock-mp3");
-  assert.equal(store.get(replay.action === "cache" ? replay.cacheKey : ""), "mock-mp3");
-  assert.equal(store.size, 1);
+  };
+  const live = testEnv({ VOICE_PREVIEW_LIVE: "1", VOICE_PREVIEW_DAILY_CAP_USD: "0.05" });
+  const reasonOf = (plan: ReturnType<typeof planVoicePreview>) => (plan.action === "unavailable" ? plan.reason : plan.action);
+  assert.equal(reasonOf(planVoicePreview({ ...mom, spentTodayUsd: 0, env: testEnv() })), "live_preview_off");
+  assert.equal(reasonOf(planVoicePreview({ ...mom, spentTodayUsd: 0, env: testEnv({ VOICE_PREVIEW_LIVE: "1" }) })), "live_preview_off");
+  assert.equal(reasonOf(planVoicePreview({ ...mom, providerVoiceId: null, spentTodayUsd: 0, env: live })), "no_provider_voice");
+  assert.equal(reasonOf(planVoicePreview({ ...mom, spentTodayUsd: 0.05, env: live })), "daily_cap_reached");
+  assert.equal(reasonOf(planVoicePreview({ ...mom, spentTodayUsd: Number.NaN, env: live })), "daily_cap_reached");
+  const paid = planVoicePreview({ ...mom, spentTodayUsd: 0, env: live });
+  assert.equal(paid.action, "generate");
+  if (paid.action === "generate") {
+    assert.equal(paid.paid, true);
+    assert.equal(paid.estimatedUsd, previewEstimateUsd("en"));
+    assert.equal(paid.script, PREVIEW_SCRIPT.en);
+  }
+  assert.ok(PREVIEW_ATTEMPT_CEILING_USD >= previewEstimateUsd("zh-Hant"));
+  const replayKey = voicePreviewCacheKey({ voiceAppId: "v_mom", voiceVersion: 1, language: "en", modelId: "eleven_v3", ownerId: "user-a" });
+  assert.equal(replayKey, voicePreviewCacheKey({ voiceAppId: "v_mom", voiceVersion: 1, language: "en-US", modelId: "eleven_v3", ownerId: "user-a" }));
+  assert.notEqual(replayKey, voicePreviewCacheKey({ voiceAppId: "v_mom", voiceVersion: 1, language: "en", modelId: "eleven_v3", ownerId: "user-b" }));
 });
 
 test("weekly samples can name the voice, language, and whether it is personal", () => {
@@ -363,8 +392,51 @@ test("delete blocks new synthesis immediately and can clear recordings without s
   assert.equal(providerGone, true);
   assert.equal(store.rows.some((row) => row.id === "v_mom"), false);
   assert.equal(store.cleared, 1);
+  assert.equal(store.previewsDeleted, 1);
   const other = authorizeOwnedVoice({ requesterId: "user-b", voiceId: "v_mom", owned: [] });
   assert.equal(other.ok, false);
+});
+
+test("a recording that cannot be deleted keeps the voice so the parent can retry", async () => {
+  const store = memoryStore();
+  store.failClear = true;
+  store.rows.push({
+    id: "v_dad",
+    userId: "user-a",
+    displayName: "Dad",
+    language: "en",
+    status: "ready",
+    voiceVersion: 1,
+    requiresVerification: false,
+    providerVoiceId: "prov-2",
+    idempotencyKey: null,
+    consentTextVersion: "2026-11-01",
+    sampleFilename: null,
+    sampleStorageUrl: null,
+  });
+  let providerCalls = 0;
+  const result = await deletePersonalVoice(
+    { userId: "user-a", voiceId: "v_dad", deleteGeneratedAudio: true },
+    {
+      store,
+      provider: {
+        async createClone() {
+          throw new Error("no");
+        },
+        async deleteVoice() {
+          providerCalls += 1;
+        },
+        async subscription() {
+          return { voiceLimit: null, slotsUsed: null };
+        },
+      },
+      findOwned: async (userId, id) => store.rows.find((row) => row.userId === userId && row.id === id) ?? null,
+      deleteSample: async () => {},
+    }
+  );
+  assert.equal(result.ok, false);
+  assert.equal(providerCalls, 0);
+  assert.equal(store.rows.find((row) => row.id === "v_dad")?.status, "delete_failed");
 });
 
 test("live preview estimate is a few cents and is not approved by this test", () => {
@@ -386,7 +458,14 @@ function webm(size: number) {
   return bytes;
 }
 
-function memoryStore(): VoiceStore & { rows: StoredVoice[]; created: number; failInsert: boolean; cleared: number } {
+function memoryStore(): VoiceStore & {
+  rows: StoredVoice[];
+  created: number;
+  failInsert: boolean;
+  cleared: number;
+  failClear: boolean;
+  previewsDeleted: number;
+} {
   const rows: StoredVoice[] = [];
   const store = {
     rows,
@@ -427,9 +506,15 @@ function memoryStore(): VoiceStore & { rows: StoredVoice[]; created: number; fai
       return 1;
     },
     async clearStoryAudio() {
+      if (store.failClear) throw new Error("blob down");
       store.cleared += 1;
       return 1;
     },
+    async deletePreviews() {
+      store.previewsDeleted += 1;
+    },
+    failClear: false,
+    previewsDeleted: 0,
   };
   return store;
 }

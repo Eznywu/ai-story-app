@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
 
-const outDir = "/opt/cursor/artifacts/screenshots";
+const outDir = process.env.UI_SCREENSHOT_DIR || "/opt/cursor/artifacts/screenshots";
 
 const stories = [
   { id: "story-grandpa", name: "Grandpa", description: "Gentle and reassuring. A friendly grandpa for quiet adventures.", languages: ["en"], group: "story", kind: "default", status: "ready", selectable: true, isDefault: true },
@@ -45,10 +45,8 @@ async function installRoutes(page: Page, mine: unknown[] = []) {
   await page.route("**/api/voice-preference**", (route) => route.fulfill({ json: { storedOnServer: true, voiceId: "story-grandpa", language: "en" } }));
   await page.route("**/api/voice-preview**", (route) =>
     route.fulfill({
-      status: 200,
-      contentType: "audio/mpeg",
-      headers: { "X-Preview-Cache": "hit", "X-Preview-Source": "mock" },
-      body: Buffer.from("SUQz", "base64"),
+      status: 503,
+      json: { error: "A preview of this voice isn't available right now.", reason: "live_preview_off" },
     })
   );
 }
@@ -188,6 +186,10 @@ test("MOCK signed-in voice flow in English at 390x844", async ({ page }) => {
   await page.screenshot({ path: path.join(outDir, "MOCK-creating-en-390x844.png") });
   releaseClone({ selectable: true });
   await expect(page.getByRole("heading", { name: "Hear a short preview" })).toBeVisible();
+  await page.getByRole("button", { name: /^Preview/ }).click();
+  await expect(page.getByText("A preview of this voice isn't available right now.")).toBeVisible();
+  await expect(page.getByText("You can still save your voice and preview it later.")).toBeVisible();
+  await expect(page.locator(".voicePreview--playing")).toHaveCount(0);
   await page.screenshot({ path: path.join(outDir, "MOCK-preview-narration-en-390x844.png") });
   await page.getByRole("button", { name: "Next, name it" }).click();
   await expect(page.getByRole("button", { name: "Save and use" })).toBeVisible();
@@ -206,8 +208,15 @@ test("MOCK signed-in voice flow in English at 390x844", async ({ page }) => {
     return route.fulfill({ json: { voice: { id: "v_mom", name: "Mom" } } });
   });
   await page.getByRole("button", { name: "Save and use" }).click();
-  await expect(page.getByRole("option", { name: /Mom/ })).toBeVisible();
+  const card = page.locator(".myVoice");
+  await expect(card.getByText("Mom", { exact: true })).toBeVisible();
+  await expect(card.getByText("Ready · Selected")).toBeVisible();
+  await expect(card.getByRole("button", { name: /^Preview Mom/ })).toBeVisible();
+  await expect(card.getByRole("button", { name: "Add another" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Read by Mom" })).toBeVisible();
   await page.screenshot({ path: path.join(outDir, "MOCK-selected-personal-en-390x844.png") });
+  await card.getByRole("button", { name: "Change" }).click();
+  await expect(page.getByRole("option", { name: /Mom/ })).toBeVisible();
   await page.getByRole("button", { name: "Rename" }).first().click();
   await expect(page.getByRole("button", { name: "Save name" })).toBeVisible();
   await page.screenshot({ path: path.join(outDir, "MOCK-rename-en-390x844.png") });

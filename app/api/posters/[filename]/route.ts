@@ -1,7 +1,7 @@
 import fs from "fs/promises";
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth/requireUser";
-import { userOwnsMedia } from "@/lib/auth/ownedStory";
+import { userOwnsPicture } from "@/lib/auth/ownedStory";
 import { isRemoteMediaUrl, localMediaPath } from "@/lib/media/objectStore";
 import { prisma } from "@/lib/prisma";
 
@@ -23,7 +23,7 @@ export async function GET(req: Request) {
       });
     }
 
-    const owned = await userOwnsMedia(auth.user.id, "poster", filename);
+    const owned = await userOwnsPicture(auth.user.id, filename);
     if (!owned) {
       return new Response(JSON.stringify({ error: "File not found" }), {
         status: 404,

@@ -27,6 +27,8 @@ export type DefaultNarrator = {
   auditionStatus: "pending";
   elevenV3Verified: false;
   previewUrl: Partial<Record<AppLanguage, string>>;
+  /** Model the Voice Library used for each language's sample. Not the model the app narrates with. */
+  previewModelId: Partial<Record<AppLanguage, string>>;
   isDefault?: boolean;
 };
 
@@ -183,6 +185,13 @@ function previewUrl(voice: LibraryVoice): Partial<Record<AppLanguage, string>> {
   return urls;
 }
 
+function previewModelId(voice: LibraryVoice): Partial<Record<AppLanguage, string>> {
+  const models: Partial<Record<AppLanguage, string>> = {};
+  if (voice.preview.en?.modelId) models.en = voice.preview.en.modelId;
+  if (voice.preview.zh?.modelId) models["zh-Hant"] = voice.preview.zh.modelId;
+  return models;
+}
+
 export const DEFAULT_NARRATORS: DefaultNarrator[] = library.voices.map((voice) => {
   const copy = COPY[voice.providerVoiceId];
   if (!copy) throw new Error(`Missing app copy for library voice ${voice.providerVoiceId}`);
@@ -205,6 +214,7 @@ export const DEFAULT_NARRATORS: DefaultNarrator[] = library.voices.map((voice) =
     auditionStatus: "pending",
     elevenV3Verified: false,
     previewUrl: previewUrl(voice),
+    previewModelId: previewModelId(voice),
   };
 });
 
@@ -263,4 +273,30 @@ export function looksLikeProviderVoiceId(value: string): boolean {
 export function libraryPreviewUrl(voice: DefaultNarrator, language: unknown): string | null {
   const normalized = normalizeAppLanguage(language);
   return voice.previewUrl[normalized] ?? null;
+}
+
+const LIBRARY_SAMPLE_HOSTS = new Set(["storage.googleapis.com", "api.us.elevenlabs.io", "api.elevenlabs.io"]);
+
+/**
+ * The Voice Library sample that ElevenLabs lists under this voice's verified language.
+ * Only a sample in the requested language counts; another language's sample is never offered instead.
+ */
+export function librarySample(
+  voice: DefaultNarrator | null | undefined,
+  language: unknown
+): { url: string; modelId: string | null } | null {
+  if (!voice) return null;
+  const normalized = normalizeAppLanguage(language);
+  const url = voice.previewUrl[normalized];
+  if (!url || !isLibrarySampleUrl(url)) return null;
+  return { url, modelId: voice.previewModelId[normalized] ?? null };
+}
+
+export function isLibrarySampleUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && LIBRARY_SAMPLE_HOSTS.has(url.hostname);
+  } catch {
+    return false;
+  }
 }

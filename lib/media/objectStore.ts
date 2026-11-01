@@ -104,20 +104,36 @@ export async function readPrivateMedia(options: {
   return Buffer.concat(chunks);
 }
 
-export async function deleteMediaReference(options: {
+type MediaReference = {
   folder: MediaFolder;
   filename?: string | null;
+  /** Public playback URL and/or the private storage URL. Each remote URL is deleted. */
   url?: string | null;
-}): Promise<void> {
-  if (isRemoteMediaUrl(options.url) && blobStoreEnabled()) {
-    await del(options.url as string, { token: process.env.BLOB_READ_WRITE_TOKEN }).catch((err: unknown) => {
-      console.warn("[media] blob delete failed", err instanceof Error ? err.message : err);
-    });
+  storageUrl?: string | null;
+};
+
+/**
+ * Deletes the Blob copy and the local copy. Throws when a Blob delete fails so a
+ * user-requested deletion is not reported as done while the media still exists.
+ */
+export async function deleteMediaReference(options: MediaReference): Promise<void> {
+  const remote = new Set([options.url, options.storageUrl].filter((url): url is string => isRemoteMediaUrl(url)));
+  if (remote.size && blobStoreEnabled()) {
+    await del([...remote], { token: process.env.BLOB_READ_WRITE_TOKEN });
   }
   const filename = options.filename ?? "";
   if (!safeFilename(options.folder, filename)) return;
   const filePath = path.join(process.cwd(), "uploads", options.folder, filename);
-  await fs.unlink(filePath).catch(() => {});
+  await fs.unlink(filePath).catch((err: NodeJS.ErrnoException) => {
+    if (err.code !== "ENOENT") throw err;
+  });
+}
+
+/** For a file that a newer copy has already replaced. A leftover file is logged, not raised. */
+export async function deleteReplacedMedia(options: MediaReference): Promise<void> {
+  await deleteMediaReference(options).catch((err: unknown) => {
+    console.warn("[media] could not delete a replaced file", err instanceof Error ? err.message : err);
+  });
 }
 
 export function localMediaPath(folder: MediaFolder, filename: string): string | null {

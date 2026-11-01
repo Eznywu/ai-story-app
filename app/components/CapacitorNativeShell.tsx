@@ -19,7 +19,8 @@ export function CapacitorNativeShell() {
     void (async () => {
       try {
         await StatusBar.setOverlaysWebView({ overlay: true });
-        await StatusBar.setStyle({ style: Style.Dark });
+        const warm = document.documentElement.dataset.hhTheme === "warm";
+        await StatusBar.setStyle({ style: warm ? Style.Light : Style.Dark });
         try {
           await StatusBar.setBackgroundColor({ color: STATUS_BAR_HEX });
         } catch {
