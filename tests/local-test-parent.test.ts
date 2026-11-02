@@ -57,6 +57,7 @@ test("local test parent forces the mock voice provider even when a key is set", 
     bytes: new Uint8Array([1, 2, 3]),
     filename: "take.webm",
     contentType: "audio/webm",
+    languageLabel: { language: "fr", accent: "unspecified", description: "French" },
   });
   assert.match(created.providerVoiceId, /^mock_local_/);
   assert.equal(created.requiresVerification, false);
@@ -72,6 +73,7 @@ test("local test parent forces the mock voice provider even when a key is set", 
       bytes: new Uint8Array([1]),
       filename: "take.webm",
       contentType: "audio/webm",
+      languageLabel: { language: "en", accent: "unspecified", description: "English" },
     })
   );
 });

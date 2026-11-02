@@ -57,6 +57,16 @@ export function LocaleProvider({
   }, []);
 
   useEffect(() => {
+    function onTestLocale(event: Event) {
+      if (document.documentElement.dataset.hhVoiceMock !== "1") return;
+      const next = (event as CustomEvent<string>).detail;
+      if (isInterfaceLocale(next)) setLocale(next);
+    }
+    window.addEventListener("hh-set-locale", onTestLocale);
+    return () => window.removeEventListener("hh-set-locale", onTestLocale);
+  }, [setLocale]);
+
+  useEffect(() => {
     applyDocument(locale);
     try {
       const stored = localStorage.getItem(LOCALE_STORAGE_KEY);

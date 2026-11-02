@@ -41,6 +41,8 @@ export type VoiceMinAggregateOutputType = {
   provider: string | null
   voiceId: string | null
   language: string | null
+  recordingLocale: string | null
+  scriptVersion: string | null
   status: string | null
   voiceVersion: number | null
   requiresVerification: boolean | null
@@ -60,6 +62,8 @@ export type VoiceMaxAggregateOutputType = {
   provider: string | null
   voiceId: string | null
   language: string | null
+  recordingLocale: string | null
+  scriptVersion: string | null
   status: string | null
   voiceVersion: number | null
   requiresVerification: boolean | null
@@ -79,6 +83,8 @@ export type VoiceCountAggregateOutputType = {
   provider: number
   voiceId: number
   language: number
+  recordingLocale: number
+  scriptVersion: number
   status: number
   voiceVersion: number
   requiresVerification: number
@@ -108,6 +114,8 @@ export type VoiceMinAggregateInputType = {
   provider?: true
   voiceId?: true
   language?: true
+  recordingLocale?: true
+  scriptVersion?: true
   status?: true
   voiceVersion?: true
   requiresVerification?: true
@@ -127,6 +135,8 @@ export type VoiceMaxAggregateInputType = {
   provider?: true
   voiceId?: true
   language?: true
+  recordingLocale?: true
+  scriptVersion?: true
   status?: true
   voiceVersion?: true
   requiresVerification?: true
@@ -146,6 +156,8 @@ export type VoiceCountAggregateInputType = {
   provider?: true
   voiceId?: true
   language?: true
+  recordingLocale?: true
+  scriptVersion?: true
   status?: true
   voiceVersion?: true
   requiresVerification?: true
@@ -252,6 +264,8 @@ export type VoiceGroupByOutputType = {
   provider: string
   voiceId: string
   language: string
+  recordingLocale: string | null
+  scriptVersion: string | null
   status: string
   voiceVersion: number
   requiresVerification: boolean
@@ -294,6 +308,8 @@ export type VoiceWhereInput = {
   provider?: Prisma.StringFilter<"Voice"> | string
   voiceId?: Prisma.StringFilter<"Voice"> | string
   language?: Prisma.StringFilter<"Voice"> | string
+  recordingLocale?: Prisma.StringNullableFilter<"Voice"> | string | null
+  scriptVersion?: Prisma.StringNullableFilter<"Voice"> | string | null
   status?: Prisma.StringFilter<"Voice"> | string
   voiceVersion?: Prisma.IntFilter<"Voice"> | number
   requiresVerification?: Prisma.BoolFilter<"Voice"> | boolean
@@ -314,6 +330,8 @@ export type VoiceOrderByWithRelationInput = {
   provider?: Prisma.SortOrder
   voiceId?: Prisma.SortOrder
   language?: Prisma.SortOrder
+  recordingLocale?: Prisma.SortOrderInput | Prisma.SortOrder
+  scriptVersion?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   voiceVersion?: Prisma.SortOrder
   requiresVerification?: Prisma.SortOrder
@@ -339,6 +357,8 @@ export type VoiceWhereUniqueInput = Prisma.AtLeast<{
   provider?: Prisma.StringFilter<"Voice"> | string
   voiceId?: Prisma.StringFilter<"Voice"> | string
   language?: Prisma.StringFilter<"Voice"> | string
+  recordingLocale?: Prisma.StringNullableFilter<"Voice"> | string | null
+  scriptVersion?: Prisma.StringNullableFilter<"Voice"> | string | null
   status?: Prisma.StringFilter<"Voice"> | string
   voiceVersion?: Prisma.IntFilter<"Voice"> | number
   requiresVerification?: Prisma.BoolFilter<"Voice"> | boolean
@@ -359,6 +379,8 @@ export type VoiceOrderByWithAggregationInput = {
   provider?: Prisma.SortOrder
   voiceId?: Prisma.SortOrder
   language?: Prisma.SortOrder
+  recordingLocale?: Prisma.SortOrderInput | Prisma.SortOrder
+  scriptVersion?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   voiceVersion?: Prisma.SortOrder
   requiresVerification?: Prisma.SortOrder
@@ -386,6 +408,8 @@ export type VoiceScalarWhereWithAggregatesInput = {
   provider?: Prisma.StringWithAggregatesFilter<"Voice"> | string
   voiceId?: Prisma.StringWithAggregatesFilter<"Voice"> | string
   language?: Prisma.StringWithAggregatesFilter<"Voice"> | string
+  recordingLocale?: Prisma.StringNullableWithAggregatesFilter<"Voice"> | string | null
+  scriptVersion?: Prisma.StringNullableWithAggregatesFilter<"Voice"> | string | null
   status?: Prisma.StringWithAggregatesFilter<"Voice"> | string
   voiceVersion?: Prisma.IntWithAggregatesFilter<"Voice"> | number
   requiresVerification?: Prisma.BoolWithAggregatesFilter<"Voice"> | boolean
@@ -404,6 +428,8 @@ export type VoiceCreateInput = {
   provider?: string
   voiceId: string
   language?: string
+  recordingLocale?: string | null
+  scriptVersion?: string | null
   status?: string
   voiceVersion?: number
   requiresVerification?: boolean
@@ -424,6 +450,8 @@ export type VoiceUncheckedCreateInput = {
   provider?: string
   voiceId: string
   language?: string
+  recordingLocale?: string | null
+  scriptVersion?: string | null
   status?: string
   voiceVersion?: number
   requiresVerification?: boolean
@@ -442,6 +470,8 @@ export type VoiceUpdateInput = {
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   voiceId?: Prisma.StringFieldUpdateOperationsInput | string
   language?: Prisma.StringFieldUpdateOperationsInput | string
+  recordingLocale?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  scriptVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   voiceVersion?: Prisma.IntFieldUpdateOperationsInput | number
   requiresVerification?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -462,6 +492,8 @@ export type VoiceUncheckedUpdateInput = {
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   voiceId?: Prisma.StringFieldUpdateOperationsInput | string
   language?: Prisma.StringFieldUpdateOperationsInput | string
+  recordingLocale?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  scriptVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   voiceVersion?: Prisma.IntFieldUpdateOperationsInput | number
   requiresVerification?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -481,6 +513,8 @@ export type VoiceCreateManyInput = {
   provider?: string
   voiceId: string
   language?: string
+  recordingLocale?: string | null
+  scriptVersion?: string | null
   status?: string
   voiceVersion?: number
   requiresVerification?: boolean
@@ -499,6 +533,8 @@ export type VoiceUpdateManyMutationInput = {
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   voiceId?: Prisma.StringFieldUpdateOperationsInput | string
   language?: Prisma.StringFieldUpdateOperationsInput | string
+  recordingLocale?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  scriptVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   voiceVersion?: Prisma.IntFieldUpdateOperationsInput | number
   requiresVerification?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -518,6 +554,8 @@ export type VoiceUncheckedUpdateManyInput = {
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   voiceId?: Prisma.StringFieldUpdateOperationsInput | string
   language?: Prisma.StringFieldUpdateOperationsInput | string
+  recordingLocale?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  scriptVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   voiceVersion?: Prisma.IntFieldUpdateOperationsInput | number
   requiresVerification?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -557,6 +595,8 @@ export type VoiceCountOrderByAggregateInput = {
   provider?: Prisma.SortOrder
   voiceId?: Prisma.SortOrder
   language?: Prisma.SortOrder
+  recordingLocale?: Prisma.SortOrder
+  scriptVersion?: Prisma.SortOrder
   status?: Prisma.SortOrder
   voiceVersion?: Prisma.SortOrder
   requiresVerification?: Prisma.SortOrder
@@ -580,6 +620,8 @@ export type VoiceMaxOrderByAggregateInput = {
   provider?: Prisma.SortOrder
   voiceId?: Prisma.SortOrder
   language?: Prisma.SortOrder
+  recordingLocale?: Prisma.SortOrder
+  scriptVersion?: Prisma.SortOrder
   status?: Prisma.SortOrder
   voiceVersion?: Prisma.SortOrder
   requiresVerification?: Prisma.SortOrder
@@ -599,6 +641,8 @@ export type VoiceMinOrderByAggregateInput = {
   provider?: Prisma.SortOrder
   voiceId?: Prisma.SortOrder
   language?: Prisma.SortOrder
+  recordingLocale?: Prisma.SortOrder
+  scriptVersion?: Prisma.SortOrder
   status?: Prisma.SortOrder
   voiceVersion?: Prisma.SortOrder
   requiresVerification?: Prisma.SortOrder
@@ -663,6 +707,8 @@ export type VoiceCreateWithoutUserInput = {
   provider?: string
   voiceId: string
   language?: string
+  recordingLocale?: string | null
+  scriptVersion?: string | null
   status?: string
   voiceVersion?: number
   requiresVerification?: boolean
@@ -681,6 +727,8 @@ export type VoiceUncheckedCreateWithoutUserInput = {
   provider?: string
   voiceId: string
   language?: string
+  recordingLocale?: string | null
+  scriptVersion?: string | null
   status?: string
   voiceVersion?: number
   requiresVerification?: boolean
@@ -729,6 +777,8 @@ export type VoiceScalarWhereInput = {
   provider?: Prisma.StringFilter<"Voice"> | string
   voiceId?: Prisma.StringFilter<"Voice"> | string
   language?: Prisma.StringFilter<"Voice"> | string
+  recordingLocale?: Prisma.StringNullableFilter<"Voice"> | string | null
+  scriptVersion?: Prisma.StringNullableFilter<"Voice"> | string | null
   status?: Prisma.StringFilter<"Voice"> | string
   voiceVersion?: Prisma.IntFilter<"Voice"> | number
   requiresVerification?: Prisma.BoolFilter<"Voice"> | boolean
@@ -747,6 +797,8 @@ export type VoiceCreateManyUserInput = {
   provider?: string
   voiceId: string
   language?: string
+  recordingLocale?: string | null
+  scriptVersion?: string | null
   status?: string
   voiceVersion?: number
   requiresVerification?: boolean
@@ -765,6 +817,8 @@ export type VoiceUpdateWithoutUserInput = {
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   voiceId?: Prisma.StringFieldUpdateOperationsInput | string
   language?: Prisma.StringFieldUpdateOperationsInput | string
+  recordingLocale?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  scriptVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   voiceVersion?: Prisma.IntFieldUpdateOperationsInput | number
   requiresVerification?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -783,6 +837,8 @@ export type VoiceUncheckedUpdateWithoutUserInput = {
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   voiceId?: Prisma.StringFieldUpdateOperationsInput | string
   language?: Prisma.StringFieldUpdateOperationsInput | string
+  recordingLocale?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  scriptVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   voiceVersion?: Prisma.IntFieldUpdateOperationsInput | number
   requiresVerification?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -801,6 +857,8 @@ export type VoiceUncheckedUpdateManyWithoutUserInput = {
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   voiceId?: Prisma.StringFieldUpdateOperationsInput | string
   language?: Prisma.StringFieldUpdateOperationsInput | string
+  recordingLocale?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  scriptVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   voiceVersion?: Prisma.IntFieldUpdateOperationsInput | number
   requiresVerification?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -822,6 +880,8 @@ export type VoiceSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   provider?: boolean
   voiceId?: boolean
   language?: boolean
+  recordingLocale?: boolean
+  scriptVersion?: boolean
   status?: boolean
   voiceVersion?: boolean
   requiresVerification?: boolean
@@ -842,6 +902,8 @@ export type VoiceSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   provider?: boolean
   voiceId?: boolean
   language?: boolean
+  recordingLocale?: boolean
+  scriptVersion?: boolean
   status?: boolean
   voiceVersion?: boolean
   requiresVerification?: boolean
@@ -862,6 +924,8 @@ export type VoiceSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   provider?: boolean
   voiceId?: boolean
   language?: boolean
+  recordingLocale?: boolean
+  scriptVersion?: boolean
   status?: boolean
   voiceVersion?: boolean
   requiresVerification?: boolean
@@ -882,6 +946,8 @@ export type VoiceSelectScalar = {
   provider?: boolean
   voiceId?: boolean
   language?: boolean
+  recordingLocale?: boolean
+  scriptVersion?: boolean
   status?: boolean
   voiceVersion?: boolean
   requiresVerification?: boolean
@@ -894,7 +960,7 @@ export type VoiceSelectScalar = {
   updatedAt?: boolean
 }
 
-export type VoiceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "displayName" | "provider" | "voiceId" | "language" | "status" | "voiceVersion" | "requiresVerification" | "consentAt" | "consentTextVersion" | "idempotencyKey" | "sampleFilename" | "sampleStorageUrl" | "createdAt" | "updatedAt", ExtArgs["result"]["voice"]>
+export type VoiceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "displayName" | "provider" | "voiceId" | "language" | "recordingLocale" | "scriptVersion" | "status" | "voiceVersion" | "requiresVerification" | "consentAt" | "consentTextVersion" | "idempotencyKey" | "sampleFilename" | "sampleStorageUrl" | "createdAt" | "updatedAt", ExtArgs["result"]["voice"]>
 export type VoiceInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.Voice$userArgs<ExtArgs>
 }
@@ -919,7 +985,18 @@ export type $VoicePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
      * Provider voice id. Never returned to the browser and never accepted from it.
      */
     voiceId: string
+    /**
+     * Recorded language of this voice. New rows store the recording locale, not a collapsed story language.
+     */
     language: string
+    /**
+     * Locale of the script the parent actually read. Distinct from story narration language.
+     */
+    recordingLocale: string | null
+    /**
+     * Registry version frozen when the take started.
+     */
+    scriptVersion: string | null
     status: string
     voiceVersion: number
     requiresVerification: boolean
@@ -1363,6 +1440,8 @@ export interface VoiceFieldRefs {
   readonly provider: Prisma.FieldRef<"Voice", 'String'>
   readonly voiceId: Prisma.FieldRef<"Voice", 'String'>
   readonly language: Prisma.FieldRef<"Voice", 'String'>
+  readonly recordingLocale: Prisma.FieldRef<"Voice", 'String'>
+  readonly scriptVersion: Prisma.FieldRef<"Voice", 'String'>
   readonly status: Prisma.FieldRef<"Voice", 'String'>
   readonly voiceVersion: Prisma.FieldRef<"Voice", 'Int'>
   readonly requiresVerification: Prisma.FieldRef<"Voice", 'Boolean'>

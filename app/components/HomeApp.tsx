@@ -332,10 +332,8 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
         id: voice.id,
         name: voice.name || voice.id,
         description: voice.description || "",
-        language: (voice.language === "zh-Hant" ? "zh-Hant" : "en") as "en" | "zh-Hant",
-        languages: (voice.languages || [voice.language || "en"]).map((item) =>
-          item.toLowerCase().startsWith("zh") ? "zh-Hant" : "en"
-        ) as ("en" | "zh-Hant")[],
+        language: voice.recordingLocale || voice.language || "en",
+        languages: (voice.languages?.length ? voice.languages : [voice.recordingLocale || voice.language || "en"]).slice(),
         group: voice.group === "mine" ? "mine" : "story",
         kind: voice.kind === "personal" ? "personal" : "default",
         status:
