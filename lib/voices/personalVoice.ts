@@ -1,14 +1,17 @@
 import { randomBytes } from "node:crypto";
-import { normalizeAppLanguage, type AppLanguage } from "./language";
 import { CLEANUP_MAX_ATTEMPTS } from "./limits";
 import { checkVoiceUpload } from "./recordingChecks";
+import { providerLanguageLabel, resolveRecordingMetadata, type RecordingLocale } from "./recordingScripts";
 import { consentAllowsCreate, quotaAllowsCreate, type VoiceStatus } from "./decisions";
 
 export type StoredVoice = {
   id: string;
   userId: string;
   displayName: string;
-  language: AppLanguage;
+  /** Recording locale for new rows. Older rows may still be en or zh-Hant. */
+  language: string;
+  recordingLocale: string | null;
+  scriptVersion: string | null;
   status: VoiceStatus;
   voiceVersion: number;
   requiresVerification: boolean;
@@ -48,7 +51,13 @@ export type VoiceStore = {
 };
 
 export type VoiceCloneProvider = {
-  createClone(input: { name: string; bytes: Uint8Array; filename: string; contentType: string }): Promise<{
+  createClone(input: {
+    name: string;
+    bytes: Uint8Array;
+    filename: string;
+    contentType: string;
+    languageLabel: { language: string; accent: string; description: string };
+  }): Promise<{
     providerVoiceId: string;
     requiresVerification: boolean;
   }>;
@@ -74,6 +83,8 @@ export async function createPersonalVoice(
     idempotencyKey: string;
     name: string;
     language: unknown;
+    recordingLocale?: unknown;
+    scriptVersion?: unknown;
     bytes: Uint8Array;
     durationMs: number;
     voicedMs: number;
@@ -108,6 +119,13 @@ export async function createPersonalVoice(
   });
   if (!upload.ok) return { ok: false, status: 400, error: upload.message };
 
+  const recorded = resolveRecordingMetadata({
+    recordingLocale: input.recordingLocale,
+    scriptVersion: input.scriptVersion,
+    language: input.language,
+  });
+  if (!recorded.ok) return recorded;
+
   const since = new Date(deps.now.getTime() - 60 * 60 * 1000);
   const [activeCount, attempts, slots] = await Promise.all([
     deps.store.countActive(input.userId),
@@ -125,7 +143,7 @@ export async function createPersonalVoice(
 
   await deps.store.recordAttempt(input.userId, deps.now);
   const displayName = input.name.trim().slice(0, 80) || "My voice";
-  const language = normalizeAppLanguage(input.language);
+  const language: RecordingLocale = recorded.locale;
   const filename = sampleObjectName(upload.audio.extension);
   const saved = await deps.saveSample(filename, input.bytes, input.contentType || "application/octet-stream");
   let created: { providerVoiceId: string; requiresVerification: boolean };
@@ -135,6 +153,7 @@ export async function createPersonalVoice(
       bytes: input.bytes,
       filename,
       contentType: input.contentType || "application/octet-stream",
+      languageLabel: providerLanguageLabel(language),
     });
   } catch (error) {
     await deps.deleteSample(filename, saved.storageUrl);
@@ -147,6 +166,8 @@ export async function createPersonalVoice(
     userId: input.userId,
     displayName,
     language,
+    recordingLocale: language,
+    scriptVersion: recorded.scriptVersion,
     status: created.requiresVerification ? "pending_verification" : "ready",
     voiceVersion: 1,
     requiresVerification: created.requiresVerification,

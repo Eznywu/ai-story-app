@@ -11,11 +11,14 @@ env.NODE_ENV = "development";
 env.AUTH_ENABLED = "";
 env.DATABASE_URL = "postgresql://audiobook:audiobook@127.0.0.1:5432/audiobook";
 env.ELEVENLABS_API_KEY = "local-test-key-must-not-be-used";
+env.VOICE_CLONE_ATTEMPTS_PER_HOUR = "40";
+env.PERSONAL_VOICE_LIMIT = "4";
 
 export default defineConfig({
   testDir: "tests/ui",
-  testMatch: "**/local-parent.spec.ts",
-  timeout: 90_000,
+  testMatch: ["**/local-parent.spec.ts", "**/recording-scripts.spec.ts", "**/recording-script-shots.spec.ts"],
+  timeout: 180_000,
+  workers: 1,
   use: {
     baseURL: `http://127.0.0.1:${port}`,
     trace: "off",

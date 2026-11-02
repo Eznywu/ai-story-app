@@ -2,7 +2,6 @@ import { prisma } from "@/lib/prisma";
 import { GUEST_EMAIL, LOCAL_TEST_PARENT_EMAIL, authEnabled, localTestParentEnabled } from "@/lib/auth/config";
 import { deleteMediaReference, readPrivateMedia, saveMediaBytes } from "@/lib/media/objectStore";
 import { CLEARED_STORY_AUDIO, removeStoryAudioFile } from "@/lib/audio/storyMediaFiles";
-import { normalizeAppLanguage } from "@/lib/voices/language";
 import type { StoredVoice, VoiceStore } from "@/lib/voices/personalVoice";
 import type { VoiceStatus } from "@/lib/voices/decisions";
 import { personalVoicesAllowed } from "@/lib/voices/decisions";
@@ -12,6 +11,8 @@ function mapVoice(row: {
   userId: string | null;
   displayName: string;
   language: string;
+  recordingLocale: string | null;
+  scriptVersion: string | null;
   status: string;
   voiceVersion: number;
   requiresVerification: boolean;
@@ -25,7 +26,9 @@ function mapVoice(row: {
     id: row.id,
     userId: row.userId ?? "",
     displayName: row.displayName,
-    language: normalizeAppLanguage(row.language),
+    language: row.recordingLocale || row.language,
+    recordingLocale: row.recordingLocale,
+    scriptVersion: row.scriptVersion,
     status: (row.status as VoiceStatus) || "ready",
     voiceVersion: row.voiceVersion,
     requiresVerification: row.requiresVerification,
@@ -68,7 +71,9 @@ export function prismaVoiceStore(): VoiceStore {
           id: voice.id,
           userId: voice.userId,
           displayName: voice.displayName,
-          language: voice.language,
+          language: voice.recordingLocale || voice.language,
+          recordingLocale: voice.recordingLocale,
+          scriptVersion: voice.scriptVersion,
           status: voice.status,
           voiceVersion: voice.voiceVersion,
           requiresVerification: voice.requiresVerification,

@@ -254,7 +254,8 @@ export const messages = {
     useTake: "Create a voice from this take",
     nameLabel: "Name this voice",
     save: "Save and use",
-    target: "Aim for 60 to 120 seconds. Read the passage aloud.",
+    target:
+      "Aim for 60 to 120 seconds. Read in your usual accent, as if you are speaking warmly to your child. Keep a comfortable, steady pace and the same distance from the microphone. A little natural expression is enough. Skip acting, whispering, shouting, or an exaggerated pitch. Only your own live voice: no music and no other speakers. Read only this language.",
     micDenied:
       "The microphone is blocked. On iPhone Safari: Settings → Safari → Microphone → Allow. In Chrome: the lock icon → Site settings → Microphone → Allow. In the Happy Horse app: iPhone Settings → Happy Horse → Microphone. Then try again.",
     tooQuiet: "We couldn't hear enough talking. Move a little closer and read it again.",

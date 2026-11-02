@@ -14,6 +14,11 @@ export function elevenVoiceProvider(apiKey: string): VoiceCloneProvider {
       const result = await client.voices.ivc.create({
         name: input.name,
         files: [file],
+        description: input.languageLabel.description,
+        labels: JSON.stringify({
+          language: input.languageLabel.language,
+          accent: input.languageLabel.accent,
+        }),
       });
       return {
         providerVoiceId: result.voiceId,

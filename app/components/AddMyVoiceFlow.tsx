@@ -9,6 +9,12 @@ import type { VoicePreviewControls } from "@/app/hooks/useVoicePreview";
 import { voiceCopy } from "@/lib/voices/uiCopy";
 import { preferredRecorderMime, recordingClipped, voicedDurationMs } from "@/lib/voices/recordingChecks";
 import { CONSENT_TEXT_VERSION } from "@/lib/voices/consent";
+import {
+  readingText,
+  recordingScriptForLocale,
+  resolveActiveRecordingScript,
+  type RecordingScript,
+} from "@/lib/voices/recordingScripts";
 
 function newIdempotencyKey(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
@@ -37,12 +43,17 @@ type Props = {
 
 export function AddMyVoiceFlow(props: Props) {
   const spoken = voiceCopy(props.language);
-  const { messages } = useInterfaceLocale();
+  const { locale, messages } = useInterfaceLocale();
+  const localeRef = useRef(locale);
+  useEffect(() => {
+    localeRef.current = locale;
+  }, [locale]);
+  const [frozenScript, setFrozenScript] = useState<RecordingScript | null>(null);
+  const script = resolveActiveRecordingScript(locale, frozenScript);
   const copy = {
     ...messages.voice,
     lang: spoken.lang,
     consent: spoken.consent,
-    passage: spoken.passage,
     consentVersion: spoken.consentVersion,
   };
   const [step, setStep] = useState<Step>(props.personalVoices === "available" ? "consent" : "blocked");
@@ -78,6 +89,7 @@ export function AddMyVoiceFlow(props: Props) {
   }, []);
 
   async function askMicrophone() {
+    localeRef.current = locale;
     setError("");
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
       setError(copy.failed);
@@ -146,6 +158,7 @@ export function AddMyVoiceFlow(props: Props) {
       recorderRef.current = recorder;
       started.current = Date.now();
       setSeconds(0);
+      setFrozenScript(recordingScriptForLocale(localeRef.current));
       recorder.start(250);
       window.requestAnimationFrame(watch);
       setStep("record");
@@ -172,6 +185,7 @@ export function AddMyVoiceFlow(props: Props) {
     });
     setBlob(null);
     setError("");
+    setFrozenScript(null);
     setStep("permission");
     idempotency.current = newIdempotencyKey();
   }
@@ -183,8 +197,11 @@ export function AddMyVoiceFlow(props: Props) {
     const form = new FormData();
     const extension = mime.includes("mp4") ? "m4a" : mime.includes("ogg") ? "ogg" : "webm";
     form.set("file", new File([blob], `recording.${extension}`, { type: mime || "audio/webm" }));
+    const take = frozenScript ?? script;
     form.set("name", name);
-    form.set("language", copy.lang);
+    form.set("language", take.locale);
+    form.set("recordingLocale", take.locale);
+    form.set("scriptVersion", take.scriptVersion);
     form.set("durationMs", String(Math.max(seconds, 1) * 1000));
     form.set("voicedMs", String(voicedMs));
     form.set("clipped", clipped ? "true" : "false");
@@ -277,7 +294,7 @@ export function AddMyVoiceFlow(props: Props) {
       {step === "record" ? (
         <>
           <p>{copy.target}</p>
-          <p className="voiceFlow__passage">{copy.passage}</p>
+          <p className="voiceFlow__passage">{readingText(script)}</p>
           <p className="voiceFlow__timer" aria-live="polite">
             {seconds}s
           </p>

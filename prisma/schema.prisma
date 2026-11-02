@@ -147,7 +147,12 @@ model Voice {
   provider             String    @default("elevenlabs")
   /// Provider voice id. Never returned to the browser and never accepted from it.
   voiceId              String
+  /// Recorded language of this voice. New rows store the recording locale, not a collapsed story language.
   language             String    @default("en")
+  /// Locale of the script the parent actually read. Distinct from story narration language.
+  recordingLocale      String?
+  /// Registry version frozen when the take started.
+  scriptVersion        String?
   status               String    @default("ready")
   voiceVersion         Int       @default(1)
   requiresVerification Boolean   @default(false)
