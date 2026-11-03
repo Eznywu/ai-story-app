@@ -55,7 +55,13 @@ export const ModelName = {
   Session: 'Session',
   LoginCode: 'LoginCode',
   Story: 'Story',
+  ArtworkJob: 'ArtworkJob',
+  ArtworkSpendDay: 'ArtworkSpendDay',
   Voice: 'Voice',
+  VoiceAttempt: 'VoiceAttempt',
+  VoiceCleanup: 'VoiceCleanup',
+  VoicePreference: 'VoicePreference',
+  NarrationPreview: 'NarrationPreview',
   KidProfile: 'KidProfile',
   StoryCharacter: 'StoryCharacter',
   NarrationAsset: 'NarrationAsset',
@@ -137,11 +143,59 @@ export const StoryScalarFieldEnum = {
   audioConfigVersion: 'audioConfigVersion',
   audioConfigId: 'audioConfigId',
   audioCacheKey: 'audioCacheKey',
+  audioPrivate: 'audioPrivate',
+  audioStorageUrl: 'audioStorageUrl',
+  audioVoiceKind: 'audioVoiceKind',
+  audioVoiceVersion: 'audioVoiceVersion',
   dailyAutomated: 'dailyAutomated',
+  characterId: 'characterId',
+  characterSnapshot: 'characterSnapshot',
+  visualBrief: 'visualBrief',
+  illustrationFilename: 'illustrationFilename',
+  illustrationUrl: 'illustrationUrl',
+  coverFilename: 'coverFilename',
+  coverUrl: 'coverUrl',
+  artworkStatus: 'artworkStatus',
+  artworkCacheKey: 'artworkCacheKey',
+  posterCaption: 'posterCaption',
+  dedication: 'dedication',
+  artworkMeta: 'artworkMeta',
   createdAt: 'createdAt'
 } as const
 
 export type StoryScalarFieldEnum = (typeof StoryScalarFieldEnum)[keyof typeof StoryScalarFieldEnum]
+
+
+export const ArtworkJobScalarFieldEnum = {
+  id: 'id',
+  cacheKey: 'cacheKey',
+  scopeKey: 'scopeKey',
+  storyId: 'storyId',
+  status: 'status',
+  provider: 'provider',
+  model: 'model',
+  quality: 'quality',
+  attemptCount: 'attemptCount',
+  estimatedCostUsd: 'estimatedCostUsd',
+  leaseUntil: 'leaseUntil',
+  blockedUntil: 'blockedUntil',
+  errorMessage: 'errorMessage',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArtworkJobScalarFieldEnum = (typeof ArtworkJobScalarFieldEnum)[keyof typeof ArtworkJobScalarFieldEnum]
+
+
+export const ArtworkSpendDayScalarFieldEnum = {
+  id: 'id',
+  scopeKey: 'scopeKey',
+  dayKey: 'dayKey',
+  generations: 'generations',
+  estimatedUsd: 'estimatedUsd'
+} as const
+
+export type ArtworkSpendDayScalarFieldEnum = (typeof ArtworkSpendDayScalarFieldEnum)[keyof typeof ArtworkSpendDayScalarFieldEnum]
 
 
 export const VoiceScalarFieldEnum = {
@@ -151,10 +205,75 @@ export const VoiceScalarFieldEnum = {
   provider: 'provider',
   voiceId: 'voiceId',
   language: 'language',
-  createdAt: 'createdAt'
+  recordingLocale: 'recordingLocale',
+  scriptVersion: 'scriptVersion',
+  status: 'status',
+  voiceVersion: 'voiceVersion',
+  requiresVerification: 'requiresVerification',
+  consentAt: 'consentAt',
+  consentTextVersion: 'consentTextVersion',
+  idempotencyKey: 'idempotencyKey',
+  sampleFilename: 'sampleFilename',
+  sampleStorageUrl: 'sampleStorageUrl',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 } as const
 
 export type VoiceScalarFieldEnum = (typeof VoiceScalarFieldEnum)[keyof typeof VoiceScalarFieldEnum]
+
+
+export const VoiceAttemptScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  kind: 'kind',
+  createdAt: 'createdAt'
+} as const
+
+export type VoiceAttemptScalarFieldEnum = (typeof VoiceAttemptScalarFieldEnum)[keyof typeof VoiceAttemptScalarFieldEnum]
+
+
+export const VoiceCleanupScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  providerVoiceId: 'providerVoiceId',
+  sampleFilename: 'sampleFilename',
+  sampleStorageUrl: 'sampleStorageUrl',
+  voiceRowId: 'voiceRowId',
+  status: 'status',
+  attempts: 'attempts',
+  lastError: 'lastError',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type VoiceCleanupScalarFieldEnum = (typeof VoiceCleanupScalarFieldEnum)[keyof typeof VoiceCleanupScalarFieldEnum]
+
+
+export const VoicePreferenceScalarFieldEnum = {
+  userId: 'userId',
+  voiceAppId: 'voiceAppId',
+  language: 'language',
+  updatedAt: 'updatedAt'
+} as const
+
+export type VoicePreferenceScalarFieldEnum = (typeof VoicePreferenceScalarFieldEnum)[keyof typeof VoicePreferenceScalarFieldEnum]
+
+
+export const NarrationPreviewScalarFieldEnum = {
+  id: 'id',
+  cacheKey: 'cacheKey',
+  voiceAppId: 'voiceAppId',
+  ownerUserId: 'ownerUserId',
+  language: 'language',
+  modelId: 'modelId',
+  voiceVersion: 'voiceVersion',
+  source: 'source',
+  filename: 'filename',
+  storageUrl: 'storageUrl',
+  createdAt: 'createdAt'
+} as const
+
+export type NarrationPreviewScalarFieldEnum = (typeof NarrationPreviewScalarFieldEnum)[keyof typeof NarrationPreviewScalarFieldEnum]
 
 
 export const KidProfileScalarFieldEnum = {
@@ -218,6 +337,9 @@ export const NarrationAssetScalarFieldEnum = {
   attempt: 'attempt',
   baselineFlag: 'baselineFlag',
   source: 'source',
+  voiceKind: 'voiceKind',
+  voiceVersion: 'voiceVersion',
+  ownerUserId: 'ownerUserId',
   createdAt: 'createdAt'
 } as const
 

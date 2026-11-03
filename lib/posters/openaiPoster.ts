@@ -1,13 +1,18 @@
 import OpenAI from "openai";
-import { createError, getErrorMessage, getErrorStatus } from "@/lib/errors";
+import { createError, getErrorStatus } from "@/lib/errors";
 import { getOpenAiBaseUrl, getPosterHttpDispatcher } from "@/lib/providerHttp";
 import { posterProviderTransportFailureMessage } from "@/lib/posters/posterProviderErrors";
-import { buildPosterImagePrompt } from "@/lib/posters/posterPromptConfig";
 import { providerTimeoutMs } from "@/lib/vercelDuration";
 
-/** GPT image models replaced DALL·E for new accounts. `dall-e-3` still works when set explicitly. */
-const DEFAULT_IMAGE_MODEL = "gpt-image-1.5";
+/**
+ * Everyday square covers use GPT Image 2.5 Flare.
+ * `gpt-image-1.5` and `gpt-image-1-mini` shut down on 1 Dec 2026.
+ * A different model is used only when OPENAI_POSTER_IMAGE_MODEL is set.
+ * There is no automatic second model call.
+ */
+const DEFAULT_IMAGE_MODEL = "gpt-image-2.5-flare";
 const IMAGE_MODEL = process.env.OPENAI_POSTER_IMAGE_MODEL?.trim() || DEFAULT_IMAGE_MODEL;
+const IMAGE_SIZE = "1024x1024";
 
 const POSTER_TIMEOUT_MS = providerTimeoutMs(
   Number(process.env.OPENAI_POSTER_TIMEOUT_MS),
@@ -46,26 +51,20 @@ function gptImageQuality(): "low" | "medium" | "high" | "auto" {
   const raw = process.env.OPENAI_POSTER_IMAGE_QUALITY?.trim().toLowerCase();
   if (raw === "low" || raw === "medium" || raw === "high" || raw === "auto") return raw;
   if (raw === "hd") return "high";
-  return "medium";
+  return "low";
 }
 
-function modelLooksUnavailable(err: unknown): boolean {
-  const status = getErrorStatus(err, 0);
-  const msg = getErrorMessage(err, "").toLowerCase();
-  return (
-    status === 404 ||
-    /model.*(not found|does not exist|unavailable|deprecated|retired)/.test(msg) ||
-    /invalid.*model|unknown model/.test(msg)
-  );
-}
-
-async function generateOnce(client: OpenAI, model: string, prompt: string): Promise<Buffer> {
+async function generateOnce(
+  client: OpenAI,
+  model: string,
+  prompt: string
+): Promise<{ bytes: Buffer; usage: { inputTokens?: number; outputTokens?: number } | null }> {
   const image = isGptImageModel(model)
     ? await client.images.generate({
         model,
         prompt,
         n: 1,
-        size: "1024x1536",
+        size: IMAGE_SIZE,
         quality: gptImageQuality(),
         output_format: "png",
       })
@@ -73,28 +72,34 @@ async function generateOnce(client: OpenAI, model: string, prompt: string): Prom
         model,
         prompt: prompt.slice(0, 3900),
         n: 1,
-        size: "1024x1792",
-        quality: process.env.OPENAI_POSTER_IMAGE_QUALITY === "hd" ? "hd" : "standard",
+        size: IMAGE_SIZE,
+        quality: "standard",
         response_format: "b64_json",
       });
 
   const b64 = image.data?.[0]?.b64_json;
   if (!b64) {
-    throw createError("Image generation returned no image data. Try a shorter story or different genre.", 502);
+    throw createError("Image generation returned no image data.", 502);
   }
-  return Buffer.from(b64, "base64");
+  const usage = (image as { usage?: { input_tokens?: number; output_tokens?: number } }).usage;
+  return {
+    bytes: Buffer.from(b64, "base64"),
+    usage: usage
+      ? { inputTokens: usage.input_tokens, outputTokens: usage.output_tokens }
+      : null,
+  };
 }
 
-/**
- * OpenAI illustrated poster. Default model is `gpt-image-1.5` (portrait 1024x1536).
- * `dall-e-3` is used only when OPENAI_POSTER_IMAGE_MODEL names it, and a missing
- * DALL·E model retries once on `gpt-image-1.5`.
- */
+/** One OpenAI image request. Timeouts are not retried here. */
 export async function generatePosterPngFromOpenAI(input: {
-  title: string;
-  story: string;
-  genre?: string;
-}): Promise<Buffer> {
+  prompt: string;
+}): Promise<{
+  bytes: Buffer;
+  model: string;
+  quality: string;
+  size: string;
+  usage: { inputTokens?: number; outputTokens?: number } | null;
+}> {
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   if (!apiKey) {
     throw createError("Missing OPENAI_API_KEY for OpenAI poster generation.", 500);
@@ -108,29 +113,22 @@ export async function generatePosterPngFromOpenAI(input: {
     fetchOptions: { dispatcher: getPosterHttpDispatcher(POSTER_TIMEOUT_MS) },
   });
 
-  const prompt = buildPosterImagePrompt({
-    title: input.title,
-    genre: input.genre,
-    story: input.story,
-  });
-
   try {
-    console.info("[poster] openai model", { model: IMAGE_MODEL, timeoutMs: POSTER_TIMEOUT_MS });
-    return await generateOnce(client, IMAGE_MODEL, prompt);
+    console.info("[poster] openai model", {
+      model: IMAGE_MODEL,
+      size: IMAGE_SIZE,
+      quality: gptImageQuality(),
+      timeoutMs: POSTER_TIMEOUT_MS,
+    });
+    const image = await generateOnce(client, IMAGE_MODEL, input.prompt);
+    return {
+      bytes: image.bytes,
+      model: IMAGE_MODEL,
+      quality: gptImageQuality(),
+      size: IMAGE_SIZE,
+      usage: image.usage,
+    };
   } catch (err) {
-    if (!isGptImageModel(IMAGE_MODEL) && modelLooksUnavailable(err)) {
-      console.warn("[poster] image model unavailable, retrying", {
-        from: IMAGE_MODEL,
-        to: DEFAULT_IMAGE_MODEL,
-      });
-      try {
-        return await generateOnce(client, DEFAULT_IMAGE_MODEL, prompt);
-      } catch (retryErr) {
-        const status = getErrorStatus(retryErr, 0);
-        if (status > 0 && !openAiErrorLooksLikeTransportFailure(retryErr)) throw retryErr;
-        rethrowOpenAiConnectivityAs503OrThrow(retryErr);
-      }
-    }
     const status = getErrorStatus(err, 0);
     if (status > 0 && !openAiErrorLooksLikeTransportFailure(err)) {
       throw err;

@@ -4,23 +4,41 @@ import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } fro
 import { getErrorMessage } from "@/lib/errors";
 import { clientJson } from "@/lib/auth/clientApi";
 import { redirectIfUnsigned } from "@/lib/auth/redirectIfUnsigned";
-import { clearStoredClonedVoices, readStoredClonedVoices } from "@/lib/voices/clonedVoiceStorage";
-import { isCloneVoiceId, makeCloneVoiceId } from "@/lib/voices/voices";
+import { readVoicePreference, writeVoicePreference } from "@/lib/voices/preference";
 
 export type VoiceItem = {
   id: string;
   name?: string;
+  description?: string;
   language?: string;
+  languages?: string[];
+  group?: "story" | "mine";
+  kind?: "default" | "personal";
+  status?: string;
+  selectable?: boolean;
   isDefault?: boolean;
+  nonNativeRisk?: boolean;
+  recordingLocale?: string | null;
+  scriptVersion?: string | null;
 };
 
 type VoiceApiItem = {
   id?: unknown;
-  voiceId?: unknown;
   name?: unknown;
+  description?: unknown;
   language?: unknown;
+  languages?: unknown;
+  group?: unknown;
+  kind?: unknown;
+  status?: unknown;
+  selectable?: unknown;
   isDefault?: unknown;
+  nonNativeRisk?: unknown;
+  recordingLocale?: unknown;
+  scriptVersion?: unknown;
 };
+
+export type PersonalVoiceAccess = "available" | "sign-in-required";
 
 function languageGroup(language: string) {
   return language.toLowerCase().startsWith("zh") ? "zh-Hant" : "en";
@@ -28,13 +46,11 @@ function languageGroup(language: string) {
 
 function pickDefaultVoice(voices: VoiceItem[], language: string) {
   const normalizedLanguage = languageGroup(language);
-  return (
-    voices.find((v) => v.language === normalizedLanguage && v.isDefault) ??
-    voices.find((v) => v.language === normalizedLanguage) ??
-    voices.find((v) => v.isDefault) ??
-    voices[0] ??
-    null
-  );
+  const compatible = voices.filter((voice) => {
+    const langs = voice.languages?.length ? voice.languages : [voice.language || "en"];
+    return langs.some((item) => languageGroup(item) === normalizedLanguage) && voice.selectable !== false && voice.group !== "mine";
+  });
+  return compatible.find((voice) => voice.isDefault) ?? compatible[0] ?? voices.find((voice) => voice.isDefault) ?? null;
 }
 
 function savedAudioUrlFromHeader(value: string): string | null {
@@ -47,8 +63,19 @@ function savedAudioUrlFromHeader(value: string): string | null {
 function isVoiceApiItem(value: unknown): value is VoiceApiItem {
   if (!value || typeof value !== "object") return false;
   const item = value as VoiceApiItem;
-  return Boolean(item.id || item.voiceId);
+  return typeof item.id === "string" && item.id.length > 0;
 }
+
+type Narration = {
+  savedAudioUrl: string | null;
+  audioCacheKey: string | null;
+  audioConfigVersion: string | null;
+  audioDictionaryVersion: string | null;
+  audioModelId: string | null;
+  audioVoiceId: string | null;
+  audioSpeed: number | null;
+  transcriptStatus: string | null;
+};
 
 export function useTts(language: string, externalAudioRef?: RefObject<HTMLAudioElement | null>) {
   const [voices, setVoices] = useState<VoiceItem[]>([]);
@@ -57,67 +84,45 @@ export function useTts(language: string, externalAudioRef?: RefObject<HTMLAudioE
   const [isMakingMp3, setIsMakingMp3] = useState(false);
   const [isLoadingVoices, setIsLoadingVoices] = useState(false);
   const [voicesError, setVoicesError] = useState("");
+  const [personalVoices, setPersonalVoices] = useState<PersonalVoiceAccess>("sign-in-required");
+  const [voiceLimit, setVoiceLimit] = useState<number | null>(null);
   const internalAudioRef = useRef<HTMLAudioElement | null>(null);
+  const narrationsInFlight = useRef(new Map<string, Promise<Narration>>());
   const audioRef = externalAudioRef ?? internalAudioRef;
 
   const fetchVoices = useCallback(async () => {
     setIsLoadingVoices(true);
     setVoicesError("");
     try {
-      const data = await clientJson<{ voices?: unknown[] } | unknown[]>("/api/voices");
-
-      const list: unknown[] = Array.isArray(data)
-        ? data
-        : Array.isArray(data?.voices)
-          ? data.voices
-          : [];
-      const toVoiceItems = (rows: unknown[]): VoiceItem[] =>
-        rows.filter(isVoiceApiItem).map((v) => ({
-          id: String(v.id ?? v.voiceId),
-          name: typeof v.name === "string" ? v.name : undefined,
-          language: typeof v.language === "string" ? v.language : undefined,
-          isDefault: Boolean(v.isDefault),
-        }));
-
-      let normalized = toVoiceItems(list);
-      const localClones = readStoredClonedVoices();
-      const knownIds = new Set(normalized.map((voice) => voice.id));
-      const pending = localClones.filter(
-        (entry) => !knownIds.has(makeCloneVoiceId(entry.elevenVoiceId))
+      const data = await clientJson<{ voices?: unknown[]; personalVoices?: unknown; voiceLimit?: unknown }>(
+        `/api/voices?language=${encodeURIComponent(language)}`
       );
-      if (pending.length) {
-        let claimFailed = false;
-        for (const entry of pending) {
-          try {
-            await clientJson("/api/voices", {
-              method: "POST",
-              body: JSON.stringify({
-                elevenVoiceId: entry.elevenVoiceId,
-                label: entry.label,
-                language: entry.language,
-              }),
-            });
-          } catch (error: unknown) {
-            const message = getErrorMessage(error, "");
-            if (!message.includes("another account")) claimFailed = true;
-          }
-        }
-        if (!claimFailed) {
-          clearStoredClonedVoices();
-          const refreshed = await clientJson<{ voices?: unknown[] }>("/api/voices");
-          normalized = toVoiceItems(Array.isArray(refreshed.voices) ? refreshed.voices : []);
-        }
-      } else if (localClones.length) {
-        clearStoredClonedVoices();
-      }
-
-      const merged = normalized;
-      setVoices(merged);
+      setVoiceLimit(typeof data.voiceLimit === "number" && data.voiceLimit > 0 ? data.voiceLimit : null);
+      const list: unknown[] = Array.isArray(data?.voices) ? data.voices : [];
+      const normalized = list.filter(isVoiceApiItem).map((v) => ({
+        id: String(v.id),
+        name: typeof v.name === "string" ? v.name : undefined,
+        description: typeof v.description === "string" ? v.description : undefined,
+        language: typeof v.language === "string" ? v.language : undefined,
+        languages: Array.isArray(v.languages) ? v.languages.filter((item): item is string => typeof item === "string") : undefined,
+        group: v.group === "mine" ? ("mine" as const) : ("story" as const),
+        kind: v.kind === "personal" ? ("personal" as const) : ("default" as const),
+        status: typeof v.status === "string" ? v.status : undefined,
+        selectable: v.selectable !== false,
+        isDefault: Boolean(v.isDefault),
+        nonNativeRisk: v.nonNativeRisk === true,
+        recordingLocale: typeof v.recordingLocale === "string" ? v.recordingLocale : null,
+        scriptVersion: typeof v.scriptVersion === "string" ? v.scriptVersion : null,
+      }));
+      setPersonalVoices(data.personalVoices === "available" ? "available" : "sign-in-required");
+      setVoices(normalized);
       setSelectedVoiceId((prev) => {
-        if (prev && merged.some((v) => v.id === prev)) return prev;
-        return pickDefaultVoice(merged, language)?.id || "";
+        const saved = readVoicePreference();
+        const preferred = prev || saved?.voiceId || "";
+        if (preferred && normalized.some((voice) => voice.id === preferred)) return preferred;
+        return pickDefaultVoice(normalized, language)?.id || "";
       });
-      return merged;
+      return normalized;
     } catch (e: unknown) {
       setVoicesError(getErrorMessage(e, "Could not load voices."));
       return [];
@@ -158,22 +163,25 @@ export function useTts(language: string, externalAudioRef?: RefObject<HTMLAudioE
     playCurrentAudio();
   }
 
-  async function makeMp3(
+  /** A second tap while the same narration is still being made waits for it instead of paying again. */
+  function makeMp3(text: string, speed: number, lang: string, storyId?: string, force = false): Promise<Narration> {
+    const key = JSON.stringify([text, speed, lang, selectedVoiceId, storyId ?? "", force]);
+    const running = narrationsInFlight.current.get(key);
+    if (running) return running;
+    const request = requestNarration(text, speed, lang, storyId, force).finally(() => {
+      narrationsInFlight.current.delete(key);
+    });
+    narrationsInFlight.current.set(key, request);
+    return request;
+  }
+
+  async function requestNarration(
     text: string,
     speed: number,
     lang: string,
     storyId?: string,
     force = false
-  ): Promise<{
-    savedAudioUrl: string | null;
-    audioCacheKey: string | null;
-    audioConfigVersion: string | null;
-    audioDictionaryVersion: string | null;
-    audioModelId: string | null;
-    audioVoiceId: string | null;
-    audioSpeed: number | null;
-    transcriptStatus: string | null;
-  }> {
+  ): Promise<Narration> {
     setIsMakingMp3(true);
     try {
       if (!text.trim()) throw new Error("Generate a story first.");
@@ -204,16 +212,20 @@ export function useTts(language: string, externalAudioRef?: RefObject<HTMLAudioE
         throw new Error("Narration did not come back as audio. Try again.");
       }
 
-      const blob = await res.blob();
-      if (!blob.size) {
-        throw new Error("Voice failed, try again.");
-      }
-
-      const objectUrl = URL.createObjectURL(blob);
       const savedHeader = res.headers.get("X-Audio-Url")?.trim() || "";
       const savedAudioUrl = savedAudioUrlFromHeader(savedHeader);
+      if (savedAudioUrl) {
+        // The player streams the saved copy, so do not download it twice.
+        void res.body?.cancel().catch(() => {});
+        replaceAudioUrl(savedAudioUrl);
+      } else {
+        const blob = await res.blob();
+        if (!blob.size) {
+          throw new Error("Voice failed, try again.");
+        }
+        replaceAudioUrl(URL.createObjectURL(blob));
+      }
       const speedHeader = Number(res.headers.get("X-Audio-Speed"));
-      replaceAudioUrl(savedAudioUrl || objectUrl);
       playCurrentAudio();
       return {
         savedAudioUrl,
@@ -241,21 +253,28 @@ export function useTts(language: string, externalAudioRef?: RefObject<HTMLAudioE
     }
   }
 
+  const chooseVoice = useCallback((voiceId: string) => {
+    setSelectedVoiceId(voiceId);
+    writeVoicePreference({ voiceId, language });
+    void clientJson("/api/voice-preference", {
+      method: "PUT",
+      body: JSON.stringify({ voiceId, language }),
+    }).catch(() => {});
+  }, [language]);
+
   const registerClonedVoice = useCallback(
-    async (elevenVoiceId: string) => {
+    async (voiceId: string) => {
       await fetchVoices();
-      setSelectedVoiceId(makeCloneVoiceId(elevenVoiceId));
+      chooseVoice(voiceId);
     },
-    [fetchVoices]
+    [chooseVoice, fetchVoices]
   );
 
   const clearClonedVoice = useCallback(async () => {
-    clearStoredClonedVoices();
-    await clientJson("/api/voices", { method: "DELETE" });
     await fetchVoices();
   }, [fetchVoices]);
 
-  const hasClonedVoice = useMemo(() => voices.some((v) => isCloneVoiceId(v.id)), [voices]);
+  const hasClonedVoice = useMemo(() => voices.some((voice) => voice.kind === "personal"), [voices]);
 
   return {
     voices,
@@ -267,6 +286,9 @@ export function useTts(language: string, externalAudioRef?: RefObject<HTMLAudioE
     isLoadingVoices,
     voicesError,
     fetchVoices,
+    personalVoices,
+    voiceLimit,
+    chooseVoice,
     makeMp3,
     playSavedAudio,
     clearAudio,

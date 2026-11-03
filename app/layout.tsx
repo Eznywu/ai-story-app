@@ -1,42 +1,30 @@
 import type { Metadata, Viewport } from "next";
-import { Cormorant_Garamond, Geist_Mono, Inter } from "next/font/google";
 import { CapacitorNativeShell } from "@/app/components/CapacitorNativeShell";
+import { LocaleProvider } from "@/app/components/LocaleProvider";
+import { BRAND_NAME, BRAND_PROMISE } from "@/lib/brand";
+import { getRequestLocale } from "@/lib/i18n/request";
+import { localeMeta } from "@/lib/i18n/locales";
 import "./globals.css";
-
-const interSans = Inter({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-/** Figma heading family */
-const cormorantDisplay = Cormorant_Garamond({
-  variable: "--font-display",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
 
 export const metadata: Metadata = {
   title: {
-    default: "Bedtime Story",
-    template: "%s — Bedtime Story",
+    default: BRAND_NAME,
+    template: `%s — ${BRAND_NAME}`,
   },
-  description:
-    "Generate gentle personalized bedtime stories, listen with default narration, and save your favorites.",
-  applicationName: "Bedtime Story",
+  description: BRAND_PROMISE,
+  applicationName: BRAND_NAME,
   manifest: "/manifest.webmanifest",
   icons: {
-    icon: [{ url: "/icon", sizes: "512x512", type: "image/png" }],
+    icon: [
+      { url: "/brand/icon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/brand/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon", sizes: "512x512", type: "image/png" },
+    ],
     apple: [{ url: "/apple-icon", sizes: "180x180", type: "image/png" }],
   },
   appleWebApp: {
     capable: true,
-    title: "Bedtime Story",
+    title: BRAND_NAME,
     statusBarStyle: "black-translucent",
   },
   formatDetection: {
@@ -50,22 +38,24 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#0e1838",
+  themeColor: "#11182B",
   interactiveWidget: "resizes-content",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const { locale, cookieWasSet } = await getRequestLocale();
+  const meta = localeMeta(locale);
   return (
-    <html lang="en">
-      <body
-        className={`${interSans.variable} ${geistMono.variable} ${cormorantDisplay.variable} antialiased`}
-      >
+    <html lang={meta.htmlLang} dir={meta.dir}>
+      <body>
+        <LocaleProvider initialLocale={locale} cookieWasSet={cookieWasSet}>
+          {children}
+        </LocaleProvider>
         <CapacitorNativeShell />
-        {children}
       </body>
     </html>
   );

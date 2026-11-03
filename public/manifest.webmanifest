@@ -1,24 +1,30 @@
 {
-  "name": "Bedtime Story",
-  "short_name": "Bedtime",
-  "description": "Generate gentle personalized bedtime stories, listen with narration, and save your favorites.",
+  "name": "Happy Horse",
+  "short_name": "Happy Horse",
+  "description": "Little stories. Lasting closeness.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ede7f8",
-  "theme_color": "#5e4a9c",
+  "background_color": "#F6F1E9",
+  "theme_color": "#11182B",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/icon",
+      "src": "/brand/icon-192.png",
       "type": "image/png",
-      "sizes": "512x512",
-      "purpose": "any maskable"
+      "sizes": "192x192",
+      "purpose": "any"
     },
     {
-      "src": "/apple-icon",
+      "src": "/brand/icon-512.png",
       "type": "image/png",
-      "sizes": "180x180",
+      "sizes": "512x512",
       "purpose": "any"
+    },
+    {
+      "src": "/brand/icon-maskable-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
     }
   ]
 }

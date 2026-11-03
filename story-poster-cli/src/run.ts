@@ -39,6 +39,52 @@ export async function runPosterPipeline(params: {
     throw new Error("Story is too short — provide at least a few sentences.");
   }
 
+  console.log("Prompt comparison only. This tool does not judge pictures and is not visual QA.");
+  if (process.env.POSTER_BENCHMARK !== "1") {
+    const note = [
+      "Image providers were not called.",
+      "Set POSTER_BENCHMARK=1 outside production to generate with both providers.",
+      "That comparison still does not review the images.",
+      "",
+      `Title: ${params.title}`,
+      "Story excerpt:",
+      storyNorm.slice(0, 500),
+    ].join("\n");
+    const runId = runIdNow();
+    const runDir = path.join(params.outDir, runId);
+    await fs.mkdir(runDir, { recursive: true });
+    await fs.writeFile(path.join(runDir, "prompt-comparison.txt"), note, "utf8");
+    console.log(note);
+    console.log(`\nPrompt notes written to: ${runDir}`);
+    return {
+      runDir,
+      meta: {
+        runId,
+        createdAt: new Date().toISOString(),
+        title: params.title.trim() || "Untitled",
+        storyPath: params.storyPath,
+        models: {
+          creative: "not-called",
+          openaiImage: "not-called",
+          openaiImageSize: "1024x1024",
+          geminiBackend: "not-called",
+          geminiImageModel: "not-called",
+        },
+        outputs: {
+          storyNormalized: storyNorm,
+          creativeBrief: "Prompt comparison only. No image provider was called.",
+          visualConceptStatement: "Not visual QA.",
+          posterPromptVariations: [],
+          promptOpenAI: "",
+          promptGemini: "",
+          files: { posterOpenAI: "", posterGemini: "" },
+        },
+        errors: {},
+        providerComparison: "Prompt comparison only. Images were not reviewed.",
+      },
+    };
+  }
+
   const openai = new OpenAI({ apiKey: loadOpenAiKey() });
   const gemini = new GoogleGenAI({ apiKey: loadGeminiKey() });
 
@@ -82,7 +128,7 @@ export async function runPosterPipeline(params: {
     console.error("Gemini image failed:", geminiErr);
   }
 
-  console.log("\n—— Step 4/4 · Provider comparison (prompt-level) ——");
+  console.log("\n—— Step 4/4 · Prompt comparison (not visual QA) ——");
   const providerComparison = await compareProviderOutputs({
     client: openai,
     plan,

@@ -388,7 +388,13 @@ export const ModelName = {
   Session: 'Session',
   LoginCode: 'LoginCode',
   Story: 'Story',
+  ArtworkJob: 'ArtworkJob',
+  ArtworkSpendDay: 'ArtworkSpendDay',
   Voice: 'Voice',
+  VoiceAttempt: 'VoiceAttempt',
+  VoiceCleanup: 'VoiceCleanup',
+  VoicePreference: 'VoicePreference',
+  NarrationPreview: 'NarrationPreview',
   KidProfile: 'KidProfile',
   StoryCharacter: 'StoryCharacter',
   NarrationAsset: 'NarrationAsset',
@@ -410,7 +416,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "session" | "loginCode" | "story" | "voice" | "kidProfile" | "storyCharacter" | "narrationAsset" | "narrationReviewItem" | "narrationReviewReport" | "readingStats"
+    modelProps: "user" | "session" | "loginCode" | "story" | "artworkJob" | "artworkSpendDay" | "voice" | "voiceAttempt" | "voiceCleanup" | "voicePreference" | "narrationPreview" | "kidProfile" | "storyCharacter" | "narrationAsset" | "narrationReviewItem" | "narrationReviewReport" | "readingStats"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -710,6 +716,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    ArtworkJob: {
+      payload: Prisma.$ArtworkJobPayload<ExtArgs>
+      fields: Prisma.ArtworkJobFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ArtworkJobFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkJobPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ArtworkJobFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkJobPayload>
+        }
+        findFirst: {
+          args: Prisma.ArtworkJobFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkJobPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ArtworkJobFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkJobPayload>
+        }
+        findMany: {
+          args: Prisma.ArtworkJobFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkJobPayload>[]
+        }
+        create: {
+          args: Prisma.ArtworkJobCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkJobPayload>
+        }
+        createMany: {
+          args: Prisma.ArtworkJobCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ArtworkJobCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkJobPayload>[]
+        }
+        delete: {
+          args: Prisma.ArtworkJobDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkJobPayload>
+        }
+        update: {
+          args: Prisma.ArtworkJobUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkJobPayload>
+        }
+        deleteMany: {
+          args: Prisma.ArtworkJobDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ArtworkJobUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ArtworkJobUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkJobPayload>[]
+        }
+        upsert: {
+          args: Prisma.ArtworkJobUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkJobPayload>
+        }
+        aggregate: {
+          args: Prisma.ArtworkJobAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateArtworkJob>
+        }
+        groupBy: {
+          args: Prisma.ArtworkJobGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArtworkJobGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ArtworkJobCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArtworkJobCountAggregateOutputType> | number
+        }
+      }
+    }
+    ArtworkSpendDay: {
+      payload: Prisma.$ArtworkSpendDayPayload<ExtArgs>
+      fields: Prisma.ArtworkSpendDayFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ArtworkSpendDayFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkSpendDayPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ArtworkSpendDayFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkSpendDayPayload>
+        }
+        findFirst: {
+          args: Prisma.ArtworkSpendDayFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkSpendDayPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ArtworkSpendDayFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkSpendDayPayload>
+        }
+        findMany: {
+          args: Prisma.ArtworkSpendDayFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkSpendDayPayload>[]
+        }
+        create: {
+          args: Prisma.ArtworkSpendDayCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkSpendDayPayload>
+        }
+        createMany: {
+          args: Prisma.ArtworkSpendDayCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ArtworkSpendDayCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkSpendDayPayload>[]
+        }
+        delete: {
+          args: Prisma.ArtworkSpendDayDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkSpendDayPayload>
+        }
+        update: {
+          args: Prisma.ArtworkSpendDayUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkSpendDayPayload>
+        }
+        deleteMany: {
+          args: Prisma.ArtworkSpendDayDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ArtworkSpendDayUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ArtworkSpendDayUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkSpendDayPayload>[]
+        }
+        upsert: {
+          args: Prisma.ArtworkSpendDayUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ArtworkSpendDayPayload>
+        }
+        aggregate: {
+          args: Prisma.ArtworkSpendDayAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateArtworkSpendDay>
+        }
+        groupBy: {
+          args: Prisma.ArtworkSpendDayGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArtworkSpendDayGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ArtworkSpendDayCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ArtworkSpendDayCountAggregateOutputType> | number
+        }
+      }
+    }
     Voice: {
       payload: Prisma.$VoicePayload<ExtArgs>
       fields: Prisma.VoiceFieldRefs
@@ -781,6 +935,302 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.VoiceCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.VoiceCountAggregateOutputType> | number
+        }
+      }
+    }
+    VoiceAttempt: {
+      payload: Prisma.$VoiceAttemptPayload<ExtArgs>
+      fields: Prisma.VoiceAttemptFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.VoiceAttemptFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoiceAttemptPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.VoiceAttemptFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoiceAttemptPayload>
+        }
+        findFirst: {
+          args: Prisma.VoiceAttemptFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoiceAttemptPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.VoiceAttemptFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoiceAttemptPayload>
+        }
+        findMany: {
+          args: Prisma.VoiceAttemptFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoiceAttemptPayload>[]
+        }
+        create: {
+          args: Prisma.VoiceAttemptCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoiceAttemptPayload>
+        }
+        createMany: {
+          args: Prisma.VoiceAttemptCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.VoiceAttemptCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoiceAttemptPayload>[]
+        }
+        delete: {
+          args: Prisma.VoiceAttemptDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoiceAttemptPayload>
+        }
+        update: {
+          args: Prisma.VoiceAttemptUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoiceAttemptPayload>
+        }
+        deleteMany: {
+          args: Prisma.VoiceAttemptDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.VoiceAttemptUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.VoiceAttemptUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoiceAttemptPayload>[]
+        }
+        upsert: {
+          args: Prisma.VoiceAttemptUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoiceAttemptPayload>
+        }
+        aggregate: {
+          args: Prisma.VoiceAttemptAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateVoiceAttempt>
+        }
+        groupBy: {
+          args: Prisma.VoiceAttemptGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.VoiceAttemptGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.VoiceAttemptCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.VoiceAttemptCountAggregateOutputType> | number
+        }
+      }
+    }
+    VoiceCleanup: {
+      payload: Prisma.$VoiceCleanupPayload<ExtArgs>
+      fields: Prisma.VoiceCleanupFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.VoiceCleanupFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoiceCleanupPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.VoiceCleanupFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoiceCleanupPayload>
+        }
+        findFirst: {
+          args: Prisma.VoiceCleanupFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoiceCleanupPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.VoiceCleanupFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoiceCleanupPayload>
+        }
+        findMany: {
+          args: Prisma.VoiceCleanupFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoiceCleanupPayload>[]
+        }
+        create: {
+          args: Prisma.VoiceCleanupCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoiceCleanupPayload>
+        }
+        createMany: {
+          args: Prisma.VoiceCleanupCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.VoiceCleanupCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoiceCleanupPayload>[]
+        }
+        delete: {
+          args: Prisma.VoiceCleanupDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoiceCleanupPayload>
+        }
+        update: {
+          args: Prisma.VoiceCleanupUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoiceCleanupPayload>
+        }
+        deleteMany: {
+          args: Prisma.VoiceCleanupDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.VoiceCleanupUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.VoiceCleanupUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoiceCleanupPayload>[]
+        }
+        upsert: {
+          args: Prisma.VoiceCleanupUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoiceCleanupPayload>
+        }
+        aggregate: {
+          args: Prisma.VoiceCleanupAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateVoiceCleanup>
+        }
+        groupBy: {
+          args: Prisma.VoiceCleanupGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.VoiceCleanupGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.VoiceCleanupCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.VoiceCleanupCountAggregateOutputType> | number
+        }
+      }
+    }
+    VoicePreference: {
+      payload: Prisma.$VoicePreferencePayload<ExtArgs>
+      fields: Prisma.VoicePreferenceFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.VoicePreferenceFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoicePreferencePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.VoicePreferenceFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoicePreferencePayload>
+        }
+        findFirst: {
+          args: Prisma.VoicePreferenceFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoicePreferencePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.VoicePreferenceFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoicePreferencePayload>
+        }
+        findMany: {
+          args: Prisma.VoicePreferenceFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoicePreferencePayload>[]
+        }
+        create: {
+          args: Prisma.VoicePreferenceCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoicePreferencePayload>
+        }
+        createMany: {
+          args: Prisma.VoicePreferenceCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.VoicePreferenceCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoicePreferencePayload>[]
+        }
+        delete: {
+          args: Prisma.VoicePreferenceDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoicePreferencePayload>
+        }
+        update: {
+          args: Prisma.VoicePreferenceUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoicePreferencePayload>
+        }
+        deleteMany: {
+          args: Prisma.VoicePreferenceDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.VoicePreferenceUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.VoicePreferenceUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoicePreferencePayload>[]
+        }
+        upsert: {
+          args: Prisma.VoicePreferenceUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VoicePreferencePayload>
+        }
+        aggregate: {
+          args: Prisma.VoicePreferenceAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateVoicePreference>
+        }
+        groupBy: {
+          args: Prisma.VoicePreferenceGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.VoicePreferenceGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.VoicePreferenceCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.VoicePreferenceCountAggregateOutputType> | number
+        }
+      }
+    }
+    NarrationPreview: {
+      payload: Prisma.$NarrationPreviewPayload<ExtArgs>
+      fields: Prisma.NarrationPreviewFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.NarrationPreviewFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationPreviewPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.NarrationPreviewFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationPreviewPayload>
+        }
+        findFirst: {
+          args: Prisma.NarrationPreviewFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationPreviewPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.NarrationPreviewFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationPreviewPayload>
+        }
+        findMany: {
+          args: Prisma.NarrationPreviewFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationPreviewPayload>[]
+        }
+        create: {
+          args: Prisma.NarrationPreviewCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationPreviewPayload>
+        }
+        createMany: {
+          args: Prisma.NarrationPreviewCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.NarrationPreviewCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationPreviewPayload>[]
+        }
+        delete: {
+          args: Prisma.NarrationPreviewDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationPreviewPayload>
+        }
+        update: {
+          args: Prisma.NarrationPreviewUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationPreviewPayload>
+        }
+        deleteMany: {
+          args: Prisma.NarrationPreviewDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.NarrationPreviewUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.NarrationPreviewUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationPreviewPayload>[]
+        }
+        upsert: {
+          args: Prisma.NarrationPreviewUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationPreviewPayload>
+        }
+        aggregate: {
+          args: Prisma.NarrationPreviewAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateNarrationPreview>
+        }
+        groupBy: {
+          args: Prisma.NarrationPreviewGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.NarrationPreviewGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.NarrationPreviewCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.NarrationPreviewCountAggregateOutputType> | number
         }
       }
     }
@@ -1324,11 +1774,59 @@ export const StoryScalarFieldEnum = {
   audioConfigVersion: 'audioConfigVersion',
   audioConfigId: 'audioConfigId',
   audioCacheKey: 'audioCacheKey',
+  audioPrivate: 'audioPrivate',
+  audioStorageUrl: 'audioStorageUrl',
+  audioVoiceKind: 'audioVoiceKind',
+  audioVoiceVersion: 'audioVoiceVersion',
   dailyAutomated: 'dailyAutomated',
+  characterId: 'characterId',
+  characterSnapshot: 'characterSnapshot',
+  visualBrief: 'visualBrief',
+  illustrationFilename: 'illustrationFilename',
+  illustrationUrl: 'illustrationUrl',
+  coverFilename: 'coverFilename',
+  coverUrl: 'coverUrl',
+  artworkStatus: 'artworkStatus',
+  artworkCacheKey: 'artworkCacheKey',
+  posterCaption: 'posterCaption',
+  dedication: 'dedication',
+  artworkMeta: 'artworkMeta',
   createdAt: 'createdAt'
 } as const
 
 export type StoryScalarFieldEnum = (typeof StoryScalarFieldEnum)[keyof typeof StoryScalarFieldEnum]
+
+
+export const ArtworkJobScalarFieldEnum = {
+  id: 'id',
+  cacheKey: 'cacheKey',
+  scopeKey: 'scopeKey',
+  storyId: 'storyId',
+  status: 'status',
+  provider: 'provider',
+  model: 'model',
+  quality: 'quality',
+  attemptCount: 'attemptCount',
+  estimatedCostUsd: 'estimatedCostUsd',
+  leaseUntil: 'leaseUntil',
+  blockedUntil: 'blockedUntil',
+  errorMessage: 'errorMessage',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArtworkJobScalarFieldEnum = (typeof ArtworkJobScalarFieldEnum)[keyof typeof ArtworkJobScalarFieldEnum]
+
+
+export const ArtworkSpendDayScalarFieldEnum = {
+  id: 'id',
+  scopeKey: 'scopeKey',
+  dayKey: 'dayKey',
+  generations: 'generations',
+  estimatedUsd: 'estimatedUsd'
+} as const
+
+export type ArtworkSpendDayScalarFieldEnum = (typeof ArtworkSpendDayScalarFieldEnum)[keyof typeof ArtworkSpendDayScalarFieldEnum]
 
 
 export const VoiceScalarFieldEnum = {
@@ -1338,10 +1836,75 @@ export const VoiceScalarFieldEnum = {
   provider: 'provider',
   voiceId: 'voiceId',
   language: 'language',
-  createdAt: 'createdAt'
+  recordingLocale: 'recordingLocale',
+  scriptVersion: 'scriptVersion',
+  status: 'status',
+  voiceVersion: 'voiceVersion',
+  requiresVerification: 'requiresVerification',
+  consentAt: 'consentAt',
+  consentTextVersion: 'consentTextVersion',
+  idempotencyKey: 'idempotencyKey',
+  sampleFilename: 'sampleFilename',
+  sampleStorageUrl: 'sampleStorageUrl',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 } as const
 
 export type VoiceScalarFieldEnum = (typeof VoiceScalarFieldEnum)[keyof typeof VoiceScalarFieldEnum]
+
+
+export const VoiceAttemptScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  kind: 'kind',
+  createdAt: 'createdAt'
+} as const
+
+export type VoiceAttemptScalarFieldEnum = (typeof VoiceAttemptScalarFieldEnum)[keyof typeof VoiceAttemptScalarFieldEnum]
+
+
+export const VoiceCleanupScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  providerVoiceId: 'providerVoiceId',
+  sampleFilename: 'sampleFilename',
+  sampleStorageUrl: 'sampleStorageUrl',
+  voiceRowId: 'voiceRowId',
+  status: 'status',
+  attempts: 'attempts',
+  lastError: 'lastError',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type VoiceCleanupScalarFieldEnum = (typeof VoiceCleanupScalarFieldEnum)[keyof typeof VoiceCleanupScalarFieldEnum]
+
+
+export const VoicePreferenceScalarFieldEnum = {
+  userId: 'userId',
+  voiceAppId: 'voiceAppId',
+  language: 'language',
+  updatedAt: 'updatedAt'
+} as const
+
+export type VoicePreferenceScalarFieldEnum = (typeof VoicePreferenceScalarFieldEnum)[keyof typeof VoicePreferenceScalarFieldEnum]
+
+
+export const NarrationPreviewScalarFieldEnum = {
+  id: 'id',
+  cacheKey: 'cacheKey',
+  voiceAppId: 'voiceAppId',
+  ownerUserId: 'ownerUserId',
+  language: 'language',
+  modelId: 'modelId',
+  voiceVersion: 'voiceVersion',
+  source: 'source',
+  filename: 'filename',
+  storageUrl: 'storageUrl',
+  createdAt: 'createdAt'
+} as const
+
+export type NarrationPreviewScalarFieldEnum = (typeof NarrationPreviewScalarFieldEnum)[keyof typeof NarrationPreviewScalarFieldEnum]
 
 
 export const KidProfileScalarFieldEnum = {
@@ -1405,6 +1968,9 @@ export const NarrationAssetScalarFieldEnum = {
   attempt: 'attempt',
   baselineFlag: 'baselineFlag',
   source: 'source',
+  voiceKind: 'voiceKind',
+  voiceVersion: 'voiceVersion',
+  ownerUserId: 'ownerUserId',
   createdAt: 'createdAt'
 } as const
 
@@ -1682,7 +2248,13 @@ export type GlobalOmitConfig = {
   session?: Prisma.SessionOmit
   loginCode?: Prisma.LoginCodeOmit
   story?: Prisma.StoryOmit
+  artworkJob?: Prisma.ArtworkJobOmit
+  artworkSpendDay?: Prisma.ArtworkSpendDayOmit
   voice?: Prisma.VoiceOmit
+  voiceAttempt?: Prisma.VoiceAttemptOmit
+  voiceCleanup?: Prisma.VoiceCleanupOmit
+  voicePreference?: Prisma.VoicePreferenceOmit
+  narrationPreview?: Prisma.NarrationPreviewOmit
   kidProfile?: Prisma.KidProfileOmit
   storyCharacter?: Prisma.StoryCharacterOmit
   narrationAsset?: Prisma.NarrationAssetOmit

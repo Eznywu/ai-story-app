@@ -60,7 +60,7 @@ export const MODEL_CAPABILITIES: Record<string, ModelCapability> = {
     audioTags: true,
     phonemeDictionary: "english-ipa",
     notes:
-      "Default model. 5,000 character limit, about 5 minutes. Dramatic delivery. Phoneme dictionaries work for English; non-English IPA is documented for v4, so Chinese stays on local alias or the original characters. No request stitching. The installed SDK says language_code returns an error except on Turbo v2.5 and Flash v2.5, while the models page lists codes for v3. This app does not send language_code to v3.",
+      "Default model. 5,000 character limit, about 5 minutes. Dramatic delivery. Phoneme dictionaries work for English; non-English IPA is documented for v4, so Chinese stays on local alias or the original characters. No request stitching. The models page lists language codes for v3, but the installed SDK documents language_code as an error except on Turbo v2.5 and Flash v2.5. This app does not send language_code to v3 until a capped live check confirms it. App language still maps en to en and zh-TW to zh for models that do support the field.",
   },
   eleven_multilingual_v2: {
     modelId: "eleven_multilingual_v2",

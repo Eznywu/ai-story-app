@@ -1,0 +1,370 @@
+{
+  "fetchedAt": "2026-11-01",
+  "endpoint": "GET /v1/shared-voices/{voice_id}",
+  "voices": [
+    {
+      "providerVoiceId": "NOpBlnGInO9m6vDvFkFC",
+      "providerName": "Spuds Oxley - Grandpa",
+      "publicOwnerId": "ae23ca715ed6b339e4ad22f2d45dd40b36a6449e031b4f8970bfe29524bd1bbc",
+      "category": "high_quality",
+      "useCase": "narrative_story",
+      "descriptive": "gentle",
+      "gender": "male",
+      "age": "old",
+      "accent": "american",
+      "locale": "en-US",
+      "libraryLanguage": "en",
+      "freeUsersAllowed": true,
+      "rate": 1.0,
+      "fiatRate": null,
+      "noticePeriodDays": 730,
+      "description": "A friendly Southern grandpa who knows how to enthrall his audience with tall tales and fun adventures! A warm, friendly, stylized baritone voice that is great for these categories: characters, educational, advertisement, social media, conversational, and entertainment.",
+      "verifiedAppLanguages": [
+        "en"
+      ],
+      "elevenV3InVerifiedList": false,
+      "preview": {
+        "en": {
+          "url": "https://storage.googleapis.com/eleven-public-prod/database/workspace/64971298bfc24086b69026970a21f1f9/voices/NOpBlnGInO9m6vDvFkFC/M4xySW4rr1SbAKKwMAtI.mp3",
+          "modelId": "eleven_multilingual_v2"
+        },
+        "zh": null
+      }
+    },
+    {
+      "providerVoiceId": "UgBBYS2sOqTuMpoF3BR0",
+      "providerName": "Mark - Natural Conversations",
+      "publicOwnerId": "024c9393c6380665357f60b1062c863cd635d79791f13d6f0a834a319d5ff56c",
+      "category": "high_quality",
+      "useCase": "conversational",
+      "descriptive": "casual",
+      "gender": "male",
+      "age": "young",
+      "accent": "american",
+      "locale": "en-US",
+      "libraryLanguage": "en",
+      "freeUsersAllowed": true,
+      "rate": 1.0,
+      "fiatRate": null,
+      "noticePeriodDays": 730,
+      "description": "A casual, young-adult speaking in a natural manner. Perfect for Conversational AI.",
+      "verifiedAppLanguages": [
+        "en",
+        "zh"
+      ],
+      "elevenV3InVerifiedList": false,
+      "preview": {
+        "en": {
+          "url": "https://storage.googleapis.com/eleven-public-prod/database/workspace/f94e260200764678babc807b935bfb0b/voices/UgBBYS2sOqTuMpoF3BR0/0Oc7jiXwWN9kRTXfQsmw.mp3",
+          "modelId": "eleven_multilingual_v2"
+        },
+        "zh": {
+          "url": "https://api.us.elevenlabs.io/v1/voices/UgBBYS2sOqTuMpoF3BR0/previews/audio?payload=eyJraW5kIjoidmVyaWZpZWRfbGFuZ3VhZ2UiLCJsYW5ndWFnZSI6InpoIiwibW9kZWxfaWQiOiJlbGV2ZW5fZmxhc2hfdjJfNSJ9",
+          "modelId": "eleven_flash_v2_5"
+        }
+      }
+    },
+    {
+      "providerVoiceId": "cCYjmrGZaI86GUJ7F2Nn",
+      "providerName": "David - Audiobook & Documentary",
+      "publicOwnerId": "fd99b11504e8c1aac6e847ea61616cd450db4e2b1b8aaa196c35d58c85fd9f28",
+      "category": "high_quality",
+      "useCase": "narrative_story",
+      "descriptive": "serious",
+      "gender": "male",
+      "age": "middle_aged",
+      "accent": "american",
+      "locale": "en-US",
+      "libraryLanguage": "en",
+      "freeUsersAllowed": true,
+      "rate": 1.0,
+      "fiatRate": null,
+      "noticePeriodDays": 730,
+      "description": "Deep, smooth, studio-quality male voice engineered for high-volume audiobook publishing, premium documentaries, and cinematic narration. Full of emotion and range—from authoritative and compelling to heartfelt, down-to-earth, and friendly.",
+      "verifiedAppLanguages": [
+        "en",
+        "zh"
+      ],
+      "elevenV3InVerifiedList": false,
+      "preview": {
+        "en": {
+          "url": "https://api.us.elevenlabs.io/v1/voices/cCYjmrGZaI86GUJ7F2Nn/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiJhMjY2ZjQ0ZDg1MDU0NDhkOGZmNzdmMjc1Mzc5M2I3YiIsImZpbGVuYW1lIjoiYVJ0Z2JPR0REVkd2UmZDaHpLRlAubXAzIiwidGltZXN0YW1wIjoxNzkzNTA1NjAwMDAwMDAwfQ%3D%3D",
+          "modelId": "eleven_multilingual_v2"
+        },
+        "zh": {
+          "url": "https://api.us.elevenlabs.io/v1/voices/cCYjmrGZaI86GUJ7F2Nn/previews/audio?payload=eyJraW5kIjoidmVyaWZpZWRfbGFuZ3VhZ2UiLCJsYW5ndWFnZSI6InpoIiwibW9kZWxfaWQiOiJlbGV2ZW5fZmxhc2hfdjJfNSJ9",
+          "modelId": "eleven_flash_v2_5"
+        }
+      }
+    },
+    {
+      "providerVoiceId": "PCa5QtqUKnVu4yH3HxLp",
+      "providerName": "Aaron Gerard - Expressive",
+      "publicOwnerId": "03f974420bcc0744495b3e6fe10e0191160a0e98f55cb411030efddb48050973",
+      "category": "professional",
+      "useCase": "narrative_story",
+      "descriptive": "upbeat",
+      "gender": "male",
+      "age": "middle_aged",
+      "accent": "american",
+      "locale": "en-US",
+      "libraryLanguage": "en",
+      "freeUsersAllowed": true,
+      "rate": 1.0,
+      "fiatRate": null,
+      "noticePeriodDays": 730,
+      "description": "An energetic, expressive Californian male voice with a conversational delivery. Animated storytelling with natural changes in pace and emotion, from quiet reflection to genuine enthusiasm. Engaging without becoming theatrical. Suited to documentary narration, stories, and motivational speaking.",
+      "verifiedAppLanguages": [
+        "en"
+      ],
+      "elevenV3InVerifiedList": false,
+      "preview": {
+        "en": {
+          "url": "https://storage.googleapis.com/eleven-public-prod/database/workspace/bbc93d573acf4529aff7853117ea4964/voices/PCa5QtqUKnVu4yH3HxLp/9b2feb74-829e-4f4e-8d42-3e73fd6c7291.mp3",
+          "modelId": "eleven_multilingual_v2"
+        },
+        "zh": null
+      }
+    },
+    {
+      "providerVoiceId": "y47FZICqt6oFf4Z89DXT",
+      "providerName": "Pastie - Warm Nigerian Storyteller",
+      "publicOwnerId": "26bafd7acb4b0df706a731c676f0b2daf5e2edb466a93c7d409bc8c00fbd5126",
+      "category": "professional",
+      "useCase": "narrative_story",
+      "descriptive": "crisp",
+      "gender": "female",
+      "age": "middle_aged",
+      "accent": "nigerian",
+      "locale": "en-NG",
+      "libraryLanguage": "en",
+      "freeUsersAllowed": true,
+      "rate": 1.0,
+      "fiatRate": null,
+      "noticePeriodDays": 365,
+      "description": "A beautifully clear, articulate, and warm Nigerian female voice with rich, natural tones and excellent diction. Confident, engaging, and expressive, with a smooth, polished delivery that brings every story to life. Perfect for documentaries, audiobooks, cinematic storytelling, educational narration, inspirational content, Bible readings, commercials, and professional voiceovers. Authentic Nigerian English with exceptional clarity, natural elegance, and universal appeal.",
+      "verifiedAppLanguages": [
+        "en"
+      ],
+      "elevenV3InVerifiedList": false,
+      "preview": {
+        "en": {
+          "url": "https://storage.googleapis.com/eleven-public-prod/database/workspace/84dce02d927644e587245e593169b663/voices/y47FZICqt6oFf4Z89DXT/NYTF4NqSWcg697gLHOB3.mp3",
+          "modelId": "eleven_multilingual_v2"
+        },
+        "zh": null
+      }
+    },
+    {
+      "providerVoiceId": "SIdddo4tIfBnOJY8JYjx",
+      "providerName": "Tun Tun - Relaxed",
+      "publicOwnerId": "2338bf2f56e38f3f61f05843430dcad6b82f93a029fdafab5a4d4610c10e14f9",
+      "category": "professional",
+      "useCase": "narrative_story",
+      "descriptive": "gentle",
+      "gender": "male",
+      "age": "young",
+      "accent": "taiwan mandarin",
+      "locale": "cmn-TW",
+      "libraryLanguage": "zh",
+      "freeUsersAllowed": false,
+      "rate": 1.0,
+      "fiatRate": null,
+      "noticePeriodDays": 730,
+      "description": "A warm, gentle Taiwanese Mandarin male voice with a calm, unhurried pace. Soft and friendly tone, relaxed delivery, clear articulation.",
+      "verifiedAppLanguages": [
+        "zh"
+      ],
+      "elevenV3InVerifiedList": false,
+      "preview": {
+        "en": null,
+        "zh": {
+          "url": "https://api.us.elevenlabs.io/v1/voices/SIdddo4tIfBnOJY8JYjx/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiJhMDRmNTI1ODI1YzA0NWNiODdhMDJkOWFhYTYwODNkNyIsImZpbGVuYW1lIjoid0FnQVZQcmhJbFlwYUdCV1JneVQubXAzIiwidGltZXN0YW1wIjoxNzkzNTA1NjAwMDAwMDAwfQ%3D%3D",
+          "modelId": "eleven_multilingual_v2"
+        }
+      }
+    },
+    {
+      "providerVoiceId": "ZhxuUPFU7Hvp3p8qIPQP",
+      "providerName": "Chun - Natural Taiwanese Mandarin",
+      "publicOwnerId": "c15ea2b78183471ad4551c1af39557f8d94fa26024a7c5237e67e1bd17cf2334",
+      "category": "professional",
+      "useCase": "narrative_story",
+      "descriptive": "casual",
+      "gender": "male",
+      "age": "middle_aged",
+      "accent": "taiwan mandarin",
+      "locale": "cmn-TW",
+      "libraryLanguage": "zh",
+      "freeUsersAllowed": true,
+      "rate": 1.0,
+      "fiatRate": null,
+      "noticePeriodDays": 730,
+      "description": "A natural adult male voice speaking Taiwanese Mandarin (zh-TW), with a clear and conversational tone. Suitable for narration, educational content, podcasts, and everyday dialogue. Features a Taiwanese Mandarin accent rather than Mainland Chinese Mandarin.",
+      "verifiedAppLanguages": [
+        "zh"
+      ],
+      "elevenV3InVerifiedList": false,
+      "preview": {
+        "en": null,
+        "zh": {
+          "url": "https://api.us.elevenlabs.io/v1/voices/ZhxuUPFU7Hvp3p8qIPQP/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiI0OTNjODg3NGNhMWI0ZTgyYmI4M2EzNTUwZjJkMmQwMCIsImZpbGVuYW1lIjoidVd4S1hiREU4OTUxd3d2aTlWOXMubXAzIiwidGltZXN0YW1wIjoxNzkzNTA1NjAwMDAwMDAwfQ%3D%3D",
+          "modelId": "eleven_multilingual_v2"
+        }
+      }
+    },
+    {
+      "providerVoiceId": "DowyQ68vDpgFYdWVGjc3",
+      "providerName": "Jason Chen - Deep, Magnetic and Calm",
+      "publicOwnerId": "213859b1d1703a17daae1d56066a547571ab298b14e1a86eedd05126a8bf08b8",
+      "category": "high_quality",
+      "useCase": "narrative_story",
+      "descriptive": "deep",
+      "gender": "male",
+      "age": "middle_aged",
+      "accent": "beijing mandarin",
+      "locale": "cmn-CN",
+      "libraryLanguage": "zh",
+      "freeUsersAllowed": true,
+      "rate": 1.0,
+      "fiatRate": null,
+      "noticePeriodDays": 730,
+      "description": "I am Jason Chen, a deep and magnetic Chinese male voice. My tone is calm, steady, and expressive, carrying a sense of confidence and composure. I am perfect for narrations, audiobooks, podcasts, and any content that needs a mature and captivating voice.",
+      "verifiedAppLanguages": [
+        "zh"
+      ],
+      "elevenV3InVerifiedList": false,
+      "preview": {
+        "en": null,
+        "zh": {
+          "url": "https://api.us.elevenlabs.io/v1/voices/DowyQ68vDpgFYdWVGjc3/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiJmMTdlNzY0YjQ2MzU0OTM0YWViOTFhNDRkNDRiN2ZkMyIsImZpbGVuYW1lIjoiWjh6bnNZaXJXRTV3RVhNM1MxdTIubXAzIiwidGltZXN0YW1wIjoxNzkzNTA1NjAwMDAwMDAwfQ%3D%3D",
+          "modelId": "eleven_multilingual_v2"
+        }
+      }
+    },
+    {
+      "providerVoiceId": "9lHjugDhwqoxA5MhX0az",
+      "providerName": "Anna Su - Casual, Friendly and Bright",
+      "publicOwnerId": "649d5d7a8d7cda374f337b08fe37fe9066686b8c337c4e357fb5f15ff9b699f9",
+      "category": "high_quality",
+      "useCase": "social_media",
+      "descriptive": "casual",
+      "gender": "female",
+      "age": "young",
+      "accent": "taiwan mandarin",
+      "locale": "cmn-TW",
+      "libraryLanguage": "zh",
+      "freeUsersAllowed": true,
+      "rate": 1.0,
+      "fiatRate": null,
+      "noticePeriodDays": 730,
+      "description": "A youthful and bright Chinese female voice with a soft, friendly tone — warm, conversational, and effortlessly engaging, like a friend catching up with you over coffee.",
+      "verifiedAppLanguages": [
+        "en",
+        "zh"
+      ],
+      "elevenV3InVerifiedList": false,
+      "preview": {
+        "en": {
+          "url": "https://storage.googleapis.com/eleven-public-prod/database/user/iWxuY2XaYrWRf6GQxIUY2M0J0gJ3/voices/9lHjugDhwqoxA5MhX0az/9fbfa1bf-9e62-48ad-91a5-2c14fd54a6f7.mp3",
+          "modelId": "eleven_turbo_v2_5"
+        },
+        "zh": {
+          "url": "https://storage.googleapis.com/eleven-public-prod/database/workspace/c7ba9eef99104e2f9a93d2a1682b1258/voices/9lHjugDhwqoxA5MhX0az/55SoO0ERY953JPIuC271.mp3",
+          "modelId": "eleven_multilingual_v2"
+        }
+      }
+    },
+    {
+      "providerVoiceId": "4VZIsMPtgggwNg7OXbPY",
+      "providerName": "James Gao - Calm, Friendly and Warm",
+      "publicOwnerId": "60079d355e8d217eb5d21249e688a09ac07a6d483c50a63560d9936211b5b100",
+      "category": "high_quality",
+      "useCase": "narrative_story",
+      "descriptive": "calm",
+      "gender": "male",
+      "age": "middle_aged",
+      "accent": "standard",
+      "locale": "cmn-CN",
+      "libraryLanguage": "zh",
+      "freeUsersAllowed": true,
+      "rate": 1.0,
+      "fiatRate": null,
+      "noticePeriodDays": 730,
+      "description": "A middle-aged Chinese voice in a calm, friendly tone. Perfect for narrative and storytelling.",
+      "verifiedAppLanguages": [
+        "en",
+        "zh"
+      ],
+      "elevenV3InVerifiedList": false,
+      "preview": {
+        "en": {
+          "url": "https://storage.googleapis.com/eleven-public-prod/database/user/qCmCyqVqIbevIuA9FVI25BpgadC2/voices/4VZIsMPtgggwNg7OXbPY/ba9e4523-fc6e-4ba2-a008-81ebfcb8de69.mp3",
+          "modelId": "eleven_turbo_v2_5"
+        },
+        "zh": {
+          "url": "https://storage.googleapis.com/eleven-public-prod/database/workspace/4692f055db3b4d3fb2878d2e1f242f0a/voices/4VZIsMPtgggwNg7OXbPY/9fLlmDXPhO819IAIRK44.mp3",
+          "modelId": "eleven_multilingual_v2"
+        }
+      }
+    },
+    {
+      "providerVoiceId": "fQj4gJSexpu8RDE2Ii5m",
+      "providerName": "Yu - Youthful, Energetic and Engaging",
+      "publicOwnerId": "98502da27d31153bf16a3b7acc4708333deb810b421a78e356e09261f54706f0",
+      "category": "professional",
+      "useCase": "conversational",
+      "descriptive": "gentle",
+      "gender": "male",
+      "age": "young",
+      "accent": "taiwan mandarin",
+      "locale": "cmn-TW",
+      "libraryLanguage": "zh",
+      "freeUsersAllowed": true,
+      "rate": 1.0,
+      "fiatRate": null,
+      "noticePeriodDays": 730,
+      "description": "Yu is a vibrant, upbeat voice in Traditional Chinese with a youthful Taiwanese accent. It is characterized by its energetic tone and engaging delivery. Perfectly suited for tutorials, podcasts, calls, and classes, this voice ensures clarity and captures attention with a professional yet approachable vibe.",
+      "verifiedAppLanguages": [
+        "zh"
+      ],
+      "elevenV3InVerifiedList": false,
+      "preview": {
+        "en": null,
+        "zh": {
+          "url": "https://storage.googleapis.com/eleven-public-prod/database/workspace/c347177b192844f784b8442a31fd339e/voices/fQj4gJSexpu8RDE2Ii5m/xXnDtL0jvbLE622bVoEA.mp3",
+          "modelId": "eleven_multilingual_v2"
+        }
+      }
+    },
+    {
+      "providerVoiceId": "Y2kfOuWTL6V4UWWmDF0s",
+      "providerName": "KK - Natural, friendly female",
+      "publicOwnerId": "5f336c2156cd48a3add6865d90ce227f4f94a26af82bd858e733773cd1f9d9c1",
+      "category": "professional",
+      "useCase": "narrative_story",
+      "descriptive": "classy",
+      "gender": "female",
+      "age": "young",
+      "accent": "taiwan mandarin",
+      "locale": "cmn-TW",
+      "libraryLanguage": "zh",
+      "freeUsersAllowed": false,
+      "rate": 1.0,
+      "fiatRate": null,
+      "noticePeriodDays": 730,
+      "description": "Natural Taiwanese Mandarin ,natural, warm, and friendly, with clear articulation that makes information easy to follow. It’s well suited for educational videos, explainer content, podcasts, and conversational narration, helping your audience feel comfortable and engaged.",
+      "verifiedAppLanguages": [
+        "zh"
+      ],
+      "elevenV3InVerifiedList": false,
+      "preview": {
+        "en": null,
+        "zh": {
+          "url": "https://storage.googleapis.com/eleven-public-prod/database/workspace/115d8db2d6844507a545ca80b0fcdcf8/voices/Y2kfOuWTL6V4UWWmDF0s/SsKA6pC1IY5Eoo8U1KYD.mp3",
+          "modelId": "eleven_multilingual_v2"
+        }
+      }
+    }
+  ]
+}

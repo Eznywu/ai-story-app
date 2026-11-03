@@ -9,5 +9,10 @@
       "path": "/api/cron/narration-review",
       "schedule": "0 2 * * 1"
     }
-  ]
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "codex/phase-a-release-candidate": false
+    }
+  }
 }

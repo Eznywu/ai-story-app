@@ -28,22 +28,20 @@ function toLibraryItem(raw: Record<string, unknown>): StoryLibraryItem {
     createdAt: String(raw?.createdAt ?? ""),
     dailyAutomated: Boolean(raw?.dailyAutomated),
     posterUrl,
+    coverUrl:
+      raw?.coverUrl != null && String(raw.coverUrl).trim() !== "" ? String(raw.coverUrl) : null,
+    illustrationUrl:
+      raw?.illustrationUrl != null && String(raw.illustrationUrl).trim() !== ""
+        ? String(raw.illustrationUrl)
+        : null,
+    artworkStatus: raw?.artworkStatus ? String(raw.artworkStatus) : null,
+    posterCaption: raw?.posterCaption ? String(raw.posterCaption) : null,
+    dedication: raw?.dedication ? String(raw.dedication) : null,
     audioUrl:
       raw?.audioUrl != null && String(raw.audioUrl).trim() !== "" ? String(raw.audioUrl) : null,
+    audioVoiceId: raw?.audioVoiceId ? String(raw.audioVoiceId) : null,
+    audioLanguage: raw?.audioLanguage ? String(raw.audioLanguage) : null,
   };
-}
-
-async function blobToBase64Png(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onloadend = () => {
-      const s = r.result as string;
-      const comma = s.indexOf(",");
-      resolve(comma >= 0 ? s.slice(comma + 1) : s);
-    };
-    r.onerror = () => reject(new Error("Could not read poster image."));
-    r.readAsDataURL(blob);
-  });
 }
 
 export function useStoryLibrary() {
@@ -89,6 +87,9 @@ export function useStoryLibrary() {
     title: string;
     story: string;
     id?: string | null;
+    characterId?: string | null;
+    characterSnapshot?: unknown;
+    visualBrief?: unknown;
   }) {
     setIsSaving(true);
     try {
@@ -105,32 +106,23 @@ export function useStoryLibrary() {
           title: input.title,
           text: input.story,
           ...(input.id ? { id: input.id } : {}),
+          ...(input.characterId ? { characterId: input.characterId } : {}),
+          ...(input.characterSnapshot ? { characterSnapshot: input.characterSnapshot } : {}),
+          ...(input.visualBrief ? { visualBrief: input.visualBrief } : {}),
         }),
       });
       const data = await res.json().catch(() => ({}));
+      if (redirectIfUnsigned(res.status)) {
+        throw new Error(data?.error || "Sign in to continue.");
+      }
       if (!res.ok) {
         throw new Error(data?.error || `Save failed (${res.status})`);
       }
-      await refreshLibrary();
+      // The caller opens the saved story next; Home reloads the library when it is shown again.
       return data?.story as Record<string, unknown> | undefined;
     } finally {
       setIsSaving(false);
     }
-  }
-
-  async function savePosterForStory(storyId: string, blob: Blob) {
-    const imageBase64 = await blobToBase64Png(blob);
-    const res = await fetch("/api/posters/save", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ storyId, imageBase64 }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      throw new Error(data?.error || `Poster save failed (${res.status})`);
-    }
-    await refreshLibrary();
-    return { posterUrl: String(data?.posterUrl ?? "") };
   }
 
   async function deleteStory(storyId: string) {
@@ -138,10 +130,13 @@ export function useStoryLibrary() {
       method: "DELETE",
     });
     const data = await res.json().catch(() => ({}));
+    if (redirectIfUnsigned(res.status)) {
+      throw new Error(data?.error || "Sign in to continue.");
+    }
     if (!res.ok) {
       throw new Error(data?.error || `Delete failed (${res.status})`);
     }
-    await refreshLibrary();
+    setLibrary((current) => current.filter((item) => item.id !== storyId));
   }
 
   return {
@@ -152,7 +147,6 @@ export function useStoryLibrary() {
     isSaving,
     refreshLibrary,
     saveStory,
-    savePosterForStory,
     deleteStory,
   };
 }

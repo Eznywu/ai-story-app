@@ -32,7 +32,7 @@ async function main() {
     configIds: COMPARISON_CONFIG_IDS,
     capUsd: gate.capUsd,
     synthesize: async (job) => {
-      const voice = resolveNarrationVoice(job.language.toLowerCase().startsWith("zh") ? "Eason_CN" : "Eason_EN", job.language);
+      const voice = resolveNarrationVoice(job.language.toLowerCase().startsWith("zh") ? "story-james" : "story-david", job.language);
       const plan = planNarration({
         text: job.text,
         language: job.language,

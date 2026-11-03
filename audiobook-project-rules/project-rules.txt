@@ -121,3 +121,15 @@ Proposed operating plan note, 2026-10-24. This file is not replaced.
 Notion page "Operating Plan — Goals, Metrics & Roadmap", proposed v1: https://app.notion.com/p/403f569f891e81968813def2f47c3e2f
 Its numerical targets and dates are recommendations until Eason adopts them. This note does not adopt them.
 Left unresolved on purpose: product name (Happy Horse / Bedtime Story / Emrsy Story / DREAMWEAVER), whether accounts and subscriptions are Phase 1 work, and whether the unchecked phases in execution-priority-plan.md block the runtime journey. Do not delete this file, the checklist, or the execution plan to settle those.
+
+---
+Scope note, 2026-11-01. This file is not replaced. The lines above that call voice cloning a future feature or a Phase 1 non-goal stay as history.
+
+Eason (CEO) explicitly added parent voice cloning to current scope on 2026-11-01. That request overrides the older non-goal. Notion records the same change on the Implementation Baseline (https://app.notion.com/p/402f569f891e81ac9a55d1aac78b8981) and the proposed operating plan v1 (https://app.notion.com/p/403f569f891e81968813def2f47c3e2f). The work is AB-14 (https://app.notion.com/p/40bf569f891e8135b3a7f5343b312a85), linked to AB-11.
+
+What that means for this file:
+- Parents may record a voice and create a private narrator. Recording stays optional and out of onboarding.
+- At least five default narrators are offered for English and for Traditional Chinese.
+- Language is chosen separately from voice.
+- Personal voices belong to a signed-in account, not the shared guest.
+- The older "do not expand into voice cloning" build-order sentence in the operating plan is history and does not block this request.

@@ -15,12 +15,23 @@ export type StoryDTO = {
   dailyAutomated?: boolean;
   /** Present when a poster PNG was saved for this story. */
   posterUrl?: string | null;
+  coverUrl?: string | null;
+  illustrationUrl?: string | null;
+  artworkStatus?: string | null;
+  posterCaption?: string | null;
+  dedication?: string | null;
   /** Present when narration MP3 was saved for this story. */
   audioUrl?: string | null;
+  /** App voice id and language of the saved narration, when there is one. */
+  audioVoiceId?: string | null;
+  audioLanguage?: string | null;
 };
 
 /** Max length for optional story guidance; enforced in `lib/stories/storyGenerator.ts`. */
 export const STORY_INPUT_MAX_CHARS = 360;
+
+/** Upper bound for a saved story and for one narration request. A long story is about 10,000 characters. */
+export const STORY_TEXT_MAX_CHARS = 20_000;
 
 export type StoryCreateInput = {
   title?: string;
@@ -34,6 +45,9 @@ export type StoryCreateInput = {
   childGender?: string;
   /** When set, update this saved story instead of creating another row. */
   id?: string;
+  characterId?: string | null;
+  characterSnapshot?: StoryGenerationInput["character"];
+  visualBrief?: StoryVisualBrief | null;
 };
 
 export type StoryGenerationInput = {
@@ -46,6 +60,35 @@ export type StoryGenerationInput = {
   title?: string;
   /** Optional guidance for the model (max {@link STORY_INPUT_MAX_CHARS} characters). */
   storyInput?: string;
+  /** Selected character, kept apart from the listener's age. */
+  character?: {
+    id?: string | null;
+    version?: string | null;
+    name?: string | null;
+    type?: string | null;
+    characterAge?: string | null;
+    visualStyle?: string | null;
+    referenceImageUrl?: string | null;
+    appearance?: {
+      colours?: string;
+      proportions?: string;
+      clothing?: string;
+      accessories?: string;
+    } | null;
+  };
+};
+
+export type StoryVisualBrief = {
+  version: number;
+  moment: string;
+  protagonist: string;
+  setting: string;
+  action: string;
+  emotion: string;
+  props: string[];
+  composition: string;
+  ageBand: string;
+  genre: string;
 };
 
 export type VoiceOption = {

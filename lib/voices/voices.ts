@@ -1,4 +1,13 @@
-/** Client-selected cloned voice: `clone:` + ElevenLabs `voice_id` */
+import {
+  defaultNarratorById,
+  defaultNarratorFor,
+  DEFAULT_NARRATORS,
+  isLegacyVoiceId,
+  legacyVoice,
+} from "@/lib/voices/registry";
+import { normalizeAppLanguage } from "@/lib/voices/language";
+
+/** Old client prefix. It is no longer accepted as authorization. */
 export const VOICE_CLONE_PREFIX = "clone:" as const;
 
 export type Voice = {
@@ -7,6 +16,7 @@ export type Voice = {
   elevenId: string;
   language: string;
   isDefault?: boolean;
+  legacy?: boolean;
 };
 
 export function makeCloneVoiceId(elevenLabsVoiceId: string) {
@@ -17,45 +27,55 @@ export function isCloneVoiceId(voiceId: string) {
   return voiceId.startsWith(VOICE_CLONE_PREFIX);
 }
 
-export const VOICES: Voice[] = [
-  { id: "Eason_EN", name: "Eason_EN", elevenId: "4LguZr3BgHUrmCOioCQW", language: "en", isDefault: true },
-  { id: "Eason_CN", name: "Eason_CN", elevenId: "XoqehnQ3P4qwqiNC3rDG", language: "zh-Hant", isDefault: true },
-  { id: "Neva_CN", name: "Neva_CN", elevenId: "JEeewzD9jFL4GqDHRhMc", language: "zh-Hant" },
-];
+/** Public story voices. Family clones are not in this list. */
+export const VOICES: Voice[] = DEFAULT_NARRATORS.map((voice) => ({
+  id: voice.id,
+  name: voice.name,
+  elevenId: voice.providerVoiceId,
+  language: voice.languages[0] ?? "en",
+  isDefault: voice.isDefault,
+}));
 
-function normalizeLanguage(language?: string) {
-  const value = String(language ?? "en").toLowerCase();
-  if (value.startsWith("zh")) return "zh-Hant";
-  return "en";
+export function getDefaultVoice(language?: string): Voice | null {
+  const narrator = defaultNarratorFor(language);
+  return {
+    id: narrator.id,
+    name: narrator.name,
+    elevenId: narrator.providerVoiceId,
+    language: narrator.languages[0] ?? "en",
+    isDefault: narrator.isDefault,
+  };
 }
 
-export function getDefaultVoice(language?: string) {
-  const normalized = normalizeLanguage(language);
-  return (
-    VOICES.find((voice) => voice.language === normalized && voice.isDefault) ??
-    VOICES.find((voice) => voice.language === normalized) ??
-    VOICES.find((voice) => voice.isDefault) ??
-    VOICES[0] ??
-    null
-  );
-}
-
-export function resolveVoiceById(voiceId?: string, language?: string) {
-  if (voiceId) {
-    const id = String(voiceId);
-    if (isCloneVoiceId(id)) {
-      const elevenId = id.slice(VOICE_CLONE_PREFIX.length).trim();
-      if (elevenId) {
-        return {
-          id,
-          name: "My recording",
-          elevenId,
-          language: normalizeLanguage(language),
-        };
-      }
+/**
+ * Resolves a known app id. An explicit unknown id returns null.
+ * An empty id returns the default for that language.
+ * Legacy family ids resolve only so older saved audio can be identified. They are marked legacy.
+ */
+export function resolveVoiceById(voiceId?: string, language?: string): Voice | null {
+  if (voiceId && String(voiceId).trim()) {
+    const id = String(voiceId).trim();
+    if (isCloneVoiceId(id) || id.startsWith("v_")) return null;
+    const legacy = legacyVoice(id);
+    if (legacy || isLegacyVoiceId(id)) {
+      if (!legacy) return null;
+      return {
+        id: legacy.id,
+        name: legacy.name,
+        elevenId: legacy.providerVoiceId,
+        language: legacy.language,
+        legacy: true,
+      };
     }
-    const hit = VOICES.find((voice) => voice.id === id);
-    if (hit) return hit;
+    const narrator = defaultNarratorById(id);
+    if (!narrator) return null;
+    return {
+      id: narrator.id,
+      name: narrator.name,
+      elevenId: narrator.providerVoiceId,
+      language: normalizeAppLanguage(language),
+      isDefault: narrator.isDefault,
+    };
   }
   return getDefaultVoice(language);
 }

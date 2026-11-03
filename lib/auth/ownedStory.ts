@@ -6,16 +6,13 @@ export async function findOwnedStory(userId: string, storyId: string) {
   return prisma.story.findFirst({ where: { id: storyId, userId } });
 }
 
-export async function userOwnsMedia(
-  userId: string,
-  kind: "audio" | "poster",
-  filename: string
-): Promise<boolean> {
+/** True when one of this user's stories uses the picture file. */
+export async function userOwnsPicture(userId: string, filename: string): Promise<boolean> {
   const story = await prisma.story.findFirst({
-    where:
-      kind === "audio"
-        ? { userId, audioFilename: filename }
-        : { userId, posterFilename: filename },
+    where: {
+      userId,
+      OR: [{ posterFilename: filename }, { illustrationFilename: filename }, { coverFilename: filename }],
+    },
     select: { id: true },
   });
   return Boolean(story);

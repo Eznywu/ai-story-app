@@ -60,10 +60,40 @@ export type LoginCode = Prisma.LoginCodeModel
  */
 export type Story = Prisma.StoryModel
 /**
+ * Model ArtworkJob
+ * One illustration job. cacheKey is unique so two servers cannot start the same paid image.
+ */
+export type ArtworkJob = Prisma.ArtworkJobModel
+/**
+ * Model ArtworkSpendDay
+ * Daily artwork allowance. Guest browsers do not share a bucket just because they share a user id.
+ */
+export type ArtworkSpendDay = Prisma.ArtworkSpendDayModel
+/**
  * Model Voice
  * 
  */
 export type Voice = Prisma.VoiceModel
+/**
+ * Model VoiceAttempt
+ * One clone attempt, used for the hourly rate limit.
+ */
+export type VoiceAttempt = Prisma.VoiceAttemptModel
+/**
+ * Model VoiceCleanup
+ * Retryable delete of a provider clone and its sample after a failed save or delete.
+ */
+export type VoiceCleanup = Prisma.VoiceCleanupModel
+/**
+ * Model VoicePreference
+ * Remembered narrator and language for a signed-in account. Not an ownership record.
+ */
+export type VoicePreference = Prisma.VoicePreferenceModel
+/**
+ * Model NarrationPreview
+ * One cached preview. Replay reads this row and does not call a paid voice API.
+ */
+export type NarrationPreview = Prisma.NarrationPreviewModel
 /**
  * Model KidProfile
  * 

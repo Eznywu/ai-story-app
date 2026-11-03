@@ -29,16 +29,15 @@ async function main() {
 
   if (hasFlag("--help") || hasFlag("-h")) {
     console.log(`
-Story → dual poster generator (OpenAI GPT Image + Gemini native / Imagen)
+Story poster prompt comparison. This does not look at pictures and is not visual QA.
+
+By default it writes the prompts only. It does not call an image provider.
+Set POSTER_BENCHMARK=1 to also call OpenAI and Gemini. That mode is for local
+development, spends money, and is still a prompt comparison rather than visual QA.
 
 Usage:
   npm run poster -- --story "..." --title "..."
-  npm run poster -- --file ./story.txt --title "..."
-  npm run poster -- --file ./story.md --title "..." --out ./outputs
-
-Environment:
-  OPENAI_API_KEY, GEMINI_API_KEY (required)
-  See .env.example for optional model tuning.
+  npm run poster -- --file ./story.txt --title "..." --out ./outputs
 `);
     process.exit(0);
   }
