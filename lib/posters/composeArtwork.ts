@@ -104,7 +104,9 @@ export function keepsakeTextLayout(input: {
   const titleUnits = (px: number) => {
     const sample = input.title || "Happy Horse";
     const cjk = /[\u3400-\u9fff]/.test(sample);
-    const advance = cjk ? px : px * 0.52;
+    // Bold fallback fonts need more room than the light Latin estimate.
+    // At 0.52, an ordinary 24-character title can be clipped on Linux.
+    const advance = cjk ? px : px * 0.60;
     return Math.max(8, Math.floor(textWidth / advance));
   };
   const captionCopy = () =>

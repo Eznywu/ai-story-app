@@ -13,6 +13,11 @@ export function elevenVoiceProvider(apiKey: string): VoiceCloneProvider {
       const result = await client.voices.ivc.create({
         name: input.name,
         files: [file],
+        description: input.languageLabel.description,
+        labels: JSON.stringify({
+          language: input.languageLabel.language,
+          accent: input.languageLabel.accent,
+        }),
       });
       return {
         providerVoiceId: result.voiceId,
@@ -65,7 +70,7 @@ export function mockVoiceProvider(): VoiceCloneProvider {
 }
 
 export function voiceProviderFromEnv(env: NodeJS.ProcessEnv = process.env): VoiceCloneProvider {
-  if (mockProvidersEnabled()) return mockVoiceProvider();
+  if (mockProvidersEnabled(env)) return mockVoiceProvider();
   const key = env.ELEVENLABS_API_KEY?.trim();
   if (!key) return unavailableVoiceProvider();
   return elevenVoiceProvider(key);

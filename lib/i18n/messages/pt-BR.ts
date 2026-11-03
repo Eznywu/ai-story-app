@@ -219,7 +219,8 @@ export const messages = {
     useTake: "Criar uma voz com esta tomada",
     nameLabel: "Nome desta voz",
     save: "Salvar e usar",
-    target: "Mire em 60 a 120 segundos. Leia o texto em voz alta.",
+    target:
+      "Mire em 60 a 120 segundos. Leia no seu sotaque de sempre, como se falasse com carinho com seu filho. Mantenha um ritmo confortável e constante, e a mesma distância do microfone. Uma expressão natural e leve é suficiente. Evite atuar, sussurrar o tempo todo, gritar ou exagerar o tom. Só a sua voz ao vivo: sem música e sem outras pessoas falando. Leia apenas este idioma.",
     micDenied: "O microfone está bloqueado. No Safari do iPhone: Ajustes → Safari → Microfone → Permitir. No Chrome: o cadeado → Configurações do site → Microfone → Permitir. No app Happy Horse: Ajustes do iPhone → Happy Horse → Microfone. Depois tente de novo.",
     tooQuiet: "Não ouvimos fala suficiente. Chegue um pouco mais perto e leia de novo.",
     clipped: "Ficou alto demais. Afaste um pouco o telefone e tente de novo.",

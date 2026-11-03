@@ -205,6 +205,8 @@ export const VoiceScalarFieldEnum = {
   provider: 'provider',
   voiceId: 'voiceId',
   language: 'language',
+  recordingLocale: 'recordingLocale',
+  scriptVersion: 'scriptVersion',
   status: 'status',
   voiceVersion: 'voiceVersion',
   requiresVerification: 'requiresVerification',

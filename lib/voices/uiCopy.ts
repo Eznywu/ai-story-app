@@ -1,13 +1,12 @@
 import { getMessages } from "@/lib/i18n/catalog";
 import { fill } from "@/lib/i18n/locales";
 import { CONSENT_TEXT, CONSENT_TEXT_VERSION } from "./consent";
-import { READING_PASSAGE } from "./passages";
 import { normalizeAppLanguage, type AppLanguage } from "./language";
 
 /**
- * Story-language copy for narration consent, the reading passage, and the
- * en / zh-Hant voice strings covered by tests. Screen chrome reads the same
- * catalog through the interface locale, which can differ from story language.
+ * Story-language copy for narration consent and the en / zh-Hant voice strings
+ * covered by tests. The recording passage comes from the interface locale, not
+ * from this two-language normalizer.
  */
 export function voiceCopy(language: unknown) {
   const lang: AppLanguage = normalizeAppLanguage(language);
@@ -16,7 +15,6 @@ export function voiceCopy(language: unknown) {
     lang,
     consentVersion: CONSENT_TEXT_VERSION,
     consent: CONSENT_TEXT[lang],
-    passage: READING_PASSAGE[lang],
     ...voice,
   };
 }

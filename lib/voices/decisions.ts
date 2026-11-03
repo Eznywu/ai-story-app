@@ -1,5 +1,5 @@
 import { consentAccepted } from "./consent";
-import { languagesMatch, normalizeAppLanguage, type AppLanguage } from "./language";
+import { languagesMatch, normalizeAppLanguage } from "./language";
 import { cloneAttemptsPerHour, personalVoiceLimit, slotCeilingBlocks } from "./limits";
 import {
   defaultNarratorById,
@@ -18,7 +18,10 @@ export type OwnedVoice = {
   id: string;
   userId: string;
   displayName: string;
-  language: AppLanguage;
+  /** Recording locale when known. Legacy rows are en or zh-Hant. */
+  language: string;
+  recordingLocale?: string | null;
+  scriptVersion?: string | null;
   status: VoiceStatus;
   voiceVersion: number;
   requiresVerification: boolean;
@@ -28,8 +31,10 @@ export type PublicVoice = {
   id: string;
   name: string;
   description: string;
-  language: AppLanguage;
-  languages: AppLanguage[];
+  language: string;
+  languages: string[];
+  recordingLocale?: string | null;
+  scriptVersion?: string | null;
   group: "story" | "mine";
   kind: "default" | "personal";
   status: VoiceStatus | "pending_audition";
@@ -65,12 +70,15 @@ export function toPublicDefault(voice: DefaultNarrator, language: unknown): Publ
 export function toPublicPersonal(voice: OwnedVoice, language: unknown): PublicVoice {
   const appLanguage = normalizeAppLanguage(language);
   const selectable = voice.status === "ready" && !voice.requiresVerification;
+  const recorded = voice.recordingLocale || voice.language;
   return {
     id: voice.id,
     name: voice.displayName,
     description: appLanguage === "zh-Hant" ? "我的聲音" : "My voice",
-    language: voice.language,
-    languages: [voice.language],
+    language: recorded,
+    languages: [recorded],
+    recordingLocale: voice.recordingLocale ?? null,
+    scriptVersion: voice.scriptVersion ?? null,
     group: "mine",
     kind: "personal",
     status: voice.requiresVerification ? "pending_verification" : voice.status,
@@ -181,7 +189,8 @@ export function authorizeSynthesis(input: {
       alternatives,
     };
   }
-  const warning = languagesMatch([owned.language], language)
+  const recorded = owned.recordingLocale || owned.language;
+  const warning = languagesMatch([recorded], language)
     ? undefined
     : "This voice was recorded in another language. It stays selected. You can pick a story voice for this language instead.";
   return {
