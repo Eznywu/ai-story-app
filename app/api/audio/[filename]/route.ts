@@ -38,7 +38,8 @@ export async function GET(req: Request) {
       return NextResponse.redirect(story.audioUrl, 302);
     }
     return notFound();
-  } catch {
+  } catch (err) {
+    console.error("[audio] could not read a private recording", err instanceof Error ? err.message : err);
     return notFound();
   }
 }
