@@ -42,9 +42,11 @@ Run `prisma migrate deploy`, not db push/reset, against the reviewed environment
 Do not assume the hosted migration ledger matches source history.
 No production or hosted preview migration has been run by this task.
 
-`build:vercel` runs migrations before Next build. Because hosted preview/production
-database separation is unverified, vercel.json disables automatic Git deployments
-only for `codex/phase-a-release-candidate`. Other branches retain their existing behavior.
+`build:vercel` runs migrations before Next build. vercel.json disables automatic
+Git deployments for `codex/phase-a-release-candidate` only. Preview Blob isolation
+is in place, so `cursor/ab20-phase-a-preview-setup-950e` may deploy to Preview.
+Other branches retain their existing behavior. A Preview deployment uses the
+Preview database binding and must not be promoted to Production.
 Before enabling this branch or manually deploying: verify distinct database endpoints
 and database/branch IDs, separate storage, preview-scoped credentials, migration ledger
 and a backup/restore plan. Never copy credential values into this receipt.
@@ -55,7 +57,7 @@ and a backup/restore plan. Never copy credential values into this receipt.
 | --- | --- |
 | Database | DATABASE_URL; optional PG_POOL_MAX. Distinct preview and production databases. |
 | Login | AUTH_ENABLED, AUTH_SECRET, RESEND_API_KEY, AUTH_EMAIL_FROM. Verify delivery/domain/session behavior before beta. |
-| Durable media | BLOB_READ_WRITE_TOKEN. Verify private voice samples and generated personal narration; local uploads are test fallback only. |
+| Durable media | Public: `BLOB_PUBLIC_READ_WRITE_TOKEN` and `BLOB_PUBLIC_STORE_ID`. Private: `BLOB_PRIVATE_READ_WRITE_TOKEN` and `BLOB_PRIVATE_STORE_ID`. `BLOB_READ_WRITE_TOKEN` and `BLOB_STORE_ID` are a public-only legacy fallback for the existing Production store. One store credential cannot serve both access modes. Private samples and personal narration never use the public token. A deployed environment with no private credential fails closed. Local `uploads/` is only for a machine that is not deployed. |
 | Story generation | OPENAI_API_KEY; OPENAI_STORY_MODELS, OPENAI_STORY_TEMPERATURE, OPENAI_STORY_TIMEOUT_MS. |
 | Artwork | POSTER_IMAGE_PROVIDER, OPENAI_POSTER_IMAGE_MODEL, OPENAI_POSTER_IMAGE_QUALITY, OPENAI_POSTER_TIMEOUT_MS, POSTER_MAX_ATTEMPTS, POSTER_DAILY_GENERATION_CAP, POSTER_DAILY_SPEND_CAP_USD, POSTER_CONNECTIVITY_TIMEOUT_MS; optional ARTWORK_LEGACY_BRIEF. |
 | Optional alternate artwork | GEMINI_API_KEY (or GOOGLE_API_KEY / GOOGLE_GENERATIVE_AI_API_KEY), GEMINI_IMAGE_MODEL, GEMINI_HTTP_TIMEOUT_MS, GEMINI_NATIVE_IMAGE_ASPECT_RATIO, GEMINI_NATIVE_IMAGE_SIZE, POSTER_BENCHMARK. |
@@ -66,6 +68,14 @@ and a backup/restore plan. Never copy credential values into this receipt.
 
 Some optional configuration names are read through configuration functions rather
 than process.env directly. This is a source inventory, not proof of hosted setup.
+
+## Preview setup branch
+
+`cursor/ab20-phase-a-preview-setup-950e` is allowed to deploy to Preview after
+the public and private Preview Blob stores were connected with prefixes
+`BLOB_PUBLIC` and `BLOB_PRIVATE`. The candidate branch guard stays in place.
+This branch does not migrate Production and does not enable paid provider calls.
+Vercel Authentication covers Preview URLs.
 
 ## Verification and next gate
 

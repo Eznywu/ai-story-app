@@ -138,8 +138,8 @@ Global and component-level styles.
 
 ### Data and Persistence
 - `prisma/` + PostgreSQL (`DATABASE_URL`) via Prisma; see `.env.example`
-- `uploads/` for generated media when `BLOB_READ_WRITE_TOKEN` is unset (local dev)
-- Vercel Blob when `BLOB_READ_WRITE_TOKEN` is set (required for posters and audio to survive on Vercel)
+- `uploads/` for generated media only when no Blob credential is set and the app is not deployed
+- Vercel Blob for durable media: `BLOB_PUBLIC_READ_WRITE_TOKEN` for public posters and catalog audio, `BLOB_PRIVATE_READ_WRITE_TOKEN` for voice samples and personal narration. `BLOB_READ_WRITE_TOKEN` is a public-only legacy fallback.
 
 ### Platform and Tooling
 - `next.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `postcss.config.mjs`
