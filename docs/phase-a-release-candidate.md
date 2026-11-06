@@ -43,9 +43,10 @@ Do not assume the hosted migration ledger matches source history.
 No production or hosted preview migration has been run by this task.
 
 `build:vercel` runs migrations before Next build. vercel.json disables automatic
-Git deployments for `codex/phase-a-release-candidate` and, until Preview Blob
-isolation is verified, for `cursor/ab20-phase-a-preview-setup-950e`. Other branches
-retain their existing behavior.
+Git deployments for `codex/phase-a-release-candidate` only. Preview Blob isolation
+is in place, so `cursor/ab20-phase-a-preview-setup-950e` may deploy to Preview.
+Other branches retain their existing behavior. A Preview deployment uses the
+Preview database binding and must not be promoted to Production.
 Before enabling this branch or manually deploying: verify distinct database endpoints
 and database/branch IDs, separate storage, preview-scoped credentials, migration ledger
 and a backup/restore plan. Never copy credential values into this receipt.
@@ -70,10 +71,11 @@ than process.env directly. This is a source inventory, not proof of hosted setup
 
 ## Preview setup branch
 
-`cursor/ab20-phase-a-preview-setup-950e` keeps automatic deployment disabled in
-`vercel.json` until both new Preview Blob stores are connected and a Preview
-deployment is intentionally enabled. The candidate branch guard stays in place.
+`cursor/ab20-phase-a-preview-setup-950e` is allowed to deploy to Preview after
+the public and private Preview Blob stores were connected with prefixes
+`BLOB_PUBLIC` and `BLOB_PRIVATE`. The candidate branch guard stays in place.
 This branch does not migrate Production and does not enable paid provider calls.
+Vercel Authentication covers Preview URLs.
 
 ## Verification and next gate
 

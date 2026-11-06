@@ -12,8 +12,7 @@
   ],
   "git": {
     "deploymentEnabled": {
-      "codex/phase-a-release-candidate": false,
-      "cursor/ab20-phase-a-preview-setup-950e": false
+      "codex/phase-a-release-candidate": false
     }
   }
 }
