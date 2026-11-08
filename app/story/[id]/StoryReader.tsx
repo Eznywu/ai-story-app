@@ -2,22 +2,27 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import "@/app/page.css";
+import { BrandMark } from "@/app/components/BrandMark";
+import { StoryArtwork } from "@/app/components/StoryArtwork";
+import { StoryCover } from "@/app/components/StoryCover";
 import { QuietSheet } from "@/app/components/QuietSheet";
 import { TtsControls } from "@/app/components/TtsControls";
-import { friendlyVoiceName, languageLabel } from "@/app/components/voiceLabel";
+import { useInterfaceLocale } from "@/app/components/LocaleProvider";
+import { friendlyVoiceName } from "@/app/components/voiceLabel";
+import { fill } from "@/lib/i18n/locales";
 import { useTts } from "@/app/hooks/useTts";
-import { useStoryLibrary } from "@/app/hooks/useStoryLibrary";
+import { useDocumentTheme } from "@/app/hooks/useDocumentTheme";
 import { skipWithin } from "@/lib/audio/skipWithin";
-import { coverPresentation } from "@/lib/stories/coverPresentation";
-import { createStoryPoster, downloadPosterPng } from "@/lib/posters/poster";
-import type { PosterCreateOutcome } from "@/lib/posters/poster";
+import { clearListenPosition, readListenPosition, writeListenPosition } from "@/lib/audio/listenPosition";
+import { downloadPosterPng, requestStoryArtwork } from "@/lib/posters/poster";
+import type { ArtworkRequestResult } from "@/lib/posters/poster";
 import { getErrorMessage } from "@/lib/errors";
 import { redirectIfUnsigned } from "@/lib/auth/redirectIfUnsigned";
 import { PLAYBACK_RATES } from "@/lib/tts/ttsLimits";
 import { activeNarrationSpeed, activeTtsConfig } from "@/lib/tts/config";
 import { savedAudioIdentityStatus } from "@/lib/tts/audioIdentity";
+import { narratorForOpenStory } from "@/lib/voices/narratorChoice";
 import { useReadingStats } from "@/app/hooks/useReadingStats";
 import dictionaryFile from "@/data/pronunciation/dictionary.json";
 
@@ -31,6 +36,11 @@ type StoryRecord = {
   language: string | null;
   mainCharacterName: string | null;
   posterUrl: string | null;
+  coverUrl?: string | null;
+  illustrationUrl?: string | null;
+  artworkStatus?: string | null;
+  posterCaption?: string | null;
+  dedication?: string | null;
   audioUrl: string | null;
   audioCacheKey?: string | null;
   audioVoiceId?: string | null;
@@ -41,30 +51,36 @@ type StoryRecord = {
   audioVoiceSettings?: { speed?: number } | null;
 };
 
-type PosterState =
-  | { status: "idle" }
-  | { status: "generating" }
-  | { status: "ready"; url: string; outcome: PosterCreateOutcome; hint?: string }
-  | { status: "error"; message: string };
+type PosterState = {
+  status: "idle" | "generating" | "pending" | "illustrated" | "fallback" | "error";
+  illustrationUrl?: string | null;
+  coverUrl?: string | null;
+  posterUrl?: string | null;
+  caption?: string | null;
+  dedication?: string | null;
+  message?: string;
+};
+
+/** Saving the position this often while playing is enough to resume within a couple of seconds. */
+const POSITION_SAVE_MS = 2000;
 
 function formatRate(rate: number) {
   return rate === 1 ? "1x" : `${rate}x`;
 }
 
-function playbackErrorMessage(error: unknown) {
-  const message = getErrorMessage(error, "Voice failed, try again.");
+function playbackErrorMessage(error: unknown, fallback: string) {
+  const message = getErrorMessage(error, fallback);
   if (/interrupted by a new load request|no supported sources|not supported/i.test(message)) {
-    return "Voice failed, try again.";
+    return fallback;
   }
   return message;
 }
 
-function formatClock(seconds: number) {
-  if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
-  const whole = Math.floor(seconds);
-  const minutes = Math.floor(whole / 60);
-  const remain = whole % 60;
-  return `${minutes}:${remain.toString().padStart(2, "0")}`;
+function storyLanguageName(language: string | null | undefined, labels: { englishName: string; traditionalChinese: string }) {
+  const value = (language || "").toLowerCase();
+  if (value.includes("hant") || value.includes("tw") || value.includes("hk") || value.startsWith("zh")) return labels.traditionalChinese;
+  if (value.startsWith("en")) return labels.englishName;
+  return (language || "").trim();
 }
 
 function IconChevronLeft() {
@@ -117,33 +133,63 @@ function IconCheck() {
   );
 }
 
+function IconSkip({ back }: { back?: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden className="listenSkip__icon">
+      <g stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        {back ? (
+          <>
+            <path d="M1 4v6h6" />
+            <path d="M3.5 15a9 9 0 102.1-9.4L1 10" />
+          </>
+        ) : (
+          <>
+            <path d="M23 4v6h-6" />
+            <path d="M20.5 15a9 9 0 11-2.1-9.4L23 10" />
+          </>
+        )}
+      </g>
+    </svg>
+  );
+}
+
 /**
- * Story page `/story/[id]`.
- * Cover, title, timeline, and Play. Speed is one control. Read story expands in place.
- * Cover, keepsake, and narration changes live in labelled sheets.
- * Play creates narration only when this story has none yet. Playback speed does not call the voice provider again.
+ * Story player `/story/[id]`.
+ * Top to bottom: back and more, the square cover, title with child, narrator, and language, the timeline with
+ * real elapsed and total time, −15 / Play / +15, speed and narration, Read story, then the keepsake poster.
+ * Play uses this story's saved narration and resumes where this device stopped. It makes narration only when
+ * the story has none. Playback speed never calls the voice service.
  */
 export function StoryReader({ storyId }: { storyId: string }) {
+  const { messages, formatClock: formatLocaleClock } = useInterfaceLocale();
+  const copy = messages.reader;
+  const posterCopy = messages.poster;
+  useDocumentTheme("night");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const posterOnce = useRef<string | null>(null);
+  const openedVoiceFor = useRef<string | null>(null);
   const playOnce = useRef(false);
+  const lastPositionSave = useRef(0);
+  const [from] = useState(() => (typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("from")));
   const [story, setStory] = useState<StoryRecord | null>(null);
   const [loadError, setLoadError] = useState("");
   const [loading, setLoading] = useState(true);
   const [poster, setPoster] = useState<PosterState>({ status: "idle" });
-  const [brokenCoverUrl, setBrokenCoverUrl] = useState<string | null>(null);
-  const [coverAttempt, setCoverAttempt] = useState(0);
+  const [coverFailed, setCoverFailed] = useState(false);
   const [playbackRate, setPlaybackRate] = useState<(typeof PLAYBACK_RATES)[number]>(1);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [narrationSpeed, setNarrationSpeed] = useState(() => activeNarrationSpeed());
   const [audioError, setAudioError] = useState("");
+  const [audioBroken, setAudioBroken] = useState(false);
+  const [downloadError, setDownloadError] = useState("");
   const [savedAudioUrl, setSavedAudioUrl] = useState<string | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
   const [narrationOpen, setNarrationOpen] = useState(false);
   const [scriptOpen, setScriptOpen] = useState(false);
   const [speedOpen, setSpeedOpen] = useState(false);
+  const [readScale, setReadScale] = useState(0);
 
   const language = story?.language?.trim() || "zh-Hant";
   const {
@@ -156,7 +202,6 @@ export function StoryReader({ storyId }: { storyId: string }) {
     fetchVoices,
     makeMp3,
   } = useTts(language, audioRef);
-  const { savePosterForStory } = useStoryLibrary();
   const { onStoryPlayed } = useReadingStats();
 
   const loadStory = useCallback(async () => {
@@ -166,26 +211,44 @@ export function StoryReader({ storyId }: { storyId: string }) {
       const res = await fetch(`/api/stories/${encodeURIComponent(storyId)}`, { cache: "no-store" });
       const data = await res.json().catch(() => ({}));
       if (redirectIfUnsigned(res.status)) {
-        throw new Error(data?.error || "Sign in to continue.");
+        throw new Error(data?.error || copy.signIn);
       }
       if (!res.ok) {
-        throw new Error(data?.error || `Could not open this story (${res.status})`);
+        throw new Error(data?.error || `${copy.openFailed} (${res.status})`);
       }
       const row = data?.story as StoryRecord | undefined;
-      if (!row?.id) throw new Error("Story not found.");
+      if (!row?.id) throw new Error(copy.notFound);
       setStory(row);
       setSavedAudioUrl(row.audioUrl);
-      if (row.posterUrl) {
-        setPoster({ status: "ready", url: row.posterUrl, outcome: "illustrated" });
+      const savedStatus =
+        row.artworkStatus === "illustrated" || row.artworkStatus === "fallback" || row.artworkStatus === "error"
+          ? row.artworkStatus
+          : row.posterUrl || row.coverUrl || row.illustrationUrl
+            ? "illustrated"
+            : null;
+      if (savedStatus) {
+        setPoster((current) => {
+          if (current.status === "generating" || current.status === "pending") return current;
+          if (current.illustrationUrl || current.posterUrl || current.coverUrl) return current;
+          return {
+            status: savedStatus,
+            illustrationUrl: row.illustrationUrl,
+            coverUrl: row.coverUrl,
+            posterUrl: row.posterUrl,
+            caption: row.posterCaption,
+            dedication: row.dedication,
+            message: savedStatus === "illustrated" ? undefined : posterCopy.savedSimple,
+          };
+        });
       }
       return row;
     } catch (error: unknown) {
-      setLoadError(getErrorMessage(error, "Could not open this story."));
+      setLoadError(getErrorMessage(error, copy.openFailed));
       return null;
     } finally {
       setLoading(false);
     }
-  }, [storyId]);
+  }, [copy.notFound, copy.openFailed, copy.signIn, posterCopy.savedSimple, storyId]);
 
   useEffect(() => {
     void loadStory();
@@ -193,10 +256,16 @@ export function StoryReader({ storyId }: { storyId: string }) {
   }, [loadStory, fetchVoices]);
 
   useEffect(() => {
-    const requested = new URLSearchParams(window.location.search).get("voice");
-    if (!requested || !voices.some((voice) => voice.id === requested)) return;
-    setSelectedVoiceId(requested);
-  }, [setSelectedVoiceId, voices]);
+    if (!story || !voices.length || openedVoiceFor.current === story.id) return;
+    openedVoiceFor.current = story.id;
+    const next = narratorForOpenStory({
+      voices,
+      language: story.language?.trim() || "zh-Hant",
+      savedVoiceId: story.audioVoiceId,
+      queryVoiceId: new URLSearchParams(window.location.search).get("voice"),
+    });
+    if (next) setSelectedVoiceId(next);
+  }, [setSelectedVoiceId, story, voices]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -211,41 +280,89 @@ export function StoryReader({ storyId }: { storyId: string }) {
     if (audio.src !== absolute) audio.src = savedAudioUrl;
   }, [savedAudioUrl]);
 
-  const generatePoster = useCallback(async () => {
-    if (!story?.text.trim()) return;
-    setBrokenCoverUrl(null);
-    setCoverAttempt((attempt) => attempt + 1);
-    setPoster({ status: "generating" });
-    try {
-      const result = await createStoryPoster({
-        title: story.title,
-        story: story.text,
-        genre: story.genre,
+  const savePosition = useCallback(
+    (force: boolean) => {
+      const audio = audioRef.current;
+      if (!audio || !savedAudioUrl || !Number.isFinite(audio.duration) || audio.duration <= 0) return;
+      const now = Date.now();
+      if (!force && now - lastPositionSave.current < POSITION_SAVE_MS) return;
+      lastPositionSave.current = now;
+      writeListenPosition(storyId, { t: audio.currentTime, d: audio.duration, src: savedAudioUrl });
+    },
+    [savedAudioUrl, storyId]
+  );
+
+  // Leaving the page (back, another tab, closing the app) keeps the place for next time.
+  useEffect(() => {
+    const onHide = () => savePosition(true);
+    window.addEventListener("pagehide", onHide);
+    return () => {
+      window.removeEventListener("pagehide", onHide);
+      savePosition(true);
+    };
+  }, [savePosition]);
+
+  const applyArtwork = useCallback((result: ArtworkRequestResult) => {
+    const status =
+      result.status === "illustrated" || result.status === "fallback" || result.status === "error" || result.status === "pending"
+        ? result.status
+        : "error";
+    setCoverFailed(false);
+    setPoster({
+      status,
+      illustrationUrl: result.illustrationUrl,
+      coverUrl: result.coverUrl,
+      posterUrl: result.posterUrl,
+      caption: result.caption,
+      dedication: result.dedication,
+      message: result.error,
+    });
+    setStory((current) =>
+      current
+        ? {
+            ...current,
+            illustrationUrl: result.illustrationUrl ?? current.illustrationUrl,
+            coverUrl: result.coverUrl ?? current.coverUrl,
+            posterUrl: result.posterUrl ?? current.posterUrl,
+            posterCaption: result.caption ?? current.posterCaption,
+            dedication: result.dedication ?? current.dedication,
+            artworkStatus: status === "pending" ? current.artworkStatus : status,
+          }
+        : current
+    );
+  }, []);
+
+  const requestArtwork = useCallback(
+    async (intent: "create" | "read" | "download" | "reload" | "regenerate", forceFallback = false) => {
+      if (!story?.id) return null;
+      if (intent === "create" || intent === "regenerate") setPoster({ status: "generating" });
+      const result = await requestStoryArtwork({
         storyId: story.id,
+        title: story.title,
+        intent,
+        forceFallback,
       });
-      const saved = await savePosterForStory(story.id, result.blob);
-      const url = saved.posterUrl || URL.createObjectURL(result.blob);
-      setPoster({
-        status: "ready",
-        url,
-        outcome: result.outcome,
-        hint: result.fallbackReason,
-      });
-      setStory((current) => (current ? { ...current, posterUrl: saved.posterUrl || url } : current));
-    } catch (error: unknown) {
-      setPoster({
-        status: "error",
-        message: getErrorMessage(error, "Poster could not be created."),
-      });
-    }
-  }, [savePosterForStory, story]);
+      applyArtwork(result);
+      return result;
+    },
+    [applyArtwork, story]
+  );
 
   useEffect(() => {
-    if (!story || story.posterUrl || posterOnce.current === story.id) return;
-    if (poster.status === "generating" || poster.status === "ready" || poster.status === "error") return;
+    if (!story || posterOnce.current === story.id) return;
+    if (poster.status === "generating" || poster.status === "illustrated" || poster.status === "fallback" || poster.status === "error") {
+      return;
+    }
+    if (story.artworkStatus === "fallback" || story.artworkStatus === "error" || story.artworkStatus === "illustrated") {
+      return;
+    }
+    if (story.posterUrl || story.coverUrl || story.illustrationUrl) return;
     posterOnce.current = story.id;
-    void generatePoster();
-  }, [generatePoster, poster.status, story]);
+    const forceFallback = new URLSearchParams(window.location.search).get("artwork") === "fallback";
+    void requestArtwork("create", forceFallback).catch((error: unknown) => {
+      setPoster({ status: "error", message: getErrorMessage(error, posterCopy.couldNotCreate) });
+    });
+  }, [poster.status, posterCopy.couldNotCreate, requestArtwork, story]);
 
   const audioIdentity = savedAudioIdentityStatus(
     story
@@ -270,6 +387,7 @@ export function StoryReader({ storyId }: { storyId: string }) {
 
   function rememberNarration(result: Awaited<ReturnType<typeof makeMp3>>) {
     if (!result.savedAudioUrl) return;
+    setAudioBroken(false);
     setSavedAudioUrl(result.savedAudioUrl);
     setStory((current) =>
       current
@@ -289,14 +407,14 @@ export function StoryReader({ storyId }: { storyId: string }) {
   }
 
   async function ensureAudio() {
-    if (!story?.text.trim()) throw new Error("This story has no script yet.");
+    if (!story?.text.trim()) throw new Error(copy.noScript);
     if (savedAudioUrl && (audioIdentity === "fresh" || audioIdentity === "stale" || audioIdentity === "unknown")) {
       return savedAudioUrl;
     }
     setAudioError("");
     const result = await makeMp3(story.text, narrationSpeed, language, story.id, false);
     if (!result.savedAudioUrl) {
-      throw new Error("Narration played, but it could not be saved on this story.");
+      throw new Error(copy.narrationUnsaved);
     }
     rememberNarration(result);
     return result.savedAudioUrl;
@@ -314,19 +432,28 @@ export function StoryReader({ storyId }: { storyId: string }) {
       await ensureAudio();
       const next = audioRef.current;
       if (!next) return;
+      if (audioBroken) {
+        setAudioBroken(false);
+        next.load();
+      }
       next.playbackRate = playbackRate;
       const started = next.play();
       if (started) {
         started.catch((error: unknown) => {
           const message = error instanceof Error ? error.message : String(error);
           if (next.paused && /interrupted by a call to pause/i.test(message)) return;
-          setAudioError(playbackErrorMessage(error));
+          // iOS drops the tap once narration took a while to make; the audio is ready, so the next tap plays it.
+          if (error instanceof DOMException && error.name === "NotAllowedError") {
+            setPlaying(false);
+            return;
+          }
+          setAudioError(playbackErrorMessage(error, copy.voiceFailed));
           setPlaying(false);
         });
       }
-      if (story) onStoryPlayed(story.id, story.title?.trim() || "Story");
+      if (story) onStoryPlayed(story.id, story.title?.trim() || copy.story);
     } catch (error: unknown) {
-      setAudioError(playbackErrorMessage(error));
+      setAudioError(playbackErrorMessage(error, copy.voiceFailed));
       setPlaying(false);
     }
   }
@@ -339,12 +466,13 @@ export function StoryReader({ storyId }: { storyId: string }) {
     try {
       const result = await makeMp3(story.text, narrationSpeed, language, story.id, true);
       if (!result.savedAudioUrl) {
-        throw new Error("Narration played, but it could not be saved on this story.");
+        throw new Error(copy.narrationUnsaved);
       }
+      clearListenPosition(story.id);
       rememberNarration(result);
       setPlaying(true);
     } catch (error: unknown) {
-      setAudioError(playbackErrorMessage(error));
+      setAudioError(playbackErrorMessage(error, copy.voiceFailed));
     }
   }
 
@@ -354,7 +482,7 @@ export function StoryReader({ storyId }: { storyId: string }) {
     if (!wantsPlay) return;
     playOnce.current = true;
     void onTogglePlay();
-    // Start playback once when the library asked for it.
+    // Start playback once when Home or the library asked for it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [story, loading]);
 
@@ -363,6 +491,7 @@ export function StoryReader({ storyId }: { storyId: string }) {
     if (!audio || !Number.isFinite(value)) return;
     audio.currentTime = value;
     setProgress(value);
+    savePosition(true);
   }
 
   function skip(seconds: number) {
@@ -372,27 +501,46 @@ export function StoryReader({ storyId }: { storyId: string }) {
     const next = skipWithin(audio.currentTime, seconds, limit);
     audio.currentTime = next;
     setProgress(next);
+    savePosition(true);
   }
 
   async function onDownloadKeepsake() {
-    if (poster.status !== "ready") {
-      await generatePoster();
-      return;
+    setDownloadError("");
+    try {
+      const current = poster.posterUrl ? poster : await requestArtwork("download");
+      const url = current?.posterUrl;
+      if (!url) throw new Error(posterCopy.couldNotDownload);
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(posterCopy.couldNotDownload);
+      downloadPosterPng(await response.blob(), title);
+    } catch (error: unknown) {
+      setDownloadError(getErrorMessage(error, posterCopy.couldNotDownload));
     }
-    const response = await fetch(poster.url);
-    if (!response.ok) throw new Error("Could not download this poster.");
-    const blob = await response.blob();
-    downloadPosterPng(blob, title);
   }
 
-  const title = story?.title?.trim() || (loading ? "Opening story…" : "Bedtime story");
+  function retryCover() {
+    void requestArtwork("reload").catch(() => {
+      setPoster((state) => ({ ...state, status: "error", message: posterCopy.coverFailed }));
+    });
+  }
+
+  function newCover() {
+    void requestArtwork("regenerate").catch((error: unknown) => {
+      setPoster({ status: "error", message: getErrorMessage(error, posterCopy.couldNotCreate) });
+    });
+  }
+
+  const title = story?.title?.trim() || (loading ? copy.opening : copy.story);
   const childName = story?.mainCharacterName?.trim() || "";
   const narratorVoice = voices.find((voice) => voice.id === selectedVoiceId);
-  const narratorName = friendlyVoiceName(narratorVoice);
-  const spokenLanguage = languageLabel(language);
+  const recordedVoice = voices.find((voice) => voice.id === story?.audioVoiceId);
+  const shownVoice = savedAudioUrl && story?.audioVoiceId ? recordedVoice : narratorVoice;
+  const shownName =
+    friendlyVoiceName(shownVoice) || (savedAudioUrl && story?.audioVoiceId ? copy.savedNarrator : friendlyVoiceName(narratorVoice));
+  const spokenLanguage = storyLanguageName(story?.audioLanguage || language, copy);
   const creditLine = [
-    childName ? `For ${childName}` : "",
-    narratorName && spokenLanguage ? `${narratorName} in ${spokenLanguage}` : narratorName || spokenLanguage,
+    childName ? fill(copy.forChild, { name: childName }) : "",
+    shownName && spokenLanguage ? fill(copy.voiceIn, { name: shownName, language: spokenLanguage }) : shownName || spokenLanguage,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -401,34 +549,39 @@ export function StoryReader({ storyId }: { storyId: string }) {
   const seekMax = knownDuration ? duration : 0;
   const seekValue = Math.min(progress, seekMax || progress);
   const progressPct = seekMax > 0 ? Math.min(100, (seekValue / seekMax) * 100) : 0;
-  const cover = coverPresentation(poster, brokenCoverUrl);
-  const coverFallback =
-    cover.showFallbackArt || (poster.status === "ready" && poster.outcome === "text_fallback");
+  const coverUrl = poster.coverUrl ?? story?.coverUrl ?? null;
+  const illustrationUrl = poster.illustrationUrl ?? story?.illustrationUrl ?? null;
+  const posterUrl = poster.posterUrl ?? story?.posterUrl ?? null;
+  const hasSavedArt = Boolean(coverUrl || illustrationUrl || posterUrl);
+  const painting = poster.status === "generating" || poster.status === "pending";
+  const backHref = from === "home" ? "/?tab=home" : "/?tab=library";
+  const backLabel = from === "home" ? messages.nav.home : copy.back;
 
-  let playLabel = "Play";
-  if (isMakingMp3) playLabel = "Preparing narration";
-  else if (playing) playLabel = "Pause";
-  else if (!savedAudioUrl) playLabel = "Play";
+  let playLabel = copy.play;
+  if (isMakingMp3) playLabel = copy.preparing;
+  else if (playing) playLabel = copy.pause;
+  else if (!savedAudioUrl) playLabel = copy.prepare;
 
   let statusText = "";
-  if (isMakingMp3) statusText = "Preparing narration";
-  else if (playing) statusText = "Playing";
-  else if (audioIdentity === "stale") statusText = "Older recording. Regenerate narration to use the current voice setup.";
-  else if (story && !loadError) statusText = "Ready to play";
+  if (isMakingMp3) statusText = copy.preparing;
+  else if (playing) statusText = copy.playing;
+  else if (audioIdentity === "stale") statusText = copy.stale;
+  else if (!savedAudioUrl) statusText = copy.notReady;
+  else if (story && !loadError) statusText = copy.ready;
 
   return (
     <main className="pageRoot storyPage pageRoot--calm">
       <div className="overlay">
         <div className="container listen">
           <header className="listenBar">
-            <Link href="/?tab=library" className="listenBar__back">
+            <Link href={backHref} className="listenBar__back">
               <IconChevronLeft />
-              My Stories
+              {backLabel}
             </Link>
             <button
               type="button"
               className="listenBar__more"
-              aria-label="More actions"
+              aria-label={copy.more}
               aria-haspopup="dialog"
               onClick={() => setMoreOpen(true)}
               disabled={!story || Boolean(loadError)}
@@ -442,43 +595,37 @@ export function StoryReader({ storyId }: { storyId: string }) {
               <span className="errorText">{loadError}</span>
               <div className="errorActions">
                 <button className="button buttonPrimary" type="button" onClick={() => void loadStory()}>
-                  Try again
+                  {copy.tryAgain}
                 </button>
               </div>
             </div>
           ) : null}
 
-          <div className={`listenCover${coverFallback ? " listenCover--fallback" : ""}`}>
-            {cover.showImage && cover.imageUrl ? (
-              <Image
-                key={`${cover.imageUrl}:${coverAttempt}`}
-                src={cover.imageUrl}
-                alt={`${title} cover`}
-                width={800}
-                height={800}
-                unoptimized
-                className="listenCover__img"
-                onError={() => {
-                  if (cover.imageUrl) setBrokenCoverUrl(cover.imageUrl);
-                }}
+          <div className="listenCover" data-testid="player-cover" aria-busy={loading || painting}>
+            {loading ? (
+              <span className="listenCover__skeleton" aria-hidden />
+            ) : hasSavedArt && !coverFailed ? (
+              <StoryCover
+                key={[coverUrl, illustrationUrl, posterUrl].join("|")}
+                coverUrl={coverUrl}
+                illustrationUrl={illustrationUrl}
+                posterUrl={posterUrl}
+                priority
+                onAllFailed={() => setCoverFailed(true)}
               />
             ) : (
-              <div className="listenCover__art" role="img" aria-label={story?.genre ? `${story.genre} cover` : "Story cover"}>
-                <span className="listenCover__moon" aria-hidden />
-                <span className="listenCover__caption">
-                  {poster.status === "generating" || (loading && !loadError) ? "Painting the cover…" : story?.genre || "Bedtime"}
-                </span>
+              <div className="listenCover__placeholder" role="img" aria-label={painting ? posterCopy.painting : posterCopy.simpleCover}>
+                <BrandMark variant="onDark" className="listenCover__mark" label={null} />
+                <span>{painting ? posterCopy.painting : posterCopy.simpleCover}</span>
               </div>
             )}
           </div>
-          {cover.message ? (
-            <p className="listenHint" role="status">
-              {cover.message}
-              {cover.showRetry ? (
-                <button type="button" className="listenRetry" onClick={() => void generatePoster()}>
-                  Try cover again
-                </button>
-              ) : null}
+          {!loading && !painting && (coverFailed || (poster.status === "error" && !hasSavedArt)) ? (
+            <p className="listenHint listenHint--cover" role="status">
+              {coverFailed ? posterCopy.coverFailed : poster.message || posterCopy.couldNotCreate}
+              <button type="button" className="listenRetry" onClick={coverFailed ? retryCover : newCover}>
+                {coverFailed ? copy.reloadCover : copy.newCover}
+              </button>
             </p>
           ) : null}
 
@@ -487,7 +634,7 @@ export function StoryReader({ storyId }: { storyId: string }) {
           {story && !loadError ? (
             <p className="listenSaved">
               <IconCheck />
-              Saved to My Stories
+              {copy.savedTo}
             </p>
           ) : null}
 
@@ -496,7 +643,7 @@ export function StoryReader({ storyId }: { storyId: string }) {
               <>
                 {audioError}
                 <button type="button" className="listenRetry" onClick={() => void onTogglePlay()}>
-                  Try again
+                  {copy.tryAgain}
                 </button>
               </>
             ) : (
@@ -514,20 +661,23 @@ export function StoryReader({ storyId }: { storyId: string }) {
               value={seekMax ? seekValue : 0}
               style={{ ["--pct" as string]: `${progressPct}%` }}
               onChange={(event) => onSeek(Number(event.target.value))}
-              disabled={!savedAudioUrl || isMakingMp3}
-              aria-label="Timeline"
+              disabled={!savedAudioUrl || isMakingMp3 || !knownDuration}
+              aria-label={copy.timeline}
               aria-valuemin={0}
               aria-valuemax={Math.round(seekMax || 0)}
               aria-valuenow={Math.round(seekValue || 0)}
               aria-valuetext={
                 savedAudioUrl
-                  ? `${formatClock(seekValue)} of ${knownDuration ? formatClock(duration) : "unknown length"}`
-                  : "No audio yet"
+                  ? fill(copy.progress, {
+                      current: formatLocaleClock(seekValue),
+                      total: knownDuration ? formatLocaleClock(duration) : copy.unknownLength,
+                    })
+                  : copy.noAudio
               }
             />
             <div className="listenTimes">
-              <span>{formatClock(savedAudioUrl ? seekValue : 0)}</span>
-              <span>{knownDuration ? formatClock(duration) : "–:––"}</span>
+              <span>{formatLocaleClock(savedAudioUrl ? seekValue : 0)}</span>
+              <span>{knownDuration ? formatLocaleClock(duration) : "–:––"}</span>
             </div>
           </div>
 
@@ -535,15 +685,18 @@ export function StoryReader({ storyId }: { storyId: string }) {
             <button
               type="button"
               className="listenSkip"
-              aria-label="Back 15 seconds"
+              aria-label={copy.back15}
               onClick={() => skip(-15)}
-              disabled={!savedAudioUrl || isMakingMp3}
+              disabled={!savedAudioUrl || isMakingMp3 || !knownDuration}
             >
-              <span aria-hidden>−15</span>
+              <IconSkip back />
+              <span className="listenSkip__label" aria-hidden>
+                15
+              </span>
             </button>
             <button
               type="button"
-              className="listenPlay"
+              className={`listenPlay${!savedAudioUrl && !playing ? " listenPlay--prepare" : ""}`}
               onClick={() => void onTogglePlay()}
               disabled={!story || isMakingMp3 || Boolean(loadError)}
               aria-label={playLabel}
@@ -553,18 +706,23 @@ export function StoryReader({ storyId }: { storyId: string }) {
                 <span className="listenSpinner" />
               ) : playing ? (
                 <span className="listenPause" aria-hidden />
-              ) : (
+              ) : savedAudioUrl ? (
                 <span className="listenTriangle" aria-hidden />
+              ) : (
+                <span className="listenPrepare">{copy.prepare}</span>
               )}
             </button>
             <button
               type="button"
               className="listenSkip"
-              aria-label="Forward 15 seconds"
+              aria-label={copy.forward15}
               onClick={() => skip(15)}
-              disabled={!savedAudioUrl || isMakingMp3}
+              disabled={!savedAudioUrl || isMakingMp3 || !knownDuration}
             >
-              <span aria-hidden>+15</span>
+              <IconSkip />
+              <span className="listenSkip__label" aria-hidden>
+                15
+              </span>
             </button>
           </div>
 
@@ -575,7 +733,7 @@ export function StoryReader({ storyId }: { storyId: string }) {
                 className="listenSpeed__button"
                 aria-haspopup="listbox"
                 aria-expanded={speedOpen}
-                aria-label={`Playback speed ${formatRate(playbackRate)}`}
+                aria-label={fill(copy.speedValue, { rate: formatRate(playbackRate) })}
                 onClick={() => setSpeedOpen((open) => !open)}
               >
                 {formatRate(playbackRate)}
@@ -584,7 +742,7 @@ export function StoryReader({ storyId }: { storyId: string }) {
                 </span>
               </button>
               {speedOpen ? (
-                <ul className="listenSpeed__menu" role="listbox" aria-label="Playback speed">
+                <ul className="listenSpeed__menu" role="listbox" aria-label={copy.speed}>
                   {PLAYBACK_RATES.map((rate) => (
                     <li key={rate}>
                       <button
@@ -605,11 +763,11 @@ export function StoryReader({ storyId }: { storyId: string }) {
             </div>
             <button type="button" className="listenNarration" onClick={() => setNarrationOpen(true)}>
               <IconWave />
-              Narration
+              {copy.narration}
             </button>
           </div>
 
-          <section className="listenScriptCard" aria-label="Read story">
+          <section className="listenScriptCard" aria-label={copy.readStory}>
             <button
               type="button"
               className="listenScript"
@@ -617,17 +775,75 @@ export function StoryReader({ storyId }: { storyId: string }) {
               onClick={() => setScriptOpen((open) => !open)}
             >
               <IconBook />
-              <span>Read story</span>
+              <span>{copy.readStory}</span>
               <IconChevron down={!scriptOpen} />
             </button>
             {scriptOpen ? (
-              <div className="listenScript__body">
-                {loading ? <p className="listenHint">Loading the script…</p> : null}
+              <div
+                className="listenScript__body"
+                style={{ ["--read-size" as string]: ["1.125rem", "1.25rem", "1.45rem"][readScale] }}
+              >
+                <div className="listenReadTools">
+                  <span>{copy.textSize}</span>
+                  <button type="button" onClick={() => setReadScale((size) => Math.max(0, size - 1))} disabled={readScale === 0} aria-label={copy.smaller}>
+                    A−
+                  </button>
+                  <button type="button" onClick={() => setReadScale((size) => Math.min(2, size + 1))} disabled={readScale === 2} aria-label={copy.larger}>
+                    A+
+                  </button>
+                </div>
+                {loading ? <p className="listenHint">{copy.loadingScript}</p> : null}
                 {story?.text ? <p className="listenScript__text">{story.text}</p> : null}
-                {!loading && !story?.text ? <p className="listenHint">This story has no script yet.</p> : null}
+                {!loading && !story?.text ? <p className="listenHint">{copy.noScript}</p> : null}
               </div>
             ) : null}
           </section>
+
+          {story && !loadError ? (
+            <section className="listenKeepsake" aria-labelledby="keepsake-heading">
+              <h2 id="keepsake-heading" className="listenKeepsake__title">
+                {copy.keepsakeTitle}
+              </h2>
+              <p className="listenKeepsake__body">{copy.keepsakeBody}</p>
+              {posterUrl ? (
+                <figure className="listenKeepsake__frame">
+                  {/* The saved 4:5 keepsake, shown whole at its own proportions: the same file Save my poster downloads. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={posterUrl}
+                    alt={fill(copy.keepsakeAlt, { title })}
+                    className="listenKeepsake__img"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </figure>
+              ) : (
+                <StoryArtwork
+                  kind="keepsake"
+                  title={title}
+                  caption={poster.caption || story.posterCaption}
+                  dedication={poster.dedication || story.dedication}
+                  illustrationUrl={poster.status === "fallback" || poster.status === "error" ? null : illustrationUrl}
+                  status={poster.status}
+                  message={poster.message}
+                  large={readScale > 0}
+                />
+              )}
+              <button
+                type="button"
+                className="savePoster"
+                onClick={() => void onDownloadKeepsake()}
+                disabled={painting}
+              >
+                {posterCopy.save}
+              </button>
+              {downloadError ? (
+                <p className="listenStatus listenStatus--error" role="alert">
+                  {downloadError}
+                </p>
+              ) : null}
+            </section>
+          ) : null}
 
           <audio
             ref={audioRef}
@@ -635,69 +851,90 @@ export function StoryReader({ storyId }: { storyId: string }) {
             playsInline
             className="listenAudio"
             onPlay={() => setPlaying(true)}
-            onPause={() => setPlaying(false)}
-            onEnded={() => setPlaying(false)}
-            onTimeUpdate={(event) => setProgress(event.currentTarget.currentTime)}
-            onLoadedMetadata={(event) => setDuration(event.currentTarget.duration || 0)}
+            onPause={() => {
+              setPlaying(false);
+              savePosition(true);
+            }}
+            onEnded={() => {
+              setPlaying(false);
+              clearListenPosition(storyId);
+            }}
+            onError={() => {
+              if (!savedAudioUrl) return;
+              setPlaying(false);
+              setAudioBroken(true);
+              setAudioError(copy.audioLoadFailed);
+            }}
+            onTimeUpdate={(event) => {
+              setProgress(event.currentTarget.currentTime);
+              savePosition(false);
+            }}
+            onLoadedMetadata={(event) => {
+              const audio = event.currentTarget;
+              const nextDuration = audio.duration || 0;
+              setDuration(nextDuration);
+              setAudioBroken(false);
+              const saved = readListenPosition(storyId, savedAudioUrl);
+              if (saved && nextDuration > saved.t + 1) {
+                audio.currentTime = saved.t;
+                setProgress(saved.t);
+              }
+            }}
             onDurationChange={(event) => setDuration(event.currentTarget.duration || 0)}
           />
         </div>
       </div>
 
       {moreOpen ? (
-        <QuietSheet title="Story actions" onClose={() => setMoreOpen(false)}>
+        <QuietSheet title={copy.actions} closeLabel={messages.common.close} onClose={() => setMoreOpen(false)}>
           <button
             type="button"
             className="sheetAction"
-            onClick={() => void generatePoster()}
+            onClick={newCover}
             disabled={!story || poster.status === "generating"}
           >
-            {poster.status === "generating" ? "Painting the cover…" : "New cover artwork"}
+            {poster.status === "generating" ? posterCopy.painting : copy.newCover}
           </button>
           <button
             type="button"
             className="sheetAction"
-            onClick={() => void onDownloadKeepsake().catch(() => {})}
+            onClick={() => void onDownloadKeepsake()}
             disabled={!story || poster.status === "generating"}
           >
-            {poster.status === "ready" ? "Download keepsake poster" : "Create keepsake poster"}
+            {posterCopy.save}
           </button>
-          {cover.showRetry ? (
-            <button
-              type="button"
-              className="sheetAction"
-              onClick={() => void generatePoster()}
-            >
-              Try cover again
+          {coverFailed ? (
+            <button type="button" className="sheetAction" onClick={retryCover}>
+              {copy.reloadCover}
             </button>
           ) : null}
-          <p className="listenHint">Artwork and the keepsake use this story. Narration stays available either way.</p>
+          <p className="listenHint">{copy.actionsHint}</p>
         </QuietSheet>
       ) : null}
 
       {narrationOpen ? (
-        <QuietSheet title="Narration" onClose={() => setNarrationOpen(false)}>
+        <QuietSheet title={copy.narration} closeLabel={messages.common.close} onClose={() => setNarrationOpen(false)}>
           <label className="createSheet__field">
-            <span className="createScreen__label">Voice</span>
+            <span className="createScreen__label">{copy.voice}</span>
             <select
               value={selectedVoiceId}
               onChange={(event) => setSelectedVoiceId(event.target.value)}
               disabled={isLoadingVoices || isMakingMp3}
             >
-              {isLoadingVoices ? <option value="">Loading voices…</option> : null}
-              {voicesError ? <option value="">Voices unavailable</option> : null}
+              {isLoadingVoices ? <option value="">{copy.loadingVoices}</option> : null}
+              {voicesError ? <option value="">{copy.voicesUnavailable}</option> : null}
               {!isLoadingVoices && !voicesError
                 ? voices.map((voice) => (
                     <option key={voice.id} value={voice.id}>
                       {friendlyVoiceName(voice) || voice.id}
-                      {voice.language ? ` · ${languageLabel(voice.language)}` : ""}
+                      {voice.language ? ` · ${storyLanguageName(voice.language, copy)}` : ""}
                     </option>
                   ))
                 : null}
             </select>
             {voicesError ? (
               <button className="listenRetry" type="button" onClick={() => void fetchVoices()}>
-                Retry voices
+                {copy.retryVoices}
               </button>
             ) : null}
           </label>
@@ -708,10 +945,10 @@ export function StoryReader({ storyId }: { storyId: string }) {
             onClick={() => void onRegenerate()}
             disabled={!story || isMakingMp3}
           >
-            {isMakingMp3 ? "Regenerating narration…" : "Regenerate narration"}
+            {isMakingMp3 ? copy.regenerating : copy.regenerate}
           </button>
           <p className="listenHint">
-            Regenerate makes a new recording with this voice and narration speed. The old recording stays until the new one passes its checks. Playback speed does not call the voice service.
+            {copy.regenerateHint}
           </p>
         </QuietSheet>
       ) : null}

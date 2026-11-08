@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { Capacitor } from "@capacitor/core";
 import { StatusBar, Style } from "@capacitor/status-bar";
 
-const STATUS_BAR_HEX = "#5e4a9c";
+const STATUS_BAR_HEX = "#11182B";
 
 /**
  * iOS/Android Capacitor: status bar matches app chrome; overlay + safe-area CSS on web content.
@@ -19,7 +19,8 @@ export function CapacitorNativeShell() {
     void (async () => {
       try {
         await StatusBar.setOverlaysWebView({ overlay: true });
-        await StatusBar.setStyle({ style: Style.Dark });
+        const warm = document.documentElement.dataset.hhTheme === "warm";
+        await StatusBar.setStyle({ style: warm ? Style.Light : Style.Dark });
         try {
           await StatusBar.setBackgroundColor({ color: STATUS_BAR_HEX });
         } catch {

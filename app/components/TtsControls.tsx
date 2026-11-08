@@ -1,5 +1,7 @@
 "use client";
 
+import { useInterfaceLocale } from "@/app/components/LocaleProvider";
+import { fill } from "@/lib/i18n/locales";
 import { clampTtsSpeed, TTS_SPEED_MAX, TTS_SPEED_MIN, TTS_SPEED_STEP } from "@/lib/tts/ttsLimits";
 
 type Props = {
@@ -8,11 +10,13 @@ type Props = {
 };
 
 export function TtsControls({ speed, onSpeedChange }: Props) {
+  const { messages } = useInterfaceLocale();
+  const copy = messages.reader;
   return (
     <section className="panel">
       <div className="controlsRow">
         <div className="controlBlock">
-          <div className="label">Narration speed</div>
+          <div className="label">{copy.narrationSpeed}</div>
           <div className="stepper">
             <button
               type="button"
@@ -31,7 +35,10 @@ export function TtsControls({ speed, onSpeedChange }: Props) {
             </button>
           </div>
           <p className="hint">
-            Recording pace, {TTS_SPEED_MIN.toFixed(2)}–{TTS_SPEED_MAX.toFixed(2)}. This is separate from the playback speed on the story page. A calmer bedtime preset stays off until someone has listened and approved it.
+            {fill(copy.speedHint, {
+              min: TTS_SPEED_MIN.toFixed(2),
+              max: TTS_SPEED_MAX.toFixed(2),
+            })}
           </p>
         </div>
       </div>

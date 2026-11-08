@@ -1,9 +1,31 @@
 :root {
-  /* -------------------------------------------------------------------------
-     Bedtime design system — midnight navy + warm gold (token-first)
-     ------------------------------------------------------------------------- */
+  /* Happy Horse — one semantic colour system.
+     Identity (logo only): cream #F6F1E9, brown #47312A, terracotta #C17C63.
+     Terracotta is not a control colour. */
+  --color-background: #11182b;
+  --color-surface: #1b243b;
+  --color-surface-raised: #25314c;
+  --color-text: #f4f1eb;
+  --color-text-secondary: #b6bdcf;
+  --color-champagne: #d6be91;
+  --color-lavender: #b9aedc;
+  --color-sage: #a8c4b5;
+  --color-coral: #e6aaa5;
+  --color-divider: #39435c;
+  --color-input-border: #8491ad;
+  --color-cream: #f6f1e9;
+  --color-brown: #47312a;
+  --color-terracotta: #c17c63;
+
+  --font-geist-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "PingFang SC", "PingFang HK",
+    "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans TC", "Noto Sans SC", "Noto Sans JP", "Noto Sans CJK TC",
+    "Noto Sans CJK SC", "Noto Sans CJK JP", "Microsoft JhengHei", "Microsoft YaHei", "Yu Gothic UI", "Meiryo", "Nirmala UI",
+    "Noto Sans Devanagari", "Noto Naskh Arabic", "Noto Sans Arabic", "Geeza Pro", sans-serif;
+  --font-display: var(--font-geist-sans);
+  --font-geist-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
   --radius-sm: 12px;
-  --radius-md: 18px;
+  --radius-md: 16px;
   --radius-lg: 22px;
   --radius-xl: 28px;
   --radius-pill: 999px;
@@ -11,71 +33,122 @@
   --space-1: 8px;
   --space-2: 12px;
   --space-3: 16px;
-  --space-4: 20px;
-  --space-5: 28px;
+  --space-4: 24px;
+  --space-5: 32px;
 
   --tap-min: 44px;
-  --btn-height: 54px;
-  --input-height: 54px;
+  --btn-height: 52px;
+  --input-height: 52px;
   --chip-height: 44px;
 
-  /* Surfaces */
-  --bg-deep: #0a0e22;
-  --bg-mid: #111832;
-  --bg-low: #060814;
-  --surface-0: rgba(26, 34, 72, 0.94);
-  --surface-1: rgba(32, 42, 88, 0.78);
-  --surface-2: rgba(48, 58, 118, 0.45);
-  --border-subtle: rgba(186, 198, 255, 0.12);
-  --border-muted: rgba(186, 198, 255, 0.18);
-  --divider: rgba(255, 255, 255, 0.08);
+  --bg-deep: var(--color-background);
+  --bg-mid: var(--color-background);
+  --bg-low: var(--color-background);
+  --surface-0: var(--color-surface);
+  --surface-1: var(--color-surface);
+  --surface-2: var(--color-surface-raised);
+  --border-subtle: var(--color-divider);
+  --border-muted: var(--color-divider);
+  --divider: var(--color-divider);
 
-  /* Typography colors */
-  --text: #f3f4ff;
-  --text-muted: rgba(203, 210, 242, 0.78);
-  --text-soft: rgba(168, 180, 228, 0.62);
+  --text: var(--color-text);
+  --text-muted: var(--color-text-secondary);
+  --text-soft: var(--color-text-secondary);
 
-  /* Primary CTA — warm gold */
-  --accent-gold: #e4bc3c;
-  --accent-gold-mid: #f0cf52;
-  --accent-gold-soft: #f5da6a;
-  --accent-ink: #1a1528;
+  --accent-gold: var(--color-champagne);
+  --accent-gold-mid: var(--color-champagne);
+  --accent-gold-soft: transparent;
+  --accent-ink: var(--color-background);
 
-  /* Secondary controls */
-  --control-fill: rgba(52, 62, 120, 0.55);
-  --control-fill-pressed: rgba(62, 74, 140, 0.7);
+  --control-fill: var(--color-surface-raised);
+  --control-fill-pressed: var(--color-surface);
 
-  /* Legacy / accent aliases (components still reference these) */
-  --logo-purple: #9b8fd9;
-  --logo-purple-deep: #d8d2f5;
-  --logo-purple-mid: #b0a3e8;
-  --logo-purple-soft: rgba(176, 163, 232, 0.35);
+  --logo-purple: var(--color-lavender);
+  --logo-purple-deep: var(--color-lavender);
+  --logo-purple-mid: var(--color-lavender);
+  --logo-purple-soft: rgba(185, 174, 220, 0.28);
 
-  --bg1: var(--bg-deep);
-  --bg2: var(--bg-mid);
-  --bg3: var(--bg-low);
+  --bg1: var(--color-background);
+  --bg2: var(--color-background);
+  --bg3: var(--color-background);
 
-  --card: var(--surface-1);
-  --card2: var(--surface-2);
-  --border: var(--border-muted);
-  --muted: var(--text-muted);
+  --card: var(--color-surface);
+  --card2: var(--color-surface-raised);
+  --border: var(--color-divider);
+  --muted: var(--color-text-secondary);
 
-  --accent: var(--accent-gold);
-  --accent2: var(--accent-gold-mid);
-  --accent-glow: rgba(228, 188, 60, 0.2);
-  --accent-glow-soft: rgba(240, 207, 82, 0.12);
-  --primary-ink: var(--accent-ink);
+  --accent: var(--color-champagne);
+  --accent2: var(--color-champagne);
+  --accent-glow: transparent;
+  --accent-glow-soft: transparent;
+  --primary-ink: var(--color-background);
 
-  --capy: #9b8fd9;
+  --capy: var(--color-lavender);
 
-  /* Shadow / elevation (subtle, night-friendly) */
-  --shadow-card: 0 16px 40px rgba(0, 0, 0, 0.35);
-  --shadow-glow-gold: 0 0 24px rgba(228, 188, 60, 0.18);
+  --shadow-card: 0 12px 32px rgba(0, 0, 0, 0.28);
+  --shadow-glow-gold: none;
+
+  /* Warm daytime screens (Home, Create, My Stories, Profile). Plum carries text and primary actions.
+     Plum on ivory is about 12:1, muted on ivory about 5.8:1. No bright yellow. */
+  --warm-ivory: #fbf6ee;
+  --warm-ivory-deep: #f4eadf;
+  --warm-card: #fffdf9;
+  --warm-peach: #f7d5c2;
+  --warm-peach-soft: #fcebe1;
+  --warm-peach-line: #ebcbb7;
+  --warm-lavender: #ddd4f3;
+  --warm-lavender-soft: #f0ebfa;
+  --warm-plum: #3d2647;
+  --warm-plum-soft: #5b4366;
+  --warm-muted: #6d5a70;
+  --warm-line: #eadccf;
+  --warm-field: #9c8796;
+  --warm-error: #8e3b32;
+  --warm-shadow: 0 10px 28px rgba(61, 38, 71, 0.09);
+
+  /* Night player accents that match the warm screens: peach play control, lavender secondary. */
+  --night-peach: #f4c3a8;
+  --night-lavender: #c9bfe8;
+
+  /* Rounded where the platform has it (Safari and the iOS app), then the script's own face. */
+  --font-script: var(--font-geist-sans);
+  --font-rounded: ui-rounded, "SF Pro Rounded", var(--font-script);
 }
 
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+}
+
+/* Script-specific system faces. The lang attribute lets the browser pick the right Han, Kana, Devanagari, or Arabic glyphs. */
+html[lang="zh-Hant"] {
+  --font-script: "PingFang TC", "Noto Sans TC", "Noto Sans CJK TC", "Microsoft JhengHei", "Hiragino Sans CNS", var(--font-geist-sans);
+  font-family: var(--font-script);
+}
+html[lang="zh-Hans"] {
+  --font-script: "PingFang SC", "Noto Sans SC", "Noto Sans CJK SC", "Microsoft YaHei", "Hiragino Sans GB", var(--font-geist-sans);
+  font-family: var(--font-script);
+}
+html[lang="ja"] {
+  --font-script: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Yu Gothic", "Meiryo", "Noto Sans JP", "Noto Sans CJK JP", var(--font-geist-sans);
+  font-family: var(--font-script);
+}
+html[lang="hi"] {
+  --font-script: "Nirmala UI", "Noto Sans Devanagari", var(--font-geist-sans);
+  font-family: var(--font-script);
+}
+html[lang="ar"] {
+  --font-script: "Geeza Pro", "Noto Naskh Arabic", "Noto Sans Arabic", "Segoe UI", var(--font-geist-sans);
+  font-family: var(--font-script);
+}
+html[lang="ru"] {
+  --font-script: system-ui, -apple-system, "Segoe UI", var(--font-geist-sans);
+  font-family: var(--font-script);
+}
+
+html[data-hh-theme="warm"],
+html[data-hh-theme="warm"] body {
+  background: var(--warm-ivory-deep);
 }
 
 html,
@@ -87,9 +160,11 @@ body {
   margin: 0;
   min-height: 100vh;
   min-height: 100dvh;
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
-  font-size: 16px;
-  background: var(--bg-deep);
+  font-family: var(--font-geist-sans);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  background: var(--color-background);
 }
 
 button,
@@ -99,6 +174,11 @@ textarea {
   font-family: inherit;
 }
 
+:focus-visible {
+  outline: 2px solid var(--color-lavender);
+  outline-offset: 2px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -106,31 +186,17 @@ textarea {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
 .lulu-bg {
-  background: radial-gradient(
-      1000px 500px at 15% 10%,
-      var(--accent-glow),
-      transparent 60%
-    ),
-    radial-gradient(
-      900px 450px at 85% 20%,
-      var(--accent-glow-soft),
-      transparent 55%
-    ),
-    linear-gradient(180deg, var(--bg1), var(--bg2));
+  background: var(--color-background);
 }
 
-.lulu-card {
-  background: var(--surface-0);
-  border: 1px solid var(--border-subtle);
-  backdrop-filter: blur(14px);
-}
-
+.lulu-card,
 .lulu-card-soft {
-  background: var(--surface-1);
-  border: 1px solid var(--border-subtle);
-  backdrop-filter: blur(14px);
+  background: var(--color-surface);
+  border: 1px solid var(--color-divider);
+  backdrop-filter: none;
 }

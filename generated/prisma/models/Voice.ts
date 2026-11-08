@@ -20,8 +20,18 @@ export type VoiceModel = runtime.Types.Result.DefaultSelection<Prisma.$VoicePayl
 
 export type AggregateVoice = {
   _count: VoiceCountAggregateOutputType | null
+  _avg: VoiceAvgAggregateOutputType | null
+  _sum: VoiceSumAggregateOutputType | null
   _min: VoiceMinAggregateOutputType | null
   _max: VoiceMaxAggregateOutputType | null
+}
+
+export type VoiceAvgAggregateOutputType = {
+  voiceVersion: number | null
+}
+
+export type VoiceSumAggregateOutputType = {
+  voiceVersion: number | null
 }
 
 export type VoiceMinAggregateOutputType = {
@@ -31,7 +41,18 @@ export type VoiceMinAggregateOutputType = {
   provider: string | null
   voiceId: string | null
   language: string | null
+  recordingLocale: string | null
+  scriptVersion: string | null
+  status: string | null
+  voiceVersion: number | null
+  requiresVerification: boolean | null
+  consentAt: Date | null
+  consentTextVersion: string | null
+  idempotencyKey: string | null
+  sampleFilename: string | null
+  sampleStorageUrl: string | null
   createdAt: Date | null
+  updatedAt: Date | null
 }
 
 export type VoiceMaxAggregateOutputType = {
@@ -41,7 +62,18 @@ export type VoiceMaxAggregateOutputType = {
   provider: string | null
   voiceId: string | null
   language: string | null
+  recordingLocale: string | null
+  scriptVersion: string | null
+  status: string | null
+  voiceVersion: number | null
+  requiresVerification: boolean | null
+  consentAt: Date | null
+  consentTextVersion: string | null
+  idempotencyKey: string | null
+  sampleFilename: string | null
+  sampleStorageUrl: string | null
   createdAt: Date | null
+  updatedAt: Date | null
 }
 
 export type VoiceCountAggregateOutputType = {
@@ -51,10 +83,29 @@ export type VoiceCountAggregateOutputType = {
   provider: number
   voiceId: number
   language: number
+  recordingLocale: number
+  scriptVersion: number
+  status: number
+  voiceVersion: number
+  requiresVerification: number
+  consentAt: number
+  consentTextVersion: number
+  idempotencyKey: number
+  sampleFilename: number
+  sampleStorageUrl: number
   createdAt: number
+  updatedAt: number
   _all: number
 }
 
+
+export type VoiceAvgAggregateInputType = {
+  voiceVersion?: true
+}
+
+export type VoiceSumAggregateInputType = {
+  voiceVersion?: true
+}
 
 export type VoiceMinAggregateInputType = {
   id?: true
@@ -63,7 +114,18 @@ export type VoiceMinAggregateInputType = {
   provider?: true
   voiceId?: true
   language?: true
+  recordingLocale?: true
+  scriptVersion?: true
+  status?: true
+  voiceVersion?: true
+  requiresVerification?: true
+  consentAt?: true
+  consentTextVersion?: true
+  idempotencyKey?: true
+  sampleFilename?: true
+  sampleStorageUrl?: true
   createdAt?: true
+  updatedAt?: true
 }
 
 export type VoiceMaxAggregateInputType = {
@@ -73,7 +135,18 @@ export type VoiceMaxAggregateInputType = {
   provider?: true
   voiceId?: true
   language?: true
+  recordingLocale?: true
+  scriptVersion?: true
+  status?: true
+  voiceVersion?: true
+  requiresVerification?: true
+  consentAt?: true
+  consentTextVersion?: true
+  idempotencyKey?: true
+  sampleFilename?: true
+  sampleStorageUrl?: true
   createdAt?: true
+  updatedAt?: true
 }
 
 export type VoiceCountAggregateInputType = {
@@ -83,7 +156,18 @@ export type VoiceCountAggregateInputType = {
   provider?: true
   voiceId?: true
   language?: true
+  recordingLocale?: true
+  scriptVersion?: true
+  status?: true
+  voiceVersion?: true
+  requiresVerification?: true
+  consentAt?: true
+  consentTextVersion?: true
+  idempotencyKey?: true
+  sampleFilename?: true
+  sampleStorageUrl?: true
   createdAt?: true
+  updatedAt?: true
   _all?: true
 }
 
@@ -125,6 +209,18 @@ export type VoiceAggregateArgs<ExtArgs extends runtime.Types.Extensions.Internal
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: VoiceAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: VoiceSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: VoiceMinAggregateInputType
@@ -155,6 +251,8 @@ export type VoiceGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
   take?: number
   skip?: number
   _count?: VoiceCountAggregateInputType | true
+  _avg?: VoiceAvgAggregateInputType
+  _sum?: VoiceSumAggregateInputType
   _min?: VoiceMinAggregateInputType
   _max?: VoiceMaxAggregateInputType
 }
@@ -166,8 +264,21 @@ export type VoiceGroupByOutputType = {
   provider: string
   voiceId: string
   language: string
+  recordingLocale: string | null
+  scriptVersion: string | null
+  status: string
+  voiceVersion: number
+  requiresVerification: boolean
+  consentAt: Date | null
+  consentTextVersion: string | null
+  idempotencyKey: string | null
+  sampleFilename: string | null
+  sampleStorageUrl: string | null
   createdAt: Date
+  updatedAt: Date
   _count: VoiceCountAggregateOutputType | null
+  _avg: VoiceAvgAggregateOutputType | null
+  _sum: VoiceSumAggregateOutputType | null
   _min: VoiceMinAggregateOutputType | null
   _max: VoiceMaxAggregateOutputType | null
 }
@@ -197,7 +308,18 @@ export type VoiceWhereInput = {
   provider?: Prisma.StringFilter<"Voice"> | string
   voiceId?: Prisma.StringFilter<"Voice"> | string
   language?: Prisma.StringFilter<"Voice"> | string
+  recordingLocale?: Prisma.StringNullableFilter<"Voice"> | string | null
+  scriptVersion?: Prisma.StringNullableFilter<"Voice"> | string | null
+  status?: Prisma.StringFilter<"Voice"> | string
+  voiceVersion?: Prisma.IntFilter<"Voice"> | number
+  requiresVerification?: Prisma.BoolFilter<"Voice"> | boolean
+  consentAt?: Prisma.DateTimeNullableFilter<"Voice"> | Date | string | null
+  consentTextVersion?: Prisma.StringNullableFilter<"Voice"> | string | null
+  idempotencyKey?: Prisma.StringNullableFilter<"Voice"> | string | null
+  sampleFilename?: Prisma.StringNullableFilter<"Voice"> | string | null
+  sampleStorageUrl?: Prisma.StringNullableFilter<"Voice"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Voice"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"Voice"> | Date | string
   user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
 }
 
@@ -208,13 +330,25 @@ export type VoiceOrderByWithRelationInput = {
   provider?: Prisma.SortOrder
   voiceId?: Prisma.SortOrder
   language?: Prisma.SortOrder
+  recordingLocale?: Prisma.SortOrderInput | Prisma.SortOrder
+  scriptVersion?: Prisma.SortOrderInput | Prisma.SortOrder
+  status?: Prisma.SortOrder
+  voiceVersion?: Prisma.SortOrder
+  requiresVerification?: Prisma.SortOrder
+  consentAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  consentTextVersion?: Prisma.SortOrderInput | Prisma.SortOrder
+  idempotencyKey?: Prisma.SortOrderInput | Prisma.SortOrder
+  sampleFilename?: Prisma.SortOrderInput | Prisma.SortOrder
+  sampleStorageUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
   user?: Prisma.UserOrderByWithRelationInput
 }
 
 export type VoiceWhereUniqueInput = Prisma.AtLeast<{
   id?: string
   userId_voiceId?: Prisma.VoiceUserIdVoiceIdCompoundUniqueInput
+  userId_idempotencyKey?: Prisma.VoiceUserIdIdempotencyKeyCompoundUniqueInput
   AND?: Prisma.VoiceWhereInput | Prisma.VoiceWhereInput[]
   OR?: Prisma.VoiceWhereInput[]
   NOT?: Prisma.VoiceWhereInput | Prisma.VoiceWhereInput[]
@@ -223,9 +357,20 @@ export type VoiceWhereUniqueInput = Prisma.AtLeast<{
   provider?: Prisma.StringFilter<"Voice"> | string
   voiceId?: Prisma.StringFilter<"Voice"> | string
   language?: Prisma.StringFilter<"Voice"> | string
+  recordingLocale?: Prisma.StringNullableFilter<"Voice"> | string | null
+  scriptVersion?: Prisma.StringNullableFilter<"Voice"> | string | null
+  status?: Prisma.StringFilter<"Voice"> | string
+  voiceVersion?: Prisma.IntFilter<"Voice"> | number
+  requiresVerification?: Prisma.BoolFilter<"Voice"> | boolean
+  consentAt?: Prisma.DateTimeNullableFilter<"Voice"> | Date | string | null
+  consentTextVersion?: Prisma.StringNullableFilter<"Voice"> | string | null
+  idempotencyKey?: Prisma.StringNullableFilter<"Voice"> | string | null
+  sampleFilename?: Prisma.StringNullableFilter<"Voice"> | string | null
+  sampleStorageUrl?: Prisma.StringNullableFilter<"Voice"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Voice"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"Voice"> | Date | string
   user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
-}, "id" | "userId_voiceId">
+}, "id" | "userId_voiceId" | "userId_idempotencyKey">
 
 export type VoiceOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -234,10 +379,23 @@ export type VoiceOrderByWithAggregationInput = {
   provider?: Prisma.SortOrder
   voiceId?: Prisma.SortOrder
   language?: Prisma.SortOrder
+  recordingLocale?: Prisma.SortOrderInput | Prisma.SortOrder
+  scriptVersion?: Prisma.SortOrderInput | Prisma.SortOrder
+  status?: Prisma.SortOrder
+  voiceVersion?: Prisma.SortOrder
+  requiresVerification?: Prisma.SortOrder
+  consentAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  consentTextVersion?: Prisma.SortOrderInput | Prisma.SortOrder
+  idempotencyKey?: Prisma.SortOrderInput | Prisma.SortOrder
+  sampleFilename?: Prisma.SortOrderInput | Prisma.SortOrder
+  sampleStorageUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
   _count?: Prisma.VoiceCountOrderByAggregateInput
+  _avg?: Prisma.VoiceAvgOrderByAggregateInput
   _max?: Prisma.VoiceMaxOrderByAggregateInput
   _min?: Prisma.VoiceMinOrderByAggregateInput
+  _sum?: Prisma.VoiceSumOrderByAggregateInput
 }
 
 export type VoiceScalarWhereWithAggregatesInput = {
@@ -250,7 +408,18 @@ export type VoiceScalarWhereWithAggregatesInput = {
   provider?: Prisma.StringWithAggregatesFilter<"Voice"> | string
   voiceId?: Prisma.StringWithAggregatesFilter<"Voice"> | string
   language?: Prisma.StringWithAggregatesFilter<"Voice"> | string
+  recordingLocale?: Prisma.StringNullableWithAggregatesFilter<"Voice"> | string | null
+  scriptVersion?: Prisma.StringNullableWithAggregatesFilter<"Voice"> | string | null
+  status?: Prisma.StringWithAggregatesFilter<"Voice"> | string
+  voiceVersion?: Prisma.IntWithAggregatesFilter<"Voice"> | number
+  requiresVerification?: Prisma.BoolWithAggregatesFilter<"Voice"> | boolean
+  consentAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Voice"> | Date | string | null
+  consentTextVersion?: Prisma.StringNullableWithAggregatesFilter<"Voice"> | string | null
+  idempotencyKey?: Prisma.StringNullableWithAggregatesFilter<"Voice"> | string | null
+  sampleFilename?: Prisma.StringNullableWithAggregatesFilter<"Voice"> | string | null
+  sampleStorageUrl?: Prisma.StringNullableWithAggregatesFilter<"Voice"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Voice"> | Date | string
+  updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Voice"> | Date | string
 }
 
 export type VoiceCreateInput = {
@@ -259,7 +428,18 @@ export type VoiceCreateInput = {
   provider?: string
   voiceId: string
   language?: string
+  recordingLocale?: string | null
+  scriptVersion?: string | null
+  status?: string
+  voiceVersion?: number
+  requiresVerification?: boolean
+  consentAt?: Date | string | null
+  consentTextVersion?: string | null
+  idempotencyKey?: string | null
+  sampleFilename?: string | null
+  sampleStorageUrl?: string | null
   createdAt?: Date | string
+  updatedAt?: Date | string
   user?: Prisma.UserCreateNestedOneWithoutVoicesInput
 }
 
@@ -270,7 +450,18 @@ export type VoiceUncheckedCreateInput = {
   provider?: string
   voiceId: string
   language?: string
+  recordingLocale?: string | null
+  scriptVersion?: string | null
+  status?: string
+  voiceVersion?: number
+  requiresVerification?: boolean
+  consentAt?: Date | string | null
+  consentTextVersion?: string | null
+  idempotencyKey?: string | null
+  sampleFilename?: string | null
+  sampleStorageUrl?: string | null
   createdAt?: Date | string
+  updatedAt?: Date | string
 }
 
 export type VoiceUpdateInput = {
@@ -279,7 +470,18 @@ export type VoiceUpdateInput = {
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   voiceId?: Prisma.StringFieldUpdateOperationsInput | string
   language?: Prisma.StringFieldUpdateOperationsInput | string
+  recordingLocale?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  scriptVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  voiceVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  requiresVerification?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  consentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  consentTextVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sampleFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sampleStorageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneWithoutVoicesNestedInput
 }
 
@@ -290,7 +492,18 @@ export type VoiceUncheckedUpdateInput = {
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   voiceId?: Prisma.StringFieldUpdateOperationsInput | string
   language?: Prisma.StringFieldUpdateOperationsInput | string
+  recordingLocale?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  scriptVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  voiceVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  requiresVerification?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  consentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  consentTextVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sampleFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sampleStorageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type VoiceCreateManyInput = {
@@ -300,7 +513,18 @@ export type VoiceCreateManyInput = {
   provider?: string
   voiceId: string
   language?: string
+  recordingLocale?: string | null
+  scriptVersion?: string | null
+  status?: string
+  voiceVersion?: number
+  requiresVerification?: boolean
+  consentAt?: Date | string | null
+  consentTextVersion?: string | null
+  idempotencyKey?: string | null
+  sampleFilename?: string | null
+  sampleStorageUrl?: string | null
   createdAt?: Date | string
+  updatedAt?: Date | string
 }
 
 export type VoiceUpdateManyMutationInput = {
@@ -309,7 +533,18 @@ export type VoiceUpdateManyMutationInput = {
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   voiceId?: Prisma.StringFieldUpdateOperationsInput | string
   language?: Prisma.StringFieldUpdateOperationsInput | string
+  recordingLocale?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  scriptVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  voiceVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  requiresVerification?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  consentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  consentTextVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sampleFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sampleStorageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type VoiceUncheckedUpdateManyInput = {
@@ -319,7 +554,18 @@ export type VoiceUncheckedUpdateManyInput = {
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   voiceId?: Prisma.StringFieldUpdateOperationsInput | string
   language?: Prisma.StringFieldUpdateOperationsInput | string
+  recordingLocale?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  scriptVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  voiceVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  requiresVerification?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  consentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  consentTextVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sampleFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sampleStorageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type VoiceListRelationFilter = {
@@ -337,6 +583,11 @@ export type VoiceUserIdVoiceIdCompoundUniqueInput = {
   voiceId: string
 }
 
+export type VoiceUserIdIdempotencyKeyCompoundUniqueInput = {
+  userId: string
+  idempotencyKey: string
+}
+
 export type VoiceCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
@@ -344,7 +595,22 @@ export type VoiceCountOrderByAggregateInput = {
   provider?: Prisma.SortOrder
   voiceId?: Prisma.SortOrder
   language?: Prisma.SortOrder
+  recordingLocale?: Prisma.SortOrder
+  scriptVersion?: Prisma.SortOrder
+  status?: Prisma.SortOrder
+  voiceVersion?: Prisma.SortOrder
+  requiresVerification?: Prisma.SortOrder
+  consentAt?: Prisma.SortOrder
+  consentTextVersion?: Prisma.SortOrder
+  idempotencyKey?: Prisma.SortOrder
+  sampleFilename?: Prisma.SortOrder
+  sampleStorageUrl?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
+}
+
+export type VoiceAvgOrderByAggregateInput = {
+  voiceVersion?: Prisma.SortOrder
 }
 
 export type VoiceMaxOrderByAggregateInput = {
@@ -354,7 +620,18 @@ export type VoiceMaxOrderByAggregateInput = {
   provider?: Prisma.SortOrder
   voiceId?: Prisma.SortOrder
   language?: Prisma.SortOrder
+  recordingLocale?: Prisma.SortOrder
+  scriptVersion?: Prisma.SortOrder
+  status?: Prisma.SortOrder
+  voiceVersion?: Prisma.SortOrder
+  requiresVerification?: Prisma.SortOrder
+  consentAt?: Prisma.SortOrder
+  consentTextVersion?: Prisma.SortOrder
+  idempotencyKey?: Prisma.SortOrder
+  sampleFilename?: Prisma.SortOrder
+  sampleStorageUrl?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
 }
 
 export type VoiceMinOrderByAggregateInput = {
@@ -364,7 +641,22 @@ export type VoiceMinOrderByAggregateInput = {
   provider?: Prisma.SortOrder
   voiceId?: Prisma.SortOrder
   language?: Prisma.SortOrder
+  recordingLocale?: Prisma.SortOrder
+  scriptVersion?: Prisma.SortOrder
+  status?: Prisma.SortOrder
+  voiceVersion?: Prisma.SortOrder
+  requiresVerification?: Prisma.SortOrder
+  consentAt?: Prisma.SortOrder
+  consentTextVersion?: Prisma.SortOrder
+  idempotencyKey?: Prisma.SortOrder
+  sampleFilename?: Prisma.SortOrder
+  sampleStorageUrl?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
+}
+
+export type VoiceSumOrderByAggregateInput = {
+  voiceVersion?: Prisma.SortOrder
 }
 
 export type VoiceCreateNestedManyWithoutUserInput = {
@@ -415,7 +707,18 @@ export type VoiceCreateWithoutUserInput = {
   provider?: string
   voiceId: string
   language?: string
+  recordingLocale?: string | null
+  scriptVersion?: string | null
+  status?: string
+  voiceVersion?: number
+  requiresVerification?: boolean
+  consentAt?: Date | string | null
+  consentTextVersion?: string | null
+  idempotencyKey?: string | null
+  sampleFilename?: string | null
+  sampleStorageUrl?: string | null
   createdAt?: Date | string
+  updatedAt?: Date | string
 }
 
 export type VoiceUncheckedCreateWithoutUserInput = {
@@ -424,7 +727,18 @@ export type VoiceUncheckedCreateWithoutUserInput = {
   provider?: string
   voiceId: string
   language?: string
+  recordingLocale?: string | null
+  scriptVersion?: string | null
+  status?: string
+  voiceVersion?: number
+  requiresVerification?: boolean
+  consentAt?: Date | string | null
+  consentTextVersion?: string | null
+  idempotencyKey?: string | null
+  sampleFilename?: string | null
+  sampleStorageUrl?: string | null
   createdAt?: Date | string
+  updatedAt?: Date | string
 }
 
 export type VoiceCreateOrConnectWithoutUserInput = {
@@ -463,7 +777,18 @@ export type VoiceScalarWhereInput = {
   provider?: Prisma.StringFilter<"Voice"> | string
   voiceId?: Prisma.StringFilter<"Voice"> | string
   language?: Prisma.StringFilter<"Voice"> | string
+  recordingLocale?: Prisma.StringNullableFilter<"Voice"> | string | null
+  scriptVersion?: Prisma.StringNullableFilter<"Voice"> | string | null
+  status?: Prisma.StringFilter<"Voice"> | string
+  voiceVersion?: Prisma.IntFilter<"Voice"> | number
+  requiresVerification?: Prisma.BoolFilter<"Voice"> | boolean
+  consentAt?: Prisma.DateTimeNullableFilter<"Voice"> | Date | string | null
+  consentTextVersion?: Prisma.StringNullableFilter<"Voice"> | string | null
+  idempotencyKey?: Prisma.StringNullableFilter<"Voice"> | string | null
+  sampleFilename?: Prisma.StringNullableFilter<"Voice"> | string | null
+  sampleStorageUrl?: Prisma.StringNullableFilter<"Voice"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Voice"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"Voice"> | Date | string
 }
 
 export type VoiceCreateManyUserInput = {
@@ -472,7 +797,18 @@ export type VoiceCreateManyUserInput = {
   provider?: string
   voiceId: string
   language?: string
+  recordingLocale?: string | null
+  scriptVersion?: string | null
+  status?: string
+  voiceVersion?: number
+  requiresVerification?: boolean
+  consentAt?: Date | string | null
+  consentTextVersion?: string | null
+  idempotencyKey?: string | null
+  sampleFilename?: string | null
+  sampleStorageUrl?: string | null
   createdAt?: Date | string
+  updatedAt?: Date | string
 }
 
 export type VoiceUpdateWithoutUserInput = {
@@ -481,7 +817,18 @@ export type VoiceUpdateWithoutUserInput = {
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   voiceId?: Prisma.StringFieldUpdateOperationsInput | string
   language?: Prisma.StringFieldUpdateOperationsInput | string
+  recordingLocale?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  scriptVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  voiceVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  requiresVerification?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  consentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  consentTextVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sampleFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sampleStorageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type VoiceUncheckedUpdateWithoutUserInput = {
@@ -490,7 +837,18 @@ export type VoiceUncheckedUpdateWithoutUserInput = {
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   voiceId?: Prisma.StringFieldUpdateOperationsInput | string
   language?: Prisma.StringFieldUpdateOperationsInput | string
+  recordingLocale?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  scriptVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  voiceVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  requiresVerification?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  consentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  consentTextVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sampleFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sampleStorageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type VoiceUncheckedUpdateManyWithoutUserInput = {
@@ -499,7 +857,18 @@ export type VoiceUncheckedUpdateManyWithoutUserInput = {
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   voiceId?: Prisma.StringFieldUpdateOperationsInput | string
   language?: Prisma.StringFieldUpdateOperationsInput | string
+  recordingLocale?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  scriptVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  voiceVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  requiresVerification?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  consentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  consentTextVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sampleFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sampleStorageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 
@@ -511,7 +880,18 @@ export type VoiceSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   provider?: boolean
   voiceId?: boolean
   language?: boolean
+  recordingLocale?: boolean
+  scriptVersion?: boolean
+  status?: boolean
+  voiceVersion?: boolean
+  requiresVerification?: boolean
+  consentAt?: boolean
+  consentTextVersion?: boolean
+  idempotencyKey?: boolean
+  sampleFilename?: boolean
+  sampleStorageUrl?: boolean
   createdAt?: boolean
+  updatedAt?: boolean
   user?: boolean | Prisma.Voice$userArgs<ExtArgs>
 }, ExtArgs["result"]["voice"]>
 
@@ -522,7 +902,18 @@ export type VoiceSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   provider?: boolean
   voiceId?: boolean
   language?: boolean
+  recordingLocale?: boolean
+  scriptVersion?: boolean
+  status?: boolean
+  voiceVersion?: boolean
+  requiresVerification?: boolean
+  consentAt?: boolean
+  consentTextVersion?: boolean
+  idempotencyKey?: boolean
+  sampleFilename?: boolean
+  sampleStorageUrl?: boolean
   createdAt?: boolean
+  updatedAt?: boolean
   user?: boolean | Prisma.Voice$userArgs<ExtArgs>
 }, ExtArgs["result"]["voice"]>
 
@@ -533,7 +924,18 @@ export type VoiceSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   provider?: boolean
   voiceId?: boolean
   language?: boolean
+  recordingLocale?: boolean
+  scriptVersion?: boolean
+  status?: boolean
+  voiceVersion?: boolean
+  requiresVerification?: boolean
+  consentAt?: boolean
+  consentTextVersion?: boolean
+  idempotencyKey?: boolean
+  sampleFilename?: boolean
+  sampleStorageUrl?: boolean
   createdAt?: boolean
+  updatedAt?: boolean
   user?: boolean | Prisma.Voice$userArgs<ExtArgs>
 }, ExtArgs["result"]["voice"]>
 
@@ -544,10 +946,21 @@ export type VoiceSelectScalar = {
   provider?: boolean
   voiceId?: boolean
   language?: boolean
+  recordingLocale?: boolean
+  scriptVersion?: boolean
+  status?: boolean
+  voiceVersion?: boolean
+  requiresVerification?: boolean
+  consentAt?: boolean
+  consentTextVersion?: boolean
+  idempotencyKey?: boolean
+  sampleFilename?: boolean
+  sampleStorageUrl?: boolean
   createdAt?: boolean
+  updatedAt?: boolean
 }
 
-export type VoiceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "displayName" | "provider" | "voiceId" | "language" | "createdAt", ExtArgs["result"]["voice"]>
+export type VoiceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "displayName" | "provider" | "voiceId" | "language" | "recordingLocale" | "scriptVersion" | "status" | "voiceVersion" | "requiresVerification" | "consentAt" | "consentTextVersion" | "idempotencyKey" | "sampleFilename" | "sampleStorageUrl" | "createdAt" | "updatedAt", ExtArgs["result"]["voice"]>
 export type VoiceInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.Voice$userArgs<ExtArgs>
 }
@@ -568,9 +981,35 @@ export type $VoicePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     userId: string | null
     displayName: string
     provider: string
+    /**
+     * Provider voice id. Never returned to the browser and never accepted from it.
+     */
     voiceId: string
+    /**
+     * Recorded language of this voice. New rows store the recording locale, not a collapsed story language.
+     */
     language: string
+    /**
+     * Locale of the script the parent actually read. Distinct from story narration language.
+     */
+    recordingLocale: string | null
+    /**
+     * Registry version frozen when the take started.
+     */
+    scriptVersion: string | null
+    status: string
+    voiceVersion: number
+    requiresVerification: boolean
+    consentAt: Date | null
+    consentTextVersion: string | null
+    idempotencyKey: string | null
+    sampleFilename: string | null
+    /**
+     * Private storage URL. Not a public Blob URL.
+     */
+    sampleStorageUrl: string | null
     createdAt: Date
+    updatedAt: Date
   }, ExtArgs["result"]["voice"]>
   composites: {}
 }
@@ -1001,7 +1440,18 @@ export interface VoiceFieldRefs {
   readonly provider: Prisma.FieldRef<"Voice", 'String'>
   readonly voiceId: Prisma.FieldRef<"Voice", 'String'>
   readonly language: Prisma.FieldRef<"Voice", 'String'>
+  readonly recordingLocale: Prisma.FieldRef<"Voice", 'String'>
+  readonly scriptVersion: Prisma.FieldRef<"Voice", 'String'>
+  readonly status: Prisma.FieldRef<"Voice", 'String'>
+  readonly voiceVersion: Prisma.FieldRef<"Voice", 'Int'>
+  readonly requiresVerification: Prisma.FieldRef<"Voice", 'Boolean'>
+  readonly consentAt: Prisma.FieldRef<"Voice", 'DateTime'>
+  readonly consentTextVersion: Prisma.FieldRef<"Voice", 'String'>
+  readonly idempotencyKey: Prisma.FieldRef<"Voice", 'String'>
+  readonly sampleFilename: Prisma.FieldRef<"Voice", 'String'>
+  readonly sampleStorageUrl: Prisma.FieldRef<"Voice", 'String'>
   readonly createdAt: Prisma.FieldRef<"Voice", 'DateTime'>
+  readonly updatedAt: Prisma.FieldRef<"Voice", 'DateTime'>
 }
     
 

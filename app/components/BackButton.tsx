@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
+import { useInterfaceLocale } from "@/app/components/LocaleProvider";
 
 type Props = {
   /** When there is no prior history entry (e.g. this page was opened directly). */
@@ -13,8 +14,17 @@ type Props = {
 /**
  * Goes to the previous screen using the browser history stack when available.
  */
-export function BackButton({ fallbackHref = "/", className = "button", children = "← Back" }: Props) {
+export function BackButton({ fallbackHref = "/", className = "button", children }: Props) {
   const router = useRouter();
+  const { messages } = useInterfaceLocale();
+  const label = children ?? (
+    <>
+      <span className="dirFlip" aria-hidden>
+        ←
+      </span>{" "}
+      {messages.common.back}
+    </>
+  );
 
   return (
     <button
@@ -28,7 +38,7 @@ export function BackButton({ fallbackHref = "/", className = "button", children 
         }
       }}
     >
-      {children}
+      {label}
     </button>
   );
 }

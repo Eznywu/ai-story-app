@@ -1,85 +1,153 @@
 "use client";
 
-import React from "react";
-import type { KidProfile, StoryCharacterProfile } from "@/lib/profiles/profilesTypes";
-import type { ReadingStatsState } from "@/lib/profiles/profilesTypes";
+import React, { useState } from "react";
+import { useInterfaceLocale } from "@/app/components/LocaleProvider";
+import { QuietSheet } from "@/app/components/QuietSheet";
+import { fill } from "@/lib/i18n/locales";
+import type { KidProfile, ReadingStatsState, StoryCharacterProfile } from "@/lib/profiles/profilesTypes";
 
 type Props = {
   email?: string;
+  language: string;
   stats: ReadingStatsState | null;
   kids: KidProfile[];
   characters: StoryCharacterProfile[];
-  onGoToCreateHub: () => void;
+  onAddKid: () => void;
+  onAddCharacter: () => void;
+  onCreateStory: () => void;
 };
 
-export function ProfilePanel({ email, stats, kids, characters, onGoToCreateHub }: Props) {
+export function ProfilePanel({
+  email,
+  language,
+  stats,
+  kids,
+  characters,
+  onAddKid,
+  onAddCharacter,
+  onCreateStory,
+}: Props) {
+  const { messages, formatNumber } = useInterfaceLocale();
+  const copy = messages.profile;
+  const [voiceOpen, setVoiceOpen] = useState(false);
+  const storyLanguageLabel = language.toLowerCase().startsWith("zh") ? messages.voice.chinese : messages.voice.english;
+
   return (
-    <section className="profilePanel fadeEnter" aria-labelledby="profile-heading">
+    <section className="profilePanel" aria-labelledby="profile-heading">
       <h1 id="profile-heading" className="profilePanel__title">
-        Family Profile
+        {copy.title}
       </h1>
-      <p className="profilePanel__lede">Your reading companion settings and saved story profiles.</p>
-      {email ? <p className="profilePanel__muted">Signed in as {email}</p> : null}
+      <p className="profilePanel__lede">{copy.lede}</p>
+      {email ? <p className="profilePanel__muted">{fill(copy.signedIn, { email })}</p> : null}
 
-      <div className="profilePanel__card">
-        <h2 className="profilePanel__h2">Reading snapshot</h2>
-        <p className="profilePanel__statLine">
-          <strong>{stats?.storiesReadToday ?? 0}</strong> reads today · <strong>{stats?.streakDays ?? 0}</strong> day streak
-        </p>
-        <p className="profilePanel__muted">Last story: {stats?.lastStoryTitle?.trim() || "None yet"}</p>
-      </div>
+      <section className="profileGroup" aria-labelledby="profile-children">
+        <div className="profileGroup__head">
+          <h2 id="profile-children">{copy.children}</h2>
+          <button type="button" className="profileGroup__add" onClick={onAddKid}>
+            {copy.add}
+          </button>
+        </div>
+        {kids.length === 0 ? <p className="profilePanel__muted">{copy.noChildren}</p> : null}
+        <ul className="profileRows">
+          {kids.map((kid) => (
+            <li key={kid.id}>
+              <button type="button" className="profileRow" onClick={onCreateStory}>
+                <span className="profileRow__title">{kid.name}</span>
+                <span className="profileRow__meta">{kid.age}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </section>
 
-      <div className="profilePanel__card">
-        <h2 className="profilePanel__h2">Kid profiles</h2>
-        {kids.length === 0 ? (
-          <p className="profilePanel__muted">None yet.</p>
-        ) : (
-          <ul className="profilePanel__list">
-            {kids.map((k) => (
-              <li key={k.id}>
-                {k.name} · {k.age}
-              </li>
-            ))}
-          </ul>
-        )}
-        <button type="button" className="button buttonPrimary profilePanel__btn" onClick={onGoToCreateHub}>
-          Create with This Profile
-        </button>
-      </div>
+      <section className="profileGroup" aria-labelledby="profile-characters">
+        <div className="profileGroup__head">
+          <h2 id="profile-characters">{copy.characters}</h2>
+          <button type="button" className="profileGroup__add" onClick={onAddCharacter}>
+            {copy.add}
+          </button>
+        </div>
+        {characters.length === 0 ? <p className="profilePanel__muted">{copy.noCharacters}</p> : null}
+        <ul className="profileRows">
+          {characters.map((character) => (
+            <li key={character.id}>
+              <button type="button" className="profileRow" onClick={onCreateStory}>
+                <span className="profileRow__title">{character.name}</span>
+                <span className="profileRow__meta">{character.characterType || copy.storyCharacter}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </section>
 
-      <div className="profilePanel__card">
-        <h2 className="profilePanel__h2">Story characters</h2>
-        {characters.length === 0 ? (
-          <p className="profilePanel__muted">None yet.</p>
-        ) : (
-          <ul className="profilePanel__list">
-            {characters.map((c) => (
-              <li key={c.id}>
-                {c.name}
-                {c.characterType ? ` · ${c.characterType}` : ""}
-              </li>
-            ))}
-          </ul>
-        )}
-        <button type="button" className="button buttonPrimary profilePanel__btn" onClick={onGoToCreateHub}>
-          Use in Story
-        </button>
-      </div>
-
-      <div className="profilePanel__card">
-        <h2 className="profilePanel__h2">Settings, legal, support</h2>
-        <ul className="profilePanel__links">
+      <section className="profileGroup" aria-labelledby="profile-voices">
+        <div className="profileGroup__head">
+          <h2 id="profile-voices">{copy.voices}</h2>
+        </div>
+        <p className="profilePanel__muted">{copy.voicesBody}</p>
+        <ul className="profileRows">
           <li>
-            <a href="/settings">Settings</a>
+            <button type="button" className="profileRow" onClick={() => setVoiceOpen(true)}>
+              <span className="profileRow__title">{copy.addVoice}</span>
+              <span className="profileRow__meta">{copy.addVoiceMeta}</span>
+            </button>
           </li>
           <li>
-            <a href="/legal/privacy">Privacy Policy</a>
-          </li>
-          <li>
-            <a href="/legal/terms">Terms of Use</a>
+            <button type="button" className="profileRow" onClick={onCreateStory}>
+              <span className="profileRow__title">{copy.chooseNarrator}</span>
+              <span className="profileRow__meta">{copy.chooseMeta}</span>
+            </button>
           </li>
         </ul>
-      </div>
+      </section>
+
+      <section className="profileGroup" aria-labelledby="profile-settings">
+        <div className="profileGroup__head">
+          <h2 id="profile-settings">{copy.settings}</h2>
+        </div>
+        {stats ? (
+          <p className="profilePanel__muted">
+            {fill(copy.opened, {
+              count: formatNumber(stats.storiesReadToday ?? 0),
+              title: stats.lastStoryTitle?.trim() || copy.noneYet,
+            })}
+          </p>
+        ) : null}
+        <ul className="profileRows">
+          <li>
+            <a className="profileRow" href="/settings">
+              <span className="profileRow__title">{copy.account}</span>
+              <span className="profileRow__meta">{copy.settingsMeta}</span>
+            </a>
+          </li>
+          <li>
+            <a className="profileRow" href="/legal/privacy">
+              <span className="profileRow__title">{copy.privacy}</span>
+            </a>
+          </li>
+          <li>
+            <a className="profileRow" href="/legal/terms">
+              <span className="profileRow__title">{copy.terms}</span>
+            </a>
+          </li>
+        </ul>
+      </section>
+
+      {voiceOpen ? (
+        <QuietSheet title={copy.voiceSheetTitle} closeLabel={messages.common.close} onClose={() => setVoiceOpen(false)}>
+          <p className="profilePanel__muted">{fill(copy.voiceSheetBody, { language: storyLanguageLabel })}</p>
+          <button
+            type="button"
+            className="createScreen__submit"
+            onClick={() => {
+              setVoiceOpen(false);
+              onCreateStory();
+            }}
+          >
+            {copy.openCreate}
+          </button>
+        </QuietSheet>
+      ) : null}
     </section>
   );
 }

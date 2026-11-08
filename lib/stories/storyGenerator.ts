@@ -9,6 +9,14 @@ import { posterProviderTransportFailureMessage } from "@/lib/posters/posterProvi
 import { loadAntiRepeatLibraryContext } from "@/lib/stories/storyLibraryContext";
 import { normalizeChildGenderForStoryInput } from "@/lib/profiles/childGender";
 import { mockProvidersEnabled, mockStoryText } from "@/lib/providers/mockProviders";
+import { parseAudienceAge } from "@/lib/posters/audienceAge";
+import { buildCharacterSnapshot, type CharacterSnapshot } from "@/lib/posters/characterSnapshot";
+import {
+  deriveVisualBrief,
+  splitStoryAndBrief,
+  visualBriefInstructions,
+  type VisualBrief,
+} from "@/lib/posters/visualBrief";
 
 export function lengthHint(length: string) {
   if (length === "short") return "about 250-400 words";
@@ -127,10 +135,30 @@ function libraryAntiRepeatBlock(
   ].join("\n");
 }
 
-function buildPrompt(
+function characterBlock(character: CharacterSnapshot, isZh: boolean): string {
+  if (isZh) {
+    return [
+      `選定角色：${character.name}，是「${character.type}」。`,
+      character.characterAge ? `角色自己的年齡：${character.characterAge}。這和聽故事的孩子年齡是兩件事。` : "角色年齡未指定，不要把它改成聽故事的孩子。",
+      `外觀：顏色 ${character.appearance.colours}；比例 ${character.appearance.proportions}；服裝 ${character.appearance.clothing}；配件 ${character.appearance.accessories}。`,
+      "類型只改變場景、道具、光線和心情，不可把主角換成另一種生物。",
+    ].join("\n");
+  }
+  return [
+    `Selected character: ${character.name}, a ${character.type}.`,
+    character.characterAge
+      ? `The character's own age is ${character.characterAge}. That is separate from the listener's age.`
+      : "The character's age is unspecified. Do not replace it with the listener's age.",
+    `Appearance: colours ${character.appearance.colours}; proportions ${character.appearance.proportions}; clothing ${character.appearance.clothing}; accessories ${character.appearance.accessories}.`,
+    "Genre may change the setting, props, light, and mood. It must not change the protagonist's species or identity.",
+  ].join("\n");
+}
+
+export function buildStoryGenerationPrompt(
   input: ReturnType<typeof normalizeStoryInput>,
   freshnessSeed: string,
-  libraryContext: string
+  libraryContext: string,
+  character: CharacterSnapshot
 ) {
   const isZh = input.language.toLowerCase().includes("zh");
   const gh = genderHint(input);
@@ -149,6 +177,8 @@ function buildPrompt(
         : "",
       "語氣：像真實的睡前說故事的人，溫柔、安撫、慢慢說。",
       "格式要求：不要用標題或條列；句子短一點；多用重複句式讓寶寶安心；最後一句要很溫柔地收尾。",
+      characterBlock(character, true),
+      visualBriefInstructions(true),
       libraryBlock,
       freshness,
     ]
@@ -168,6 +198,8 @@ function buildPrompt(
       : "",
     "Tone: gentle, soothing, like a real bedtime storyteller. Calm pacing.",
     "Constraints: no headings or bullet points, short sentences, comforting repetition, end with a soft final line.",
+    characterBlock(character, false),
+    visualBriefInstructions(false),
     libraryBlock,
     freshness,
   ]
@@ -175,82 +207,89 @@ function buildPrompt(
     .join("\n");
 }
 
+/**
+ * Upper bound on output tokens: the requested word count plus the visual-brief JSON that follows
+ * the story. A tighter cap cut long English stories off before the ending and the brief.
+ */
 function outputTokenHint(length: string) {
-  if (length === "short") return 700;
-  if (length === "medium") return 1400;
-  return 2200;
+  if (length === "short") return 800;
+  if (length === "medium") return 1600;
+  return 2600;
 }
 
-function fallbackStory(input: ReturnType<typeof normalizeStoryInput>) {
-  const isZh = input.language.toLowerCase().includes("zh");
-  const name = input.mainCharacterName;
-  const genre = input.genre;
+/** Bad requests, auth, and content refusals fail the same way on a second paid try. */
+function worthRetrying(error: unknown): boolean {
+  const status = (error as { status?: unknown } | null)?.status;
+  if (typeof status !== "number") return true;
+  return status === 408 || status === 429 || status >= 500;
+}
 
-  if (isZh) {
-    const openers = [
-      `夜晚窸窣著合上书頁聲，${name} 把小被角拉好，想聽一個關於 ${genre} 的輕柔故事。`,
-      `房間裡剩下一盞暖暖的光，${name} 閉上眼睛，心裡裝著一片 ${genre} 的小天地。`,
-      `屋子外面安靜下來，${name} 抱著喜歡的小枕，等一個慢慢說的 ${genre} 故事。`,
-    ];
-    const middles = [
-      `風在窗邊寫小小的曲子，${name} 跟著節拍慢慢呼吸，一步、兩步，心像小船轻轻搖。`,
-      `遠方有一聲很輕很輕的火車聲，${name} 想像它載著晚安，一步一步開向夢的月臺。`,
-      `一隻不吵的貓在走廊打盹，${name} 聽著那均勻的呼吸，覺得世界變得好小、好安全。`,
-    ];
-    const bridges = [
-      `故事裡，${name} 拾起一顆「沒關係」放在胸口，小小的，卻剛好讓肩膀鬆下來。`,
-      `${name} 把今天最亮的一小件事摺好，像摺紙船，輕輕放在睡眠的河上漂走。`,
-      `有人小聲說：「我們明天再玩。」${name} 在心底複說一遍，眼皮跟著變重。`,
-    ];
-    const closers = [
-      `最後一句落在枕邊：晚安，${name}。星光替你關燈，夢替你保管悄悄話。`,
-      `${name} 嘴角還留著一丁點微笑，像藏進被窩的小星星，慢慢睡著了。`,
-      `晚安，${name}，願你在 ${genre} 的夢裡也被溫柔抱著。`,
-    ];
-    const pick = <T>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
-    return [pick(openers), pick(middles), pick(bridges), pick(closers)].join("\n");
-  }
+export type GeneratedStory = {
+  text: string;
+  visualBrief: VisualBrief | null;
+};
 
-  const openers = [
-    `${name} tugs the quilt square and asks for a ${genre.toLowerCase()} story low and slow, like a lullaby with words.`,
-    `The house exhales into quiet, and ${name} waits on the pillow's edge for a gentle ${genre.toLowerCase()} tale.`,
-    `A nightlight paints a small gold pool; ${name} nestles there, ready for a sleepy ${genre.toLowerCase()} adventure.`,
-  ];
-  const middles = [
-    `Somewhere far off, a train sighs once. ${name} names the sound "goodbye, busy day" and lets it roll away.`,
-    `Rain writes thin lines on the glass; ${name} counts them softly—one kindness, one breath, one rest.`,
-    `A clock ticks kindly, not rushing. ${name} matches footsteps to it until shoulders melt into the mattress.`,
-  ];
-  const bridges = [
-    `In the story's middle, ${name} pockets one brave pebble—not heavy, just enough to remember: I tried, I am safe.`,
-    `A stuffed friend leans closer; ${name} shares the blanket and whispers, "We can land together."`,
-    `${name} picks three slow breaths like three fireflies and releases them toward the ceiling.`,
-  ];
-  const closers = [
-    `The last line tucks itself under ${name}'s chin: goodnight, little listener; let the ${genre.toLowerCase()} dreams stay soft.`,
-    `${name} leaves a tiny grin on the pillow—a secret postcard to morning—and slips under sleep's door.`,
-    `Goodnight, ${name}. The room holds still; your heart may wander, but it always has a way home.`,
-  ];
-  const pick = <T>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
-  return [pick(openers), pick(middles), pick(bridges), pick(closers)].join("\n");
+function characterFromRequest(body: StoryGenerationInput, name: string): CharacterSnapshot {
+  const character = body.character;
+  return buildCharacterSnapshot({
+    id: character?.id,
+    version: character?.version,
+    name: character?.name || name,
+    type: character?.type,
+    characterAge: character?.characterAge,
+    appearance: character?.appearance,
+    visualStyle: character?.visualStyle,
+    referenceImageUrl: character?.referenceImageUrl,
+    childGender: body.childGender,
+  });
+}
+
+/** Splits the story from its visual brief. A missing brief is derived locally; the model is not asked again. */
+function withDerivedBrief(
+  text: string,
+  normalized: ReturnType<typeof normalizeStoryInput>,
+  character: CharacterSnapshot
+): GeneratedStory {
+  const split = splitStoryAndBrief(text, parseAudienceAge(normalized.age).band);
+  const story = split.story.trim();
+  return {
+    text: story,
+    visualBrief:
+      split.visualBrief ??
+      (story
+        ? deriveVisualBrief({
+            title: normalized.title,
+            story,
+            genre: normalized.genre,
+            age: normalized.age,
+            character,
+          })
+        : null),
+  };
 }
 
 export async function generateStoryWithRetry(
   body: StoryGenerationInput,
-  opts?: { retries?: number; userId?: string | null }
-) {
+  opts?: {
+    retries?: number;
+    userId?: string | null;
+    /** Test hook. Production leaves this unset and uses one model request. */
+    complete?: (prompt: string) => Promise<string>;
+  }
+): Promise<GeneratedStory> {
   const normalized = normalizeStoryInput(body);
   const validationError = validateStoryInput(normalized);
   if (validationError) {
     throw createError(validationError, 400);
   }
+  const character = characterFromRequest(body, normalized.mainCharacterName);
 
-  if (mockProvidersEnabled()) {
-    return mockStoryText(normalized);
+  if (mockProvidersEnabled() && !opts?.complete) {
+    return withDerivedBrief(mockStoryText(normalized), normalized, character);
   }
 
   const apiKey = process.env.OPENAI_API_KEY?.trim();
-  if (!apiKey) {
+  if (!opts?.complete && !apiKey) {
     throw createError(
       "Story generation needs an OpenAI API key. Set OPENAI_API_KEY and try again.",
       500
@@ -258,13 +297,15 @@ export async function generateStoryWithRetry(
   }
 
   const timeoutMs = providerTimeoutMs(Number(process.env.OPENAI_STORY_TIMEOUT_MS), 180_000);
-  const client = new OpenAI({
-    apiKey,
-    baseURL: getOpenAiBaseUrl(),
-    timeout: timeoutMs,
-    maxRetries: 0,
-    fetchOptions: { dispatcher: getPosterHttpDispatcher(timeoutMs) },
-  });
+  const client = opts?.complete
+    ? null
+    : new OpenAI({
+        apiKey: apiKey ?? "",
+        baseURL: getOpenAiBaseUrl(),
+        timeout: timeoutMs,
+        maxRetries: 0,
+        fetchOptions: { dispatcher: getPosterHttpDispatcher(timeoutMs) },
+      });
   const retries = Math.max(0, opts?.retries ?? 1);
   const models = (process.env.OPENAI_STORY_MODELS ?? "gpt-4o-mini")
     .split(",")
@@ -285,34 +326,39 @@ export async function generateStoryWithRetry(
   let lastError: unknown = null;
   while (attempt <= retries) {
     try {
-      const prompt = buildPrompt(
+      const prompt = buildStoryGenerationPrompt(
         normalized,
         randomBytes(8).toString("hex"),
-        libraryContext
+        libraryContext,
+        character
       );
-      for (const model of models) {
-        const response = await client.responses.create({
-          model,
-          input: prompt,
-          max_output_tokens: outputTokenHint(normalized.length),
-          temperature,
-        });
-        if (response.output_text?.trim()) {
-          return response.output_text;
-        }
-      }
+      const raw = opts?.complete
+        ? await opts.complete(prompt)
+        : await (async () => {
+            if (!client) throw new Error("Story model is not configured");
+            for (const model of models) {
+              const response = await client.responses.create({
+                model,
+                input: prompt,
+                max_output_tokens: outputTokenHint(normalized.length),
+                temperature,
+              });
+              if (response.output_text?.trim()) return response.output_text;
+            }
+            return "";
+          })();
+      const generated = withDerivedBrief(raw, normalized, character);
+      if (generated.text) return generated;
       throw new Error("Model returned empty story output");
     } catch (error) {
       lastError = error;
       attempt += 1;
-      if (attempt > retries) break;
+      if (attempt > retries || !worthRetrying(error)) break;
     }
   }
 
-  const msg = getErrorMessage(lastError, "");
-  if (posterProviderTransportFailureMessage(msg)) {
-    return fallbackStory(normalized);
+  if (posterProviderTransportFailureMessage(getErrorMessage(lastError, ""))) {
+    throw createError("The story service could not be reached. Nothing was saved. Please try again in a moment.", 503);
   }
-
   throw lastError ?? new Error("Story generation failed");
 }

@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import fs from "fs/promises";
+import { audioResponse } from "@/lib/audio/audioResponse";
 import { requireUser } from "@/lib/auth/requireUser";
-import { userOwnsMedia } from "@/lib/auth/ownedStory";
-import { isRemoteMediaUrl, localMediaPath } from "@/lib/media/objectStore";
+import { isRemoteMediaUrl, localMediaPath, readPrivateMedia } from "@/lib/media/objectStore";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const notFound = () => NextResponse.json({ error: "File not found" }, { status: 404 });
 
 export async function GET(req: Request) {
   const auth = await requireUser();
@@ -15,35 +17,29 @@ export async function GET(req: Request) {
     const url = new URL(req.url);
     const filename = decodeURIComponent(url.pathname.split("/").pop() || "");
     const filePath = localMediaPath("audio", filename);
-
     if (!filePath) {
-      return NextResponse.json({ error: "Invalid filename", filename }, { status: 400 });
+      return NextResponse.json({ error: "Invalid filename" }, { status: 400 });
     }
 
-    const owned = await userOwnsMedia(auth.user.id, "audio", filename);
-    if (!owned) {
-      return NextResponse.json({ error: "File not found" }, { status: 404 });
-    }
+    const story = await prisma.story.findFirst({
+      where: { userId: auth.user.id, audioFilename: filename },
+      select: { audioUrl: true, audioPrivate: true, audioStorageUrl: true },
+    });
+    if (!story) return notFound();
 
-    try {
-      const data = await fs.readFile(filePath);
-      return new Response(data, {
-        headers: {
-          "Content-Type": "audio/mpeg",
-          "Cache-Control": "private, no-store",
-        },
-      });
-    } catch {
-      const story = await prisma.story.findFirst({
-        where: { userId: auth.user.id, audioFilename: filename },
-        select: { audioUrl: true },
-      });
-      if (story?.audioUrl && isRemoteMediaUrl(story.audioUrl)) {
-        return NextResponse.redirect(story.audioUrl, 302);
-      }
-      return NextResponse.json({ error: "File not found" }, { status: 404 });
+    const local = await fs.readFile(filePath).catch(() => null);
+    if (local) return audioResponse(local, req.headers.get("range"));
+
+    if (story.audioPrivate) {
+      const bytes = await readPrivateMedia({ folder: "audio", filename, storageUrl: story.audioStorageUrl });
+      return bytes ? audioResponse(bytes, req.headers.get("range")) : notFound();
     }
-  } catch {
-    return NextResponse.json({ error: "File not found" }, { status: 404 });
+    if (story.audioUrl && isRemoteMediaUrl(story.audioUrl)) {
+      return NextResponse.redirect(story.audioUrl, 302);
+    }
+    return notFound();
+  } catch (err) {
+    console.error("[audio] could not read a private recording", err instanceof Error ? err.message : err);
+    return notFound();
   }
 }

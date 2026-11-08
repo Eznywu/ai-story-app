@@ -52,7 +52,7 @@ export async function adoptGuestLibrary(tx: Prisma.TransactionClient, userId: st
   await tx.story.updateMany({ where: { userId: guest.id }, data: { userId } });
   await tx.kidProfile.updateMany({ where: { userId: guest.id }, data: { userId } });
   await tx.storyCharacter.updateMany({ where: { userId: guest.id }, data: { userId } });
-  await tx.voice.updateMany({ where: { userId: guest.id }, data: { userId } });
+  // Personal voices are never handed from the shared guest to the first real account.
 
   const guestStats = await tx.readingStats.findUnique({ where: { userId: guest.id } });
   if (!guestStats) return;

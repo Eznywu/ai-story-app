@@ -5,9 +5,9 @@ import path from "path";
  * Local stand-in for OpenAI / ElevenLabs / image providers.
  * Ignored on Vercel production so a stray env var cannot ship canned stories.
  */
-export function mockProvidersEnabled(): boolean {
-  if (process.env.MOCK_PROVIDERS !== "1") return false;
-  if (process.env.VERCEL_ENV === "production") return false;
+export function mockProvidersEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
+  if (env.MOCK_PROVIDERS !== "1") return false;
+  if (env.VERCEL_ENV === "production") return false;
   return true;
 }
 

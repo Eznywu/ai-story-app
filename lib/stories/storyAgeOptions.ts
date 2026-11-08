@@ -1,5 +1,14 @@
 /** Labels sent to story generation (must stay compatible with `normalizeStoryInput`). */
-export const STORY_AGE_OPTIONS = ["3 months", "6 months", "9 months", "1 year", "2 years"] as const;
+export const STORY_AGE_OPTIONS = [
+  "3 months",
+  "6 months",
+  "9 months",
+  "1 year",
+  "2 years",
+  "4 years",
+  "7 years",
+  "10 years",
+] as const;
 
 export type StoryAgeLabel = (typeof STORY_AGE_OPTIONS)[number];
 

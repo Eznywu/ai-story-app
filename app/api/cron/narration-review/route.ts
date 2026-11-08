@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { authorizeCron } from "@/lib/auth/cron";
 import { captureException } from "@/lib/monitoring";
 import { getErrorMessage } from "@/lib/errors";
 import { runWeeklyNarrationReview } from "@/lib/tts/weeklyJob";
+import { retryVoiceCleanups } from "@/lib/voices/personalVoice";
+import { deletePrivateSample, prismaVoiceStore } from "@/lib/voices/accountVoices";
+import { voiceProviderFromEnv } from "@/lib/voices/provider";
 import type { Prisma } from "../../../../generated/prisma/client";
 
 export const runtime = "nodejs";
@@ -12,16 +16,10 @@ export const maxDuration = 60;
 /**
  * Monday 10:00 in UTC+8 is 02:00 UTC, which is `0 2 * * 1` in vercel.json.
  * Vercel runs crons on production deployments only. This route is not active
- * until that production deploy exists and CRON_SECRET is set. This file does
- * not call ElevenLabs or any speech service.
+ * until that production deploy exists and CRON_SECRET is set. This job does
+ * not generate audio. It may retry deleting a personal voice that was already
+ * marked for removal.
  */
-function authorizeCron(req: Request): boolean {
-  const secret = process.env.CRON_SECRET?.trim();
-  if (!secret) return false;
-  const bearer = req.headers.get("authorization");
-  if (bearer === `Bearer ${secret}`) return true;
-  return req.headers.get("x-cron-secret") === secret;
-}
 
 export async function GET(req: Request) {
   try {
@@ -41,27 +39,36 @@ export async function GET(req: Request) {
         const assets = assetIds.length
           ? await prisma.narrationAsset.findMany({
               where: { id: { in: assetIds } },
-              select: { id: true, url: true },
+              select: { id: true, url: true, voiceId: true, language: true, voiceKind: true },
             })
           : [];
-        const urls = new Map(assets.map((asset) => [asset.id, asset.url]));
-        return rows.map((row) => ({
-          id: row.id,
-          url: row.assetId ? urls.get(row.assetId) ?? null : null,
-          createdAt: row.createdAt.toISOString(),
-        }));
+        const byId = new Map(assets.map((asset) => [asset.id, asset]));
+        return rows.map((row) => {
+          const asset = row.assetId ? byId.get(row.assetId) : undefined;
+          return {
+            id: row.id,
+            url: asset?.url ?? null,
+            createdAt: row.createdAt.toISOString(),
+            voiceId: asset?.voiceId,
+            language: asset?.language,
+            voiceKind: asset?.voiceKind,
+          };
+        });
       },
       loadNewClips: async () => {
         const rows = await prisma.narrationAsset.findMany({
           where: { createdAt: { gte: since }, status: "active", sectionIndex: 0 },
           orderBy: { createdAt: "desc" },
           take: 200,
-          select: { id: true, url: true, createdAt: true },
+          select: { id: true, url: true, createdAt: true, voiceId: true, language: true, voiceKind: true },
         });
         return rows.map((row) => ({
           id: row.id,
           url: row.url,
           createdAt: row.createdAt.toISOString(),
+          voiceId: row.voiceId,
+          language: row.language,
+          voiceKind: row.voiceKind,
         }));
       },
       saveReport: async (summary) => {
@@ -74,12 +81,20 @@ export async function GET(req: Request) {
         });
       },
     });
+    const cleanup = await retryVoiceCleanups(
+      { store: prismaVoiceStore(), provider: voiceProviderFromEnv(), deleteSample: deletePrivateSample },
+      5
+    ).catch((error: unknown) => {
+      captureException(error, { route: "/api/cron/narration-review", step: "voice-cleanup" });
+      return { done: 0, pending: 0, error: getErrorMessage(error, "Voice cleanup could not run") };
+    });
     return NextResponse.json({
       ok: true,
       scheduled: false,
       schedule: "0 2 * * 1",
       scheduleMeaning: "Monday 10:00 UTC+8, only after a production deploy",
       report,
+      voiceCleanup: cleanup,
     });
   } catch (error: unknown) {
     captureException(error, { route: "/api/cron/narration-review" });

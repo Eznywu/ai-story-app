@@ -2,12 +2,18 @@
 
 import { useEffect, useState } from "react";
 import "@/app/page.css";
+import { BrandMark } from "@/app/components/BrandMark";
+import { useInterfaceLocale } from "@/app/components/LocaleProvider";
+import { BRAND_NAME } from "@/lib/brand";
+import { fill } from "@/lib/i18n/locales";
 
 type Props = {
   onSignedIn: () => void;
 };
 
 export function SignInScreen({ onSignedIn }: Props) {
+  const { messages, formatNumber } = useInterfaceLocale();
+  const copy = messages.auth;
   const [step, setStep] = useState<"email" | "code">("email");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -39,14 +45,14 @@ export function SignInScreen({ onSignedIn }: Props) {
         retryAfterSeconds?: number;
       };
       if (!res.ok) {
-        setError(data.error || "We couldn't send a code.");
+        setError(data.error || copy.sendError);
         if (typeof data.retryAfterSeconds === "number") setCooldown(data.retryAfterSeconds);
         return;
       }
       setStep("code");
       setCooldown(typeof data.cooldownSeconds === "number" ? data.cooldownSeconds : 30);
     } catch {
-      setError("We couldn't send a code. Check your connection and try again.");
+      setError(copy.sendNetwork);
     } finally {
       setSending(false);
     }
@@ -63,12 +69,12 @@ export function SignInScreen({ onSignedIn }: Props) {
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
-        setError(data.error || "That code is incorrect or expired.");
+        setError(data.error || copy.codeError);
         return;
       }
       onSignedIn();
     } catch {
-      setError("We couldn't check that code. Try again.");
+      setError(copy.verifyNetwork);
     } finally {
       setVerifying(false);
     }
@@ -81,11 +87,10 @@ export function SignInScreen({ onSignedIn }: Props) {
       <div className="overlay">
         <div className="container">
           <header>
-            <p className="signInBrand">Emrsy Story</p>
-            <h1 className="title">Sign in</h1>
-            <p className="subtitle">
-              Enter your email and we&apos;ll send a 6-digit code. No password, and the code stays in this app.
-            </p>
+            <BrandMark variant="onDark" className="signInMark" label={null} />
+            <p className="signInBrand">{BRAND_NAME}</p>
+            <h1 className="title">{copy.title}</h1>
+            <p className="subtitle">{copy.lede}</p>
           </header>
 
           {step === "email" ? (
@@ -97,7 +102,7 @@ export function SignInScreen({ onSignedIn }: Props) {
               }}
             >
               <label className="field" htmlFor="sign-in-email">
-                <span className="label">Email</span>
+                <span className="label">{copy.email}</span>
                 <input
                   id="sign-in-email"
                   name="email"
@@ -109,7 +114,7 @@ export function SignInScreen({ onSignedIn }: Props) {
                   spellCheck={false}
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
-                  placeholder="you@example.com"
+                  placeholder={copy.emailPlaceholder}
                   required
                   disabled={busy}
                 />
@@ -121,7 +126,7 @@ export function SignInScreen({ onSignedIn }: Props) {
               ) : null}
               <div className="signInActions">
                 <button className="button buttonPrimary" type="submit" disabled={busy || !email.trim()}>
-                  {sending ? "Sending code…" : "Email me a code"}
+                  {sending ? copy.sending : copy.send}
                 </button>
               </div>
             </form>
@@ -133,9 +138,9 @@ export function SignInScreen({ onSignedIn }: Props) {
                 if (!busy) void verifyCode();
               }}
             >
-              <p className="signInEmail">Code sent to {email.trim()}</p>
+              <p className="signInEmail">{fill(copy.codeSent, { email: email.trim() })}</p>
               <label className="field" htmlFor="sign-in-code">
-                <span className="label">6-digit code</span>
+                <span className="label">{copy.code}</span>
                 <input
                   id="sign-in-code"
                   name="code"
@@ -159,7 +164,7 @@ export function SignInScreen({ onSignedIn }: Props) {
               ) : null}
               <div className="signInActions">
                 <button className="button buttonPrimary" type="submit" disabled={busy || code.length !== 6}>
-                  {verifying ? "Checking code…" : "Sign in"}
+                  {verifying ? copy.checking : copy.signIn}
                 </button>
                 <button
                   className="button"
@@ -167,7 +172,7 @@ export function SignInScreen({ onSignedIn }: Props) {
                   disabled={busy || cooldown > 0}
                   onClick={() => void sendCode()}
                 >
-                  {cooldown > 0 ? `Resend code in ${cooldown}s` : sending ? "Sending code…" : "Resend code"}
+                  {cooldown > 0 ? fill(copy.resendIn, { seconds: formatNumber(cooldown) }) : sending ? copy.sending : copy.resend}
                 </button>
                 <button
                   className="button"
@@ -179,16 +184,16 @@ export function SignInScreen({ onSignedIn }: Props) {
                     setError("");
                   }}
                 >
-                  Use a different email
+                  {copy.differentEmail}
                 </button>
               </div>
             </form>
           )}
 
           <footer className="legalFooter">
-            <a href="/legal/privacy">Privacy</a>
+            <a href="/legal/privacy">{messages.common.privacy}</a>
             <span aria-hidden="true"> · </span>
-            <a href="/legal/terms">Terms</a>
+            <a href="/legal/terms">{messages.common.terms}</a>
           </footer>
         </div>
       </div>

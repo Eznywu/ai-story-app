@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+/test-results/
+/playwright-report/
 
 # next.js
 /.next/
@@ -46,6 +48,10 @@ next-env.d.ts
 # Local poster binaries (keep directory via .gitkeep)
 uploads/posters/*
 !uploads/posters/.gitkeep
+
+# Local voice recordings and cached previews
+uploads/voices/*
+!uploads/voices/.gitkeep
 
 # Capacitor / Xcode (keep ios/ project; ignore local CocoaPods & user data)
 ios/App/Pods

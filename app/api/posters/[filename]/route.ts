@@ -1,7 +1,7 @@
 import fs from "fs/promises";
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth/requireUser";
-import { userOwnsMedia } from "@/lib/auth/ownedStory";
+import { userOwnsPicture } from "@/lib/auth/ownedStory";
 import { isRemoteMediaUrl, localMediaPath } from "@/lib/media/objectStore";
 import { prisma } from "@/lib/prisma";
 
@@ -23,7 +23,7 @@ export async function GET(req: Request) {
       });
     }
 
-    const owned = await userOwnsMedia(auth.user.id, "poster", filename);
+    const owned = await userOwnsPicture(auth.user.id, filename);
     if (!owned) {
       return new Response(JSON.stringify({ error: "File not found" }), {
         status: 404,
@@ -41,11 +41,26 @@ export async function GET(req: Request) {
       });
     } catch {
       const story = await prisma.story.findFirst({
-        where: { userId: auth.user.id, posterFilename: filename },
-        select: { posterUrl: true },
+        where: {
+          userId: auth.user.id,
+          OR: [
+            { posterFilename: filename },
+            { illustrationFilename: filename },
+            { coverFilename: filename },
+          ],
+        },
+        select: { posterUrl: true, illustrationUrl: true, coverUrl: true, posterFilename: true, illustrationFilename: true, coverFilename: true },
       });
-      if (story?.posterUrl && isRemoteMediaUrl(story.posterUrl)) {
-        return NextResponse.redirect(story.posterUrl, 302);
+      const remote =
+        story?.posterFilename === filename
+          ? story.posterUrl
+          : story?.illustrationFilename === filename
+            ? story.illustrationUrl
+            : story?.coverFilename === filename
+              ? story.coverUrl
+              : null;
+      if (remote && isRemoteMediaUrl(remote)) {
+        return NextResponse.redirect(remote, 302);
       }
       return new Response(JSON.stringify({ error: "File not found" }), {
         status: 404,

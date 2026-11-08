@@ -1,12 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import type { VoiceItem } from "@/app/hooks/useTts";
+import type { PersonalVoiceAccess, VoiceItem } from "@/app/hooks/useTts";
+import { useVoicePreview, type VoicePreviewControls } from "@/app/hooks/useVoicePreview";
+import { AddMyVoiceFlow } from "@/app/components/AddMyVoiceFlow";
+import { HappyHorseCheck } from "@/app/components/HappyHorseCheck";
 import { QuietSheet } from "@/app/components/QuietSheet";
 import { StorySetupExtras } from "@/app/components/StorySetupExtras";
-import { languageLabel, voiceSummary } from "@/app/components/voiceLabel";
+import { VoicePreviewButton, VoicePreviewError } from "@/app/components/VoicePreviewButton";
+import { useInterfaceLocale } from "@/app/components/LocaleProvider";
+import { voiceSummary } from "@/app/components/voiceLabel";
 import { STORY_AGE_OPTIONS } from "@/lib/stories/storyAgeOptions";
 import { STORY_INPUT_MAX_CHARS } from "@/lib/types";
+import { redirectIfUnsigned } from "@/lib/auth/redirectIfUnsigned";
+import { fill } from "@/lib/i18n/locales";
 import type { KidProfile, StoryCharacterProfile } from "@/lib/profiles/profilesTypes";
 
 const GENRES = [
@@ -58,9 +65,14 @@ type Props = {
   moralLesson: string;
   voices: VoiceItem[];
   selectedVoiceId: string;
+  personalVoices?: PersonalVoiceAccess;
+  voiceLimit?: number | null;
+  voiceNotice?: string;
+  personalNote?: string;
   isLoadingVoices?: boolean;
   voicesError?: string;
   isGenerating: boolean;
+  submitLabel?: string;
   onAgeChange: (value: string) => void;
   onLanguageChange: (value: string) => void;
   onMainCharacterNameChange: (value: string) => void;
@@ -74,9 +86,12 @@ type Props = {
   onEducationalGoalChange: (value: string) => void;
   onMoralLessonChange: (value: string) => void;
   onVoiceChange: (value: string) => void;
+  onVoiceCreated?: (voiceId: string, selectable: boolean) => void;
   onRetryVoices?: () => void;
   onAddKid: () => void;
   onAddCharacter: () => void;
+  onSelectKid?: (kid: KidProfile) => void;
+  onSelectCharacter?: (character: StoryCharacterProfile) => void;
   onCreate: () => void;
 };
 
@@ -103,6 +118,15 @@ function IconChevron({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
       <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconMic({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <rect x="9" y="3.5" width="6" height="11" rx="3" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M6 11.5a6 6 0 0012 0M12 17.5v3M9 20.5h6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
     </svg>
   );
 }
@@ -211,20 +235,68 @@ export function CreateStoryPicker(props: Props) {
   );
   const [whoOpen, setWhoOpen] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
+  const [addingVoice, setAddingVoice] = useState(false);
+  /** Opened straight from Make my voice: leaving the recording closes the sheet instead of showing the list. */
+  const [addingFromCard, setAddingFromCard] = useState(false);
+  const [renameId, setRenameId] = useState("");
+  const [renameValue, setRenameValue] = useState("");
+  const [deleteId, setDeleteId] = useState("");
+  const [deleteAudio, setDeleteAudio] = useState(false);
+  const [manageBusy, setManageBusy] = useState(false);
+  const [manageError, setManageError] = useState("");
+  const { messages } = useInterfaceLocale();
+  const copy = messages.voice;
+  const preview = useVoicePreview(copy);
+
+  function closeVoiceSheet() {
+    preview.stop();
+    setAddingVoice(false);
+    setAddingFromCard(false);
+    setVoiceOpen(false);
+  }
+
+  function openVoiceSheet(adding: boolean) {
+    preview.stop();
+    setAddingVoice(adding);
+    setAddingFromCard(adding);
+    setVoiceOpen(true);
+  }
+
+  async function manageVoice(method: "PATCH" | "DELETE", id: string, body: object, done: () => void) {
+    if (manageBusy) return;
+    setManageBusy(true);
+    setManageError("");
+    try {
+      const res = await fetch(`/api/voices/${encodeURIComponent(id)}`, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (redirectIfUnsigned(res.status)) return;
+      if (!res.ok) {
+        setManageError(typeof data?.error === "string" && data.error ? data.error : copy.failed);
+        return;
+      }
+      done();
+      props.onRetryVoices?.();
+    } catch {
+      setManageError(copy.failed);
+    } finally {
+      setManageBusy(false);
+    }
+  }
+  const ageText = messages.ages[props.age as keyof typeof messages.ages] || props.age;
   const [themesOpen, setThemesOpen] = useState(!FEATURED.includes(props.genre));
   const [touchOpen, setTouchOpen] = useState(guidanceOpenByDefault);
 
-  const langGroup = props.language.toLowerCase().startsWith("zh") ? "zh" : "en";
-  const matchingVoices = props.voices.filter((voice) =>
-    (voice.language ?? "en").toLowerCase().startsWith(langGroup)
-  );
-  const voiceChoices = matchingVoices.length ? matchingVoices : props.voices;
+  const voiceChoices = props.voices.filter((voice) => voice.group !== "mine" && voiceSpeaks(voice, props.language));
   const selectedVoice = props.voices.find((voice) => voice.id === props.selectedVoiceId);
   const voiceLabel = props.isLoadingVoices
-    ? "Loading voices…"
+    ? copy.loadingVoices
     : props.voicesError
-      ? "Voices unavailable"
-      : voiceSummary(selectedVoice, props.language);
+      ? copy.voicesUnavailable
+      : selectedVoice?.name || voiceSummary(selectedVoice, props.language);
 
   const childName = props.mainCharacterName.trim();
   const visibleGenres =
@@ -237,30 +309,30 @@ export function CreateStoryPicker(props: Props) {
   return (
     <div className="createScreen">
       <header className="createScreen__hero">
-        <h1 className="createScreen__title">Create a story</h1>
-        <p className="createScreen__subtitle">A little magic before bedtime.</p>
+        <h1 className="createScreen__title">{copy.createTitle}</h1>
+        <p className="createScreen__subtitle">{copy.createSubtitle}</p>
       </header>
 
-      <h2 className="createScreen__label">For</h2>
+      <h2 className="createScreen__label">{copy.forChild}</h2>
       <button
         type="button"
         className="createRow"
         onClick={() => setWhoOpen(true)}
         aria-haspopup="dialog"
-        aria-label={childName ? `Story for ${childName}, ${props.age}` : "Choose who this story is for"}
+        aria-label={childName ? `${copy.forChild} ${childName}, ${ageText}` : copy.chooseChild}
       >
         <span className="createAvatar" aria-hidden>
           {initialOf(childName)}
         </span>
         <span className="createRow__text">
-          <span className="createRow__title">{childName || "Choose a child"}</span>
-          <span className="createRow__meta">{props.age}</span>
+          <span className="createRow__title">{childName || copy.chooseChild}</span>
+          <span className="createRow__meta">{ageText}</span>
         </span>
         <IconChevron className="createRow__chevron" />
       </button>
 
-      <h2 className="createScreen__label">Tonight&apos;s theme</h2>
-      <div className="createThemes" role="listbox" aria-label="Tonight's theme">
+      <h2 className="createScreen__label">{copy.tonight}</h2>
+      <div className="createThemes" role="listbox" aria-label={copy.tonight}>
         {visibleGenres.map((genre) => {
           const selected = props.genre === genre;
           return (
@@ -273,17 +345,18 @@ export function CreateStoryPicker(props: Props) {
               onClick={() => props.onGenreChange(genre)}
             >
               <ThemeIcon genre={genre} />
-              <span className="createTheme__label">{genre}</span>
+              {selected ? <span className="createTheme__check" aria-hidden>✓</span> : null}
+              <span className="createTheme__label">{copy.genres[genre as keyof typeof copy.genres] || genre}</span>
             </button>
           );
         })}
       </div>
       <button type="button" className="createLink" onClick={() => setThemesOpen((open) => !open)}>
-        {themesOpen ? "Fewer themes" : "More themes"}
+        {themesOpen ? copy.fewerThemes : copy.moreThemes}
       </button>
 
-      <h2 className="createScreen__label">Story length</h2>
-      <div className="createLength" role="radiogroup" aria-label="Story length">
+      <h2 className="createScreen__label">{copy.storyLength}</h2>
+      <div className="createLength" role="radiogroup" aria-label={copy.storyLength}>
         {LENGTHS.map((item) => {
           const selected = props.length === item.value;
           return (
@@ -295,19 +368,50 @@ export function CreateStoryPicker(props: Props) {
               className={selected ? "createLength__opt createLength__opt--on" : "createLength__opt"}
               onClick={() => props.onLengthChange(item.value)}
             >
-              {item.label}
+              {item.value === "short" ? copy.lengthShort : item.value === "medium" ? copy.lengthMedium : copy.lengthLong}
             </button>
           );
         })}
       </div>
 
-      <h2 className="createScreen__label">Read by</h2>
+      <h2 className="createScreen__label">{copy.language}</h2>
+      <div className="createSheet__chips" role="group" aria-label={copy.language}>
+        <button
+          type="button"
+          className={`createSheet__chip${props.language === "en" ? " createSheet__chip--on" : ""}`}
+          aria-pressed={props.language === "en"}
+          onClick={() => props.onLanguageChange("en")}
+        >
+          {copy.english}
+        </button>
+        <button
+          type="button"
+          className={`createSheet__chip${props.language === "zh-Hant" ? " createSheet__chip--on" : ""}`}
+          aria-pressed={props.language === "zh-Hant"}
+          onClick={() => props.onLanguageChange("zh-Hant")}
+        >
+          {copy.chinese}
+        </button>
+      </div>
+
+      <MyVoiceCard
+        mine={props.voices.filter((voice) => voice.group === "mine")}
+        selectedVoiceId={props.selectedVoiceId}
+        language={props.language}
+        voiceLimit={props.voiceLimit ?? null}
+        preview={preview}
+        onMake={() => openVoiceSheet(true)}
+        onChange={() => openVoiceSheet(false)}
+        onUse={(id) => props.onVoiceChange(id)}
+      />
+
+      <h2 className="createScreen__label">{copy.readBy}</h2>
       <button
         type="button"
         className="createRow"
-        onClick={() => setVoiceOpen(true)}
+        onClick={() => openVoiceSheet(false)}
         aria-haspopup="dialog"
-        aria-label={`Read by ${voiceLabel}`}
+        aria-label={`${copy.readBy} ${voiceLabel}`}
       >
         <span className="createRow__glyph" aria-hidden>
           <IconWave className="createRow__wave" />
@@ -324,18 +428,18 @@ export function CreateStoryPicker(props: Props) {
         aria-expanded={touchOpen}
         onClick={() => setTouchOpen((open) => !open)}
       >
-        {touchOpen ? "Hide personal touch" : "+ Add a personal touch"}
+        {touchOpen ? copy.hideTouch : copy.personalTouch}
       </button>
       {touchOpen ? (
         <div className="createTouch">
           <label className="createTouch__field" htmlFor="personal-touch">
-            <span className="createScreen__label">Optional guidance</span>
+            <span className="createScreen__label">{copy.guidance}</span>
             <textarea
               id="personal-touch"
               value={props.storyInput}
               maxLength={STORY_INPUT_MAX_CHARS}
               rows={3}
-              placeholder="A fear to skip, a favorite animal…"
+              placeholder={copy.guidancePlaceholder}
               onChange={(event) => props.onStoryInputChange(event.target.value)}
               onFocus={(event) => {
                 event.currentTarget.scrollIntoView({ block: "center", behavior: "smooth" });
@@ -365,24 +469,24 @@ export function CreateStoryPicker(props: Props) {
           disabled={props.isGenerating}
         >
           <IconSpark className="createScreen__submitIcon" />
-          {props.isGenerating ? "Creating…" : "Create story"}
+          {props.submitLabel || copy.createStory}
         </button>
       </div>
 
       {whoOpen ? (
-        <QuietSheet title="Who is this for?" onClose={() => setWhoOpen(false)}>
+        <QuietSheet title={copy.whoTitle} closeLabel={copy.close} onClose={() => setWhoOpen(false)}>
           <label className="createSheet__field">
-            <span className="createScreen__label">Name</span>
+            <span className="createScreen__label">{copy.childName}</span>
             <input
               value={props.mainCharacterName}
               onChange={(event) => props.onMainCharacterNameChange(event.target.value)}
-              placeholder="Child's name"
-              aria-label="Child or character name"
+              placeholder={copy.childName}
+              aria-label={copy.childName}
               autoComplete="off"
             />
           </label>
-          <div className="createScreen__label">Age</div>
-          <div className="createSheet__chips" role="listbox" aria-label="Age">
+          <div className="createScreen__label">{copy.age}</div>
+          <div className="createSheet__chips" role="listbox" aria-label={copy.age}>
             {STORY_AGE_OPTIONS.map((age) => (
               <button
                 key={age}
@@ -391,12 +495,12 @@ export function CreateStoryPicker(props: Props) {
                 aria-pressed={props.age === age}
                 onClick={() => props.onAgeChange(age)}
               >
-                {age}
+                {messages.ages[age as keyof typeof messages.ages] || age}
               </button>
             ))}
           </div>
-          <div className="createScreen__label">Child</div>
-          <div className="createSheet__chips" role="listbox" aria-label="Child">
+          <div className="createScreen__label">{copy.childKind}</div>
+          <div className="createSheet__chips" role="listbox" aria-label={copy.childKind}>
             {GENDERS.map((gender) => (
               <button
                 key={gender.value}
@@ -405,13 +509,13 @@ export function CreateStoryPicker(props: Props) {
                 aria-pressed={props.childGender === gender.value}
                 onClick={() => props.onChildGenderChange(gender.value)}
               >
-                {gender.label}
+                {gender.value === "girl" ? copy.girl : gender.value === "boy" ? copy.boy : gender.value === "nonbinary" ? copy.other : copy.any}
               </button>
             ))}
           </div>
           {props.kids.length || props.characters.length ? (
             <>
-              <div className="createScreen__label">Saved</div>
+              <div className="createScreen__label">{copy.saved}</div>
               <div className="createSheet__chips" aria-label="Saved kids and characters">
                 {props.kids.map((kid) => (
                   <button
@@ -419,6 +523,7 @@ export function CreateStoryPicker(props: Props) {
                     type="button"
                     className={`createSheet__chip${props.mainCharacterName === kid.name ? " createSheet__chip--on" : ""}`}
                     onClick={() => {
+                      props.onSelectKid?.(kid);
                       props.onMainCharacterNameChange(kid.name);
                       props.onAgeChange(kid.age);
                       props.onChildGenderChange(
@@ -443,6 +548,7 @@ export function CreateStoryPicker(props: Props) {
                       props.mainCharacterName === character.name ? " createSheet__chip--on" : ""
                     }`}
                     onClick={() => {
+                      props.onSelectCharacter?.(character);
                       props.onMainCharacterNameChange(character.name);
                       props.onChildGenderChange("any");
                       const note = [
@@ -471,7 +577,7 @@ export function CreateStoryPicker(props: Props) {
                 props.onAddKid();
               }}
             >
-              + Kid
+              + {copy.addKid}
             </button>
             <button
               type="button"
@@ -481,69 +587,322 @@ export function CreateStoryPicker(props: Props) {
                 props.onAddCharacter();
               }}
             >
-              + Character
+              + {copy.addCharacter}
             </button>
           </div>
         </QuietSheet>
       ) : null}
 
       {voiceOpen ? (
-        <QuietSheet title="Read by" onClose={() => setVoiceOpen(false)}>
-          <div className="createSheet__chips" role="group" aria-label="Language">
-            <button
-              type="button"
-              className={`createSheet__chip${props.language === "en" ? " createSheet__chip--on" : ""}`}
-              aria-pressed={props.language === "en"}
-              onClick={() => props.onLanguageChange("en")}
-            >
-              English
-            </button>
-            <button
-              type="button"
-              className={`createSheet__chip${props.language === "zh-Hant" ? " createSheet__chip--on" : ""}`}
-              aria-pressed={props.language === "zh-Hant"}
-              onClick={() => props.onLanguageChange("zh-Hant")}
-            >
-              中文
-            </button>
-          </div>
-          {props.voicesError ? (
-            <div className="fieldErrorRow" role="alert">
-              <span className="fieldErrorText">{props.voicesError}</span>
-              {props.onRetryVoices ? (
-                <button className="createLink" type="button" onClick={props.onRetryVoices}>
-                  Retry voices
-                </button>
-              ) : null}
-            </div>
+        <QuietSheet title={addingVoice ? copy.makeVoiceTitle : copy.readBy} closeLabel={copy.close} onClose={closeVoiceSheet}>
+          {addingVoice ? (
+            <AddMyVoiceFlow
+              language={props.language}
+              personalVoices={props.personalVoices || "sign-in-required"}
+              preview={preview}
+              onClose={() => {
+                preview.stop();
+                if (addingFromCard) closeVoiceSheet();
+                else setAddingVoice(false);
+              }}
+              onCreated={(voiceId, selectable) => {
+                closeVoiceSheet();
+                props.onVoiceCreated?.(voiceId, selectable);
+                if (selectable) props.onVoiceChange(voiceId);
+              }}
+            />
           ) : (
-            <div className="createSheet__list" role="listbox" aria-label="Voice">
-              {props.isLoadingVoices ? <p className="createRow__meta">Loading voices…</p> : null}
-              {voiceChoices.map((voice) => {
-                const selected = props.selectedVoiceId === voice.id;
-                const label = voiceSummary(voice, voice.language || props.language);
-                return (
-                  <button
-                    key={voice.id}
-                    type="button"
-                    role="option"
-                    aria-selected={selected}
-                    className={`createSheet__voice${selected ? " createSheet__voice--on" : ""}`}
-                    onClick={() => {
-                      props.onVoiceChange(voice.id);
-                      setVoiceOpen(false);
+            <>
+              {props.voiceNotice ? <p className="voiceNote">{props.voiceNotice}</p> : null}
+              {props.personalNote ? <p className="voiceNote">{props.personalNote}</p> : null}
+              {props.voicesError ? (
+                <div className="fieldErrorRow" role="alert">
+                  <span className="fieldErrorText">{props.voicesError}</span>
+                  {props.onRetryVoices ? (
+                    <button className="createLink" type="button" onClick={props.onRetryVoices}>
+                      {copy.retryVoices}
+                    </button>
+                  ) : null}
+                </div>
+              ) : (
+                <>
+                  <VoiceGroup
+                    title={copy.storyVoices}
+                    voices={voiceChoices.filter((voice) => voice.group !== "mine")}
+                    selectedVoiceId={props.selectedVoiceId}
+                    language={props.language}
+                    preview={preview}
+                    onSelect={(id) => {
+                      props.onVoiceChange(id);
+                      closeVoiceSheet();
                     }}
-                  >
-                    <IconWave className="createRow__wave" />
-                    <span>{label}</span>
-                  </button>
-                );
-              })}
-            </div>
+                  />
+                  <VoiceGroup
+                    title={copy.myVoices}
+                    voices={props.voices.filter((voice) => voice.group === "mine")}
+                    selectedVoiceId={props.selectedVoiceId}
+                    language={props.language}
+                    preview={preview}
+                    empty={copy.emptyMine}
+                    onSelect={(id) => {
+                      props.onVoiceChange(id);
+                      closeVoiceSheet();
+                    }}
+                    onRename={(voice) => {
+                      setRenameId(voice.id);
+                      setRenameValue(voice.name || "");
+                    }}
+                    onDelete={(voice) => {
+                      setDeleteId(voice.id);
+                      setDeleteAudio(false);
+                    }}
+                  />
+                  {renameId ? (
+                    <form
+                      className="voiceManage"
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        void manageVoice("PATCH", renameId, { name: renameValue }, () => setRenameId(""));
+                      }}
+                    >
+                      <label className="createTouch__field">
+                        <span className="createScreen__label">{copy.renameTitle}</span>
+                        <input value={renameValue} onChange={(event) => setRenameValue(event.target.value)} />
+                      </label>
+                      {manageError ? (
+                        <div className="fieldErrorRow" role="alert">
+                          <span className="fieldErrorText">{manageError}</span>
+                        </div>
+                      ) : null}
+                      <button type="submit" className="createScreen__submit" disabled={manageBusy || !renameValue.trim()}>
+                        {copy.saveName}
+                      </button>
+                    </form>
+                  ) : null}
+                  {deleteId ? (
+                    <div className="voiceManage">
+                      <h3 className="voiceFlow__title">{copy.deleteTitle}</h3>
+                      <p>{copy.deleteBody}</p>
+                      <HappyHorseCheck checked={deleteAudio} label={copy.deleteAlso} onChange={setDeleteAudio} />
+                      {manageError ? (
+                        <div className="fieldErrorRow" role="alert">
+                          <span className="fieldErrorText">{manageError}</span>
+                        </div>
+                      ) : null}
+                      <div className="voiceFlow__actions">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDeleteId("");
+                            setManageError("");
+                          }}
+                        >
+                          {copy.cancel}
+                        </button>
+                        <button
+                          type="button"
+                          className="createScreen__submit"
+                          disabled={manageBusy}
+                          onClick={() => {
+                            void manageVoice("DELETE", deleteId, { deleteGeneratedAudio: deleteAudio }, () => setDeleteId(""));
+                          }}
+                        >
+                          {copy.confirmDelete}
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+                </>
+              )}
+              <button
+                type="button"
+                className="createLink createLink--touch"
+                onClick={() => {
+                  preview.stop();
+                  setAddingVoice(true);
+                }}
+              >
+                {copy.add}
+              </button>
+              <p className="createRow__meta">{copy.narrationLine}</p>
+            </>
           )}
-          <p className="createRow__meta">{languageLabel(props.language)} narration</p>
         </QuietSheet>
       ) : null}
     </div>
+  );
+}
+
+function voiceSpeaks(voice: VoiceItem, language: string) {
+  const group = language.toLowerCase().startsWith("zh") ? "zh" : "en";
+  const langs = voice.languages?.length ? voice.languages : [voice.language || "en"];
+  return langs.some((item) => item.toLowerCase().startsWith(group));
+}
+
+function voiceStatusLabel(voice: VoiceItem, copy: { voiceReady: string; voicePending: string; voiceDeleting: string }) {
+  if (voice.status === "pending_verification") return copy.voicePending;
+  if (voice.status === "deleting" || voice.status === "delete_failed") return copy.voiceDeleting;
+  return copy.voiceReady;
+}
+
+/**
+ * Sits above the narrator row. Without a personal voice it is the Make my voice card, which opens consent and
+ * recording. With one, it shows that voice, whether it is ready, Preview, Change, and Add another.
+ */
+function MyVoiceCard(props: {
+  mine: VoiceItem[];
+  selectedVoiceId: string;
+  language: string;
+  voiceLimit: number | null;
+  preview: VoicePreviewControls;
+  onMake: () => void;
+  onChange: () => void;
+  onUse: (id: string) => void;
+}) {
+  const { messages } = useInterfaceLocale();
+  const copy = messages.voice;
+  const shown =
+    props.mine.find((voice) => voice.id === props.selectedVoiceId) ??
+    props.mine.find((voice) => voice.selectable !== false) ??
+    props.mine[0];
+
+  if (!shown) {
+    return (
+      <button type="button" className="makeVoice" onClick={props.onMake} aria-haspopup="dialog">
+        <span className="makeVoice__icon" aria-hidden>
+          <IconMic className="makeVoice__mic" />
+        </span>
+        <span className="makeVoice__text">
+          <span className="makeVoice__title">{copy.makeVoiceTitle}</span>
+          <span className="makeVoice__body">{copy.makeVoiceBody}</span>
+        </span>
+        <IconChevron className="makeVoice__chevron" />
+      </button>
+    );
+  }
+
+  const ready = shown.selectable !== false && shown.status !== "pending_verification" && shown.status !== "deleting";
+  const selected = shown.id === props.selectedVoiceId;
+  const atLimit = props.voiceLimit != null && props.mine.length >= props.voiceLimit;
+  const name = shown.name || copy.defaultVoiceName;
+  return (
+    <section className="myVoice" aria-labelledby="my-voice-name">
+      <div className="myVoice__head">
+        <span className="makeVoice__icon" aria-hidden>
+          <IconMic className="makeVoice__mic" />
+        </span>
+        <span className="myVoice__text">
+          <span className="myVoice__eyebrow">{copy.yourVoice}</span>
+          <span id="my-voice-name" className="myVoice__name">
+            {name}
+          </span>
+          <span className={`myVoice__status${ready ? " myVoice__status--ready" : ""}`}>
+            <span className="myVoice__dot" aria-hidden />
+            {voiceStatusLabel(shown, copy)}
+            {selected ? ` · ${copy.selected}` : ""}
+          </span>
+        </span>
+      </div>
+      <div className="myVoice__actions">
+        {ready ? <VoicePreviewButton voiceId={shown.id} name={name} language={props.language} preview={props.preview} /> : null}
+        {ready && !selected ? (
+          <button type="button" className="myVoice__action myVoice__action--primary" onClick={() => props.onUse(shown.id)}>
+            {copy.useVoice}
+          </button>
+        ) : null}
+        <button type="button" className="myVoice__action" onClick={props.onChange} aria-haspopup="dialog">
+          {copy.change}
+        </button>
+        <button
+          type="button"
+          className="myVoice__action"
+          onClick={props.onMake}
+          disabled={atLimit}
+          aria-haspopup="dialog"
+          aria-describedby={atLimit ? "my-voice-limit" : undefined}
+        >
+          {copy.addAnother}
+        </button>
+      </div>
+      <VoicePreviewError voiceId={shown.id} preview={props.preview} />
+      {atLimit ? (
+        <p id="my-voice-limit" className="myVoice__note">
+          {fill(copy.voiceLimitReached, { count: String(props.voiceLimit) })}
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
+function VoiceGroup(props: {
+  title: string;
+  voices: VoiceItem[];
+  selectedVoiceId: string;
+  language: string;
+  preview: VoicePreviewControls;
+  empty?: string;
+  onSelect: (id: string) => void;
+  onRename?: (voice: VoiceItem) => void;
+  onDelete?: (voice: VoiceItem) => void;
+}) {
+  const { messages } = useInterfaceLocale();
+  const copy = messages.voice;
+  return (
+    <section className="voiceGroup">
+      <h3 className="createScreen__label">{props.title}</h3>
+      {props.voices.length ? (
+        <div className="createSheet__list" role="listbox" aria-label={props.title}>
+          {props.voices.map((voice) => {
+            const selected = props.selectedVoiceId === voice.id;
+            const pendingVerification = voice.status === "pending_verification";
+            const pendingAudition = voice.status === "pending_audition" || voice.nonNativeRisk;
+            const ready = voice.selectable !== false && !pendingVerification && !pendingAudition;
+            return (
+              <div key={voice.id} className={`voiceCard${selected ? " voiceCard--on" : ""}`}>
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={selected}
+                  className="voiceCard__main"
+                  disabled={!ready}
+                  onClick={() => props.onSelect(voice.id)}
+                >
+                  <span className="voiceCard__name">
+                    {selected ? <span className="voiceCard__mark" aria-hidden>✓</span> : null}
+                    {voice.name || voiceSummary(voice, props.language)}
+                  </span>
+                  <span className="voiceCard__desc">{voice.description}</span>
+                  {selected ? <span className="voiceCard__selected">{copy.selected}</span> : null}
+                  {pendingVerification ? <span className="voiceCard__selected">{copy.pending}</span> : null}
+                  {pendingAudition ? <span className="voiceCard__selected">{copy.pendingAudition}</span> : null}
+                </button>
+                {props.onRename && voice.group === "mine" ? (
+                  <button type="button" className="voiceCard__preview" onClick={() => props.onRename?.(voice)}>
+                    {copy.rename}
+                  </button>
+                ) : null}
+                {props.onDelete && voice.group === "mine" ? (
+                  <button type="button" className="voiceCard__preview" onClick={() => props.onDelete?.(voice)}>
+                    {copy.delete}
+                  </button>
+                ) : null}
+                {pendingVerification || voice.status === "deleting" || voice.status === "delete_failed" ? null : (
+                  <VoicePreviewButton
+                    voiceId={voice.id}
+                    name={voice.name || ""}
+                    language={props.language}
+                    preview={props.preview}
+                    className="voiceCard__preview"
+                  />
+                )}
+                <VoicePreviewError voiceId={voice.id} preview={props.preview} />
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="createRow__meta">{props.empty || ""}</p>
+      )}
+    </section>
   );
 }

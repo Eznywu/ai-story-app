@@ -105,7 +105,7 @@ async function generateStandalone(opts: {
   const n = opts.index + 1;
   const name = pickName(opts.genreSeed * 100 + opts.index);
   const title = `${opts.genre} — standalone ${n}`;
-  const text = await generateStoryWithRetry(
+  const generated = await generateStoryWithRetry(
     {
       genre: opts.genre,
       length: "short",
@@ -117,6 +117,7 @@ async function generateStandalone(opts: {
     },
     { retries: 2 }
   );
+  const text = generated.text;
   const slug = genreSlug(opts.genre);
   const file = mdFile({
     genre: opts.genre,
@@ -152,7 +153,7 @@ async function generateSeries(opts: {
         `This is part ${part} of ${PARTS_PER_SERIES} of the same bedtime mini-series. Same main character (${name}), same calm tone and world. Do not restart from the beginning; continue seamlessly. The previous part ended near: "${tail}"`;
     }
 
-    const text = await generateStoryWithRetry(
+    const generated = await generateStoryWithRetry(
       {
         genre: opts.genre,
         length: "short",
@@ -165,7 +166,7 @@ async function generateSeries(opts: {
       },
       { retries: 2 }
     );
-    previous = text.trim();
+    previous = generated.text.trim();
 
     const file = mdFile({
       genre: opts.genre,

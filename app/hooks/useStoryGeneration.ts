@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { StoryGenerationInput } from "@/lib/types";
 import { getErrorMessage } from "@/lib/errors";
 import { redirectIfUnsigned } from "@/lib/auth/redirectIfUnsigned";
 
@@ -13,10 +14,10 @@ export type StoryGenerationForm = {
   length: string;
   title: string;
   storyInput: string;
+  character?: StoryGenerationInput["character"];
 };
 
 export function useStoryGeneration() {
-  const [story, setStory] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
 
   async function generateStory(form: StoryGenerationForm) {
@@ -34,6 +35,7 @@ export function useStoryGeneration() {
           length: form.length,
           title: form.title,
           storyInput: form.storyInput,
+          character: form.character,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -43,9 +45,10 @@ export function useStoryGeneration() {
       if (!res.ok) {
         throw new Error(data?.error || `Story API failed (${res.status})`);
       }
-      const nextStory = String(data?.story ?? "");
-      setStory(nextStory);
-      return nextStory;
+      return {
+        text: String(data?.story ?? ""),
+        visualBrief: data?.visualBrief ?? null,
+      };
     } catch (e: unknown) {
       throw new Error(getErrorMessage(e, "Failed to generate story."));
     } finally {
@@ -54,8 +57,6 @@ export function useStoryGeneration() {
   }
 
   return {
-    story,
-    setStory,
     isGenerating,
     generateStory,
   };

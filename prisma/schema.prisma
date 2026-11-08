@@ -15,6 +15,7 @@ model User {
   sessions      Session[]
   stories       Story[]
   voices        Voice[]
+  voicePreference VoicePreference?
   kids          KidProfile[]
   characters    StoryCharacter[]
   readingStats  ReadingStats?
@@ -76,26 +77,151 @@ model Story {
   audioConfigVersion     String?
   audioConfigId          String?
   audioCacheKey          String?
+  /** True when this recording must not use a public Blob URL. */
+  audioPrivate           Boolean  @default(false)
+  /** Server-only location for a private recording. Never send this to the browser. */
+  audioStorageUrl        String?
+  audioVoiceKind         String?
+  audioVoiceVersion      Int?
   /** True when created by the daily cron (`lib/stories/dailyAutomatedStories.ts`). */
   dailyAutomated Boolean  @default(false)
+  /** Frozen character at save time. Later profile edits do not change this story's art. */
+  characterId        String?
+  characterSnapshot  Json?
+  visualBrief        Json?
+  illustrationFilename String?
+  illustrationUrl      String?
+  coverFilename        String?
+  coverUrl             String?
+  /** illustrated, fallback, error, or pending. Null until the first artwork request. */
+  artworkStatus    String?
+  artworkCacheKey  String?
+  posterCaption    String?
+  dedication       String?
+  artworkMeta      Json?
   createdAt DateTime @default(now())
   narrationAssets NarrationAsset[]
 
   @@index([userId, createdAt])
+  @@index([artworkCacheKey])
+}
+
+/// One illustration job. cacheKey is unique so two servers cannot start the same paid image.
+model ArtworkJob {
+  id               String    @id @default(cuid())
+  cacheKey         String    @unique
+  scopeKey         String
+  storyId          String
+  status           String
+  provider         String?
+  model            String?
+  quality          String?
+  attemptCount     Int       @default(0)
+  estimatedCostUsd Float     @default(0)
+  leaseUntil       DateTime?
+  blockedUntil     DateTime?
+  errorMessage     String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([scopeKey, createdAt])
+  @@index([storyId])
+}
+
+/// Daily artwork allowance. Guest browsers do not share a bucket just because they share a user id.
+model ArtworkSpendDay {
+  id           String @id @default(cuid())
+  scopeKey     String
+  dayKey       String
+  generations  Int    @default(0)
+  estimatedUsd Float  @default(0)
+
+  @@unique([scopeKey, dayKey])
 }
 
 model Voice {
-  id          String   @id @default(cuid())
-  userId      String?
-  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  displayName String
-  provider    String   @default("elevenlabs")
-  voiceId     String
-  language    String   @default("en")
-  createdAt   DateTime @default(now())
+  id                   String    @id @default(cuid())
+  userId               String?
+  user                 User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  displayName          String
+  provider             String    @default("elevenlabs")
+  /// Provider voice id. Never returned to the browser and never accepted from it.
+  voiceId              String
+  /// Recorded language of this voice. New rows store the recording locale, not a collapsed story language.
+  language             String    @default("en")
+  /// Locale of the script the parent actually read. Distinct from story narration language.
+  recordingLocale      String?
+  /// Registry version frozen when the take started.
+  scriptVersion        String?
+  status               String    @default("ready")
+  voiceVersion         Int       @default(1)
+  requiresVerification Boolean   @default(false)
+  consentAt            DateTime?
+  consentTextVersion   String?
+  idempotencyKey       String?
+  sampleFilename       String?
+  /// Private storage URL. Not a public Blob URL.
+  sampleStorageUrl     String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
   @@unique([userId, voiceId])
+  @@unique([userId, idempotencyKey])
   @@index([userId])
+  @@index([status])
+}
+
+/// One clone attempt, used for the hourly rate limit.
+model VoiceAttempt {
+  id        String   @id @default(cuid())
+  userId    String
+  kind      String   @default("clone")
+  createdAt DateTime @default(now())
+
+  @@index([userId, kind, createdAt])
+}
+
+/// Retryable delete of a provider clone and its sample after a failed save or delete.
+model VoiceCleanup {
+  id               String   @id @default(cuid())
+  userId           String
+  providerVoiceId  String
+  sampleFilename   String?
+  sampleStorageUrl String?
+  voiceRowId       String?
+  status           String   @default("pending")
+  attempts         Int      @default(0)
+  lastError        String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([status, createdAt])
+}
+
+/// Remembered narrator and language for a signed-in account. Not an ownership record.
+model VoicePreference {
+  userId     String   @id
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  voiceAppId String
+  language   String
+  updatedAt  DateTime @updatedAt
+}
+
+/// One cached preview. Replay reads this row and does not call a paid voice API.
+model NarrationPreview {
+  id           String   @id @default(cuid())
+  cacheKey     String   @unique
+  voiceAppId   String
+  ownerUserId  String?
+  language     String
+  modelId      String
+  voiceVersion Int      @default(1)
+  source       String
+  filename     String?
+  storageUrl   String?
+  createdAt    DateTime @default(now())
+
+  @@index([ownerUserId, voiceAppId])
 }
 
 model KidProfile {
@@ -164,6 +290,10 @@ model NarrationAsset {
   baselineFlag      Boolean  @default(false)
   /// story, benchmark, or weekly
   source            String   @default("story")
+  /// default, personal, or legacy. Null on rows saved before this was recorded.
+  voiceKind         String?
+  voiceVersion      Int?
+  ownerUserId       String?
   createdAt         DateTime @default(now())
 
   @@index([storyId, createdAt])
