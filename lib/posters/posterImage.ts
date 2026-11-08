@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { createError, getErrorMessage, getErrorStatus } from "@/lib/errors";
 import { generatePosterPngFromGemini } from "@/lib/posters/geminiPoster";
 import { generatePosterPngFromOpenAI } from "@/lib/posters/openaiPoster";
@@ -30,10 +30,17 @@ function hasGeminiKey(): boolean {
   );
 }
 
+/** Literal URLs so the serverless trace includes the files. A built path is easy to omit. */
+const MOCK_SCENE_URL: Record<SceneKind, URL> = {
+  human: new URL("../providers/fixtures/mock-scene-human-MOCK.png", import.meta.url),
+  rabbit: new URL("../providers/fixtures/mock-scene-rabbit-MOCK.png", import.meta.url),
+  dragon: new URL("../providers/fixtures/mock-scene-dragon-MOCK.png", import.meta.url),
+  space: new URL("../providers/fixtures/mock-scene-space-MOCK.png", import.meta.url),
+};
+
 /** Committed square scene. No provider is called. */
 export function mockIllustrationPng(kind: SceneKind = "human"): Buffer {
-  const file = path.join(process.cwd(), "lib/providers/fixtures", `mock-scene-${kind}-MOCK.png`);
-  return fs.readFileSync(file);
+  return fs.readFileSync(fileURLToPath(MOCK_SCENE_URL[kind]));
 }
 
 /**

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } fro
 import { getErrorMessage } from "@/lib/errors";
 import { clientJson } from "@/lib/auth/clientApi";
 import { redirectIfUnsigned } from "@/lib/auth/redirectIfUnsigned";
+import { narratorAfterVoicesLoad } from "@/lib/voices/narratorChoice";
 import { readVoicePreference, writeVoicePreference } from "@/lib/voices/preference";
 
 export type VoiceItem = {
@@ -40,18 +41,6 @@ type VoiceApiItem = {
 
 export type PersonalVoiceAccess = "available" | "sign-in-required";
 
-function languageGroup(language: string) {
-  return language.toLowerCase().startsWith("zh") ? "zh-Hant" : "en";
-}
-
-function pickDefaultVoice(voices: VoiceItem[], language: string) {
-  const normalizedLanguage = languageGroup(language);
-  const compatible = voices.filter((voice) => {
-    const langs = voice.languages?.length ? voice.languages : [voice.language || "en"];
-    return langs.some((item) => languageGroup(item) === normalizedLanguage) && voice.selectable !== false && voice.group !== "mine";
-  });
-  return compatible.find((voice) => voice.isDefault) ?? compatible[0] ?? voices.find((voice) => voice.isDefault) ?? null;
-}
 
 function savedAudioUrlFromHeader(value: string): string | null {
   if (!value) return null;
@@ -88,6 +77,7 @@ export function useTts(language: string, externalAudioRef?: RefObject<HTMLAudioE
   const [voiceLimit, setVoiceLimit] = useState<number | null>(null);
   const internalAudioRef = useRef<HTMLAudioElement | null>(null);
   const narrationsInFlight = useRef(new Map<string, Promise<Narration>>());
+  const explicitVoiceId = useRef<string | null>(null);
   const audioRef = externalAudioRef ?? internalAudioRef;
 
   const fetchVoices = useCallback(async () => {
@@ -116,12 +106,15 @@ export function useTts(language: string, externalAudioRef?: RefObject<HTMLAudioE
       }));
       setPersonalVoices(data.personalVoices === "available" ? "available" : "sign-in-required");
       setVoices(normalized);
-      setSelectedVoiceId((prev) => {
-        const saved = readVoicePreference();
-        const preferred = prev || saved?.voiceId || "";
-        if (preferred && normalized.some((voice) => voice.id === preferred)) return preferred;
-        return pickDefaultVoice(normalized, language)?.id || "";
-      });
+      setSelectedVoiceId((prev) =>
+        narratorAfterVoicesLoad({
+          voices: normalized,
+          language,
+          previousId: prev,
+          saved: readVoicePreference(),
+          explicitId: explicitVoiceId.current,
+        })
+      );
       return normalized;
     } catch (e: unknown) {
       setVoicesError(getErrorMessage(e, "Could not load voices."));
@@ -133,8 +126,14 @@ export function useTts(language: string, externalAudioRef?: RefObject<HTMLAudioE
 
   useEffect(() => {
     if (!voices.length || selectedVoiceId) return;
-    const fallback = pickDefaultVoice(voices, language);
-    if (fallback?.id) setSelectedVoiceId(fallback.id);
+    const fallback = narratorAfterVoicesLoad({
+      voices,
+      language,
+      previousId: "",
+      saved: readVoicePreference(),
+      explicitId: explicitVoiceId.current,
+    });
+    if (fallback) setSelectedVoiceId(fallback);
   }, [language, voices, selectedVoiceId]);
 
   function replaceAudioUrl(next: string) {
@@ -254,6 +253,7 @@ export function useTts(language: string, externalAudioRef?: RefObject<HTMLAudioE
   }
 
   const chooseVoice = useCallback((voiceId: string) => {
+    explicitVoiceId.current = voiceId;
     setSelectedVoiceId(voiceId);
     writeVoicePreference({ voiceId, language });
     void clientJson("/api/voice-preference", {

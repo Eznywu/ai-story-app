@@ -4,9 +4,8 @@ import { captureException } from "@/lib/monitoring";
 import { requireUser } from "@/lib/auth/requireUser";
 import { isSafeStoryId } from "@/lib/stories/storyIds";
 import { mockProvidersEnabled } from "@/lib/providers/mockProviders";
-import { runArtworkRequest, type ArtworkIntent } from "@/lib/posters/artworkService";
+import { runArtworkRequest, type ArtworkDeps, type ArtworkIntent } from "@/lib/posters/artworkService";
 import { createPrismaArtworkStore } from "@/lib/posters/artworkStore";
-import { composeArtworkPng, transcodeImageToPng } from "@/lib/posters/composeArtwork";
 import { generateOneIllustration } from "@/lib/posters/posterImage";
 import { requestLegacyVisualBrief } from "@/lib/posters/legacyBrief";
 import { posterRoutePublicError } from "@/lib/posters/posterDiagnostics";
@@ -41,6 +40,13 @@ export async function POST(req: Request) {
     }
     const intent = requested as ArtworkIntent;
     const forceFallback = Boolean(body.forceFallback) && mockProvidersEnabled();
+    const mock = mockProvidersEnabled();
+    // Mock mode must not load sharp. A failed native import becomes a non-JSON 500,
+    // which the story page can only show as "Poster request failed (500)".
+    const compose: ArtworkDeps["compose"] = mock
+      ? async (input) => input.illustration
+      : (await import("@/lib/posters/composeArtwork")).composeArtworkPng;
+    const transcodeToPng = mock ? undefined : (await import("@/lib/posters/composeArtwork")).transcodeImageToPng;
 
     const result = await runArtworkRequest(
       {
@@ -57,8 +63,8 @@ export async function POST(req: Request) {
       {
         store: createPrismaArtworkStore(),
         provider: ({ prompt }) => generateOneIllustration(prompt),
-        compose: composeArtworkPng,
-        transcodeToPng: transcodeImageToPng,
+        compose,
+        transcodeToPng,
         legacyBrief: requestLegacyVisualBrief,
         forceFallback,
       }

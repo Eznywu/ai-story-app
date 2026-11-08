@@ -16,7 +16,8 @@ import {
   type ImageProviderResult,
 } from "../lib/posters/artworkService.ts";
 import { sniffImageMime } from "../lib/posters/imageBytes.ts";
-import { mockIllustrationPng } from "../lib/posters/posterImage.ts";
+import { generateOneIllustration, mockIllustrationPng } from "../lib/posters/posterImage.ts";
+import { mockProvidersEnabled } from "../lib/providers/mockProviders.ts";
 import { KEEPSAKE_HEIGHT, keepsakeArtRatio, posterCopy, wrapPosterText } from "../lib/posters/posterLayout.ts";
 import { encodeRgbaPng } from "../lib/posters/pngEncode.ts";
 import { buildCharacterSnapshot } from "../lib/posters/characterSnapshot.ts";
@@ -779,6 +780,41 @@ test("keepsake art is 75 to 80 percent, and English and Traditional Chinese titl
   assert.ok(chinese.caption.lines.length <= 2);
   assert.equal(chinese.dedication.lines.length, 1);
   assert.equal(sniffImageMime(encodeRgbaPng(2, 2, () => [0, 0, 0, 255])), "image/png");
+});
+
+test("mock poster mode returns a real PNG and does not need sharp or a provider key", async () => {
+  const previous = {
+    MOCK_PROVIDERS: process.env.MOCK_PROVIDERS,
+    VERCEL_ENV: process.env.VERCEL_ENV,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+  };
+  process.env.MOCK_PROVIDERS = "1";
+  process.env.VERCEL_ENV = "preview";
+  delete process.env.OPENAI_API_KEY;
+  try {
+    assert.equal(mockProvidersEnabled(), true);
+    const image = await generateOneIllustration("a small child and a rabbit in a meadow");
+    assert.equal(image.provider, "mock");
+    assert.equal(sniffImageMime(image.bytes), "image/png");
+    const memory = createMemoryStore([storyRow({ id: "story_mock_poster01" })]);
+    const result = await runArtworkRequest(
+      { userId: "user_1", email: GUEST_EMAIL, storyId: "story_mock_poster01", intent: "create", clientKey: "qa-browser" },
+      {
+        store: memory.store,
+        provider: async () => image,
+        compose: async (input) => input.illustration,
+        env: { ...baseEnv, MOCK_PROVIDERS: "1", VERCEL_ENV: "preview" },
+      }
+    );
+    assert.equal(result.httpStatus, 200);
+    assert.equal(result.status, "illustrated");
+    assert.equal(result.posterUrl?.includes("poster_"), true);
+  } finally {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
 });
 
 test("a character snapshot does not follow a later profile edit", () => {

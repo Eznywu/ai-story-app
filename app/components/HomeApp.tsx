@@ -137,6 +137,8 @@ export function HomeApp({ uiMode = "responsive" }: Props) {
   const { locale, messages } = useInterfaceLocale();
   const localeRef = useRef(locale);
   localeRef.current = locale;
+  // Form defaults, not a saved child. With login paused, Profile can be empty
+  // while this name and age still appear. They are not an account identity.
   const [age, setAge] = useState("6 months");
   const [language, setLanguage] = useState("zh-Hant");
   const [voiceNotice, setVoiceNotice] = useState("");
