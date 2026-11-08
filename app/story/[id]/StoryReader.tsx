@@ -22,6 +22,7 @@ import { redirectIfUnsigned } from "@/lib/auth/redirectIfUnsigned";
 import { PLAYBACK_RATES } from "@/lib/tts/ttsLimits";
 import { activeNarrationSpeed, activeTtsConfig } from "@/lib/tts/config";
 import { savedAudioIdentityStatus } from "@/lib/tts/audioIdentity";
+import { narratorForOpenStory } from "@/lib/voices/narratorChoice";
 import { useReadingStats } from "@/app/hooks/useReadingStats";
 import dictionaryFile from "@/data/pronunciation/dictionary.json";
 
@@ -166,6 +167,7 @@ export function StoryReader({ storyId }: { storyId: string }) {
   useDocumentTheme("night");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const posterOnce = useRef<string | null>(null);
+  const openedVoiceFor = useRef<string | null>(null);
   const playOnce = useRef(false);
   const lastPositionSave = useRef(0);
   const [from] = useState(() => (typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("from")));
@@ -254,10 +256,16 @@ export function StoryReader({ storyId }: { storyId: string }) {
   }, [loadStory, fetchVoices]);
 
   useEffect(() => {
-    const requested = new URLSearchParams(window.location.search).get("voice");
-    if (!requested || !voices.some((voice) => voice.id === requested)) return;
-    setSelectedVoiceId(requested);
-  }, [setSelectedVoiceId, voices]);
+    if (!story || !voices.length || openedVoiceFor.current === story.id) return;
+    openedVoiceFor.current = story.id;
+    const next = narratorForOpenStory({
+      voices,
+      language: story.language?.trim() || "zh-Hant",
+      savedVoiceId: story.audioVoiceId,
+      queryVoiceId: new URLSearchParams(window.location.search).get("voice"),
+    });
+    if (next) setSelectedVoiceId(next);
+  }, [setSelectedVoiceId, story, voices]);
 
   useEffect(() => {
     const audio = audioRef.current;
