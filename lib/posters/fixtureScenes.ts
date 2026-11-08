@@ -46,20 +46,47 @@ function human(x: number, y: number, s: number): RGBA {
   return head ?? color;
 }
 
+/**
+ * Free stand-in for the Lulu lantern path: a large grey rabbit, white chest,
+ * blue scarf, brass bell, lanterns receding, open ground along the bottom.
+ * It is not the real-provider reference.
+ */
 function rabbit(x: number, y: number, s: number): RGBA {
-  let color = sky(y, s, [214, 228, 206, 255], [246, 241, 233, 255]);
-  if (y > s * 0.72) color = [168, 196, 140, 255];
-  if (hit(x, y, s * 0.22, s * 0.62, s * 0.08, s * 0.05)) color = [232, 168, 176, 255];
-  if (hit(x, y, s * 0.5, s * 0.62, s * 0.16, s * 0.12)) color = [186, 186, 190, 255];
-  if (hit(x, y, s * 0.5, s * 0.66, s * 0.08, s * 0.07)) color = [246, 246, 244, 255];
-  if (hit(x, y, s * 0.42, s * 0.3, s * 0.035, s * 0.12)) color = [176, 176, 182, 255];
-  if (hit(x, y, s * 0.58, s * 0.3, s * 0.035, s * 0.12)) color = [176, 176, 182, 255];
-  if (hit(x, y, s * 0.42, s * 0.24, s * 0.02, s * 0.05)) color = [236, 196, 196, 255];
-  if (hit(x, y, s * 0.58, s * 0.24, s * 0.02, s * 0.05)) color = [236, 196, 196, 255];
-  if (y > s * 0.55 && y < s * 0.6 && x > s * 0.4 && x < s * 0.6) color = [90, 122, 168, 255];
-  if (hit(x, y, s * 0.62, s * 0.58, s * 0.018, s * 0.018)) color = [196, 164, 72, 255];
-  const head = face(x, y, s * 0.5, s * 0.46, s / 340, [210, 210, 214, 255], [186, 186, 192, 255]);
-  return head ?? color;
+  const nx = x / s;
+  const ny = y / s;
+  let color = sky(y, s, [32, 52, 92, 255], [126, 146, 168, 255]);
+  if (ny > 0.4 && ny < 0.56 && Math.sin(nx * 7) * 0.04 + 0.46 < ny) color = [58, 86, 72, 255];
+  if (hit(x, y, s * 0.12, s * 0.2, s * 0.2, s * 0.16)) color = [36, 70, 46, 255];
+  if (hit(x, y, s * 0.9, s * 0.18, s * 0.22, s * 0.18)) color = [40, 74, 48, 255];
+  if (nx > 0.05 && nx < 0.09 && ny > 0.22 && ny < 0.72) color = [78, 56, 40, 255];
+  if (nx > 0.91 && nx < 0.95 && ny > 0.2 && ny < 0.74) color = [78, 56, 40, 255];
+  const pathHalf = 0.06 + Math.max(0, ny - 0.5) * 0.55;
+  if (ny > 0.58 && Math.abs(nx - 0.48) < pathHalf) color = [168, 128, 90, 255];
+  if (ny > 0.84) color = [154, 116, 82, 255];
+  const lanterns: Array<[number, number, number]> = [
+    [0.56, 0.3, 0.016],
+    [0.62, 0.38, 0.026],
+    [0.72, 0.48, 0.04],
+    [0.84, 0.32, 0.07],
+  ];
+  for (const [lx, ly, radius] of lanterns) {
+    if (hit(x, y, lx * s, ly * s, radius * s, radius * s * 1.15)) color = [244, 214, 170, 255];
+  }
+  if (hit(x, y, s * 0.34, s * 0.6, s * 0.04, s * 0.035)) color = [236, 236, 232, 255];
+  if (hit(x, y, s * 0.46, s * 0.62, s * 0.16, s * 0.13)) color = [168, 168, 174, 255];
+  if (hit(x, y, s * 0.47, s * 0.66, s * 0.08, s * 0.07)) color = [246, 244, 238, 255];
+  if (hit(x, y, s * 0.4, s * 0.74, s * 0.045, s * 0.022)) color = [160, 160, 166, 255];
+  if (hit(x, y, s * 0.54, s * 0.74, s * 0.045, s * 0.022)) color = [160, 160, 166, 255];
+  if (hit(x, y, s * 0.48, s * 0.48, s * 0.11, s * 0.1)) color = [176, 176, 182, 255];
+  if (hit(x, y, s * 0.42, s * 0.3, s * 0.038, s * 0.12)) color = [176, 176, 182, 255];
+  if (hit(x, y, s * 0.56, s * 0.28, s * 0.038, s * 0.13)) color = [176, 176, 182, 255];
+  if (hit(x, y, s * 0.42, s * 0.3, s * 0.016, s * 0.08)) color = [236, 196, 196, 255];
+  if (hit(x, y, s * 0.56, s * 0.28, s * 0.016, s * 0.08)) color = [236, 196, 196, 255];
+  if (ny > 0.52 && ny < 0.58 && nx > 0.36 && nx < 0.6) color = [70, 112, 168, 255];
+  if (hit(x, y, s * 0.5, s * 0.575, s * 0.02, s * 0.02)) color = [196, 154, 72, 255];
+  if (hit(x, y, s * 0.44, s * 0.47, s * 0.014, s * 0.018)) color = [47, 32, 28, 255];
+  if (hit(x, y, s * 0.53, s * 0.46, s * 0.014, s * 0.018)) color = [47, 32, 28, 255];
+  return color;
 }
 
 function dragon(x: number, y: number, s: number): RGBA {
@@ -112,22 +139,33 @@ const MOCK_GLYPHS: Record<string, string[]> = {
 };
 
 function mockStamp(x: number, y: number): RGBA | null {
-  const scale = 3;
-  const originX = 12;
-  const originY = 12;
+  const scale = 7;
+  const originX = 18;
+  const originY = 16;
   const word = "MOCK";
+  const glyphWidth = 5 * scale + scale;
+  const width = word.length * glyphWidth - scale;
+  const height = 5 * scale;
+  const pad = 8;
+  const left = originX - pad;
+  const top = originY - pad;
+  const right = originX + width + pad;
+  const bottom = originY + height + pad;
+  if (x < left || y < top || x > right || y > bottom) return null;
   const localX = x - originX;
   const localY = y - originY;
-  if (localX < 0 || localY < 0) return null;
-  const glyphWidth = 5 * scale + scale;
-  const index = Math.floor(localX / glyphWidth);
-  if (index < 0 || index >= word.length) return null;
-  const glyph = MOCK_GLYPHS[word[index] ?? ""];
-  if (!glyph) return null;
-  const col = Math.floor((localX % glyphWidth) / scale);
-  const row = Math.floor(localY / scale);
-  if (row < 0 || row >= glyph.length || col < 0 || col >= 5) return null;
-  return glyph[row]?.[col] === "1" ? [71, 49, 42, 255] : null;
+  if (localX >= 0 && localY >= 0) {
+    const index = Math.floor(localX / glyphWidth);
+    const glyph = MOCK_GLYPHS[word[index] ?? ""];
+    if (glyph && index < word.length) {
+      const col = Math.floor((localX % glyphWidth) / scale);
+      const row = Math.floor(localY / scale);
+      if (row >= 0 && row < glyph.length && col >= 0 && col < 5 && glyph[row]?.[col] === "1") {
+        return [71, 49, 42, 255];
+      }
+    }
+  }
+  return [246, 241, 233, 255];
 }
 
 export function renderScene(kind: SceneKind, size = 640): Buffer {

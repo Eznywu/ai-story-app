@@ -125,6 +125,16 @@ function IconBook() {
   );
 }
 
+function IconDownload() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden className="savePoster__icon">
+      <path d="M12 4v10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M8 11l4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M5 19h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function IconCheck() {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden className="listenSaved__check">
@@ -832,9 +842,11 @@ export function StoryReader({ storyId }: { storyId: string }) {
               <button
                 type="button"
                 className="savePoster"
+                data-testid="save-poster"
                 onClick={() => void onDownloadKeepsake()}
                 disabled={painting}
               >
+                <IconDownload />
                 {posterCopy.save}
               </button>
               {downloadError ? (

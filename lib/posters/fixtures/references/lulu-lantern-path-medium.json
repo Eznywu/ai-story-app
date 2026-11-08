@@ -1,0 +1,32 @@
+{
+  "id": "lulu-lantern-path-medium",
+  "role": "visual-reference",
+  "notAMock": true,
+  "model": "gpt-image-2.5-flare",
+  "quality": "medium",
+  "size": "1024x1024",
+  "outputFormat": "png",
+  "background": "opaque",
+  "date": "2026-11-08",
+  "image": "lulu-lantern-path-medium.png",
+  "imageSha256": "f5101bf803e8212930623a843b2d913e90edd210b9f1c2db12bf3f5eb85a80ae",
+  "promptFixtureAtGeneration": "lib/posters/fixtures/lulu-lantern-path-prompt.txt",
+  "promptSha256": "315a6afab2e163917e621247eabe5d395f8badc1f3a9a40a5ba476aacb1ccad3",
+  "prompt": "Square children's storybook illustration, 1024 by 1024, one complete scene.\nPaint an expressive, polished storybook character with soft dimensional shading and tactile textures, and a distinctive friendly personality.\nHappy Horse palette: cream, brown, terracotta, and sage. Calm bedtime feel. No neon, no harsh contrast, no bright gold glow.\nAge band 3–5 design preset: one clear action or discovery, one or two characters, round but expressive forms, and recognisable surroundings. This is a picture preset, not a claim about child development.\nAudience (listener) age: 4 years. Artwork age band: 3-5.\nProtagonist age, kept separate from the listener: 3 years.\nProtagonist identity, which must not change: Lulu, a rabbit.\nStable appearance, repeat exactly: rabbit; soft grey fur with a white chest; round storybook rabbit; a blue knitted scarf; one small brass bell.\nMake this protagonist large, prominent, and recognisable. The same species, colours, signature clothing, accessory, and proportions must survive every story.\nNo reference photo is required.\nShow this story moment as a clear action or discovery: Lulu discovers a lantern path and hops toward the first glowing lantern.\nProtagonist in the scene: Lulu, a grey rabbit wearing her blue knitted scarf, curious and delighted\nSetting: a gentle woodland path with paper lanterns in the trees and open ground in front\nAction: Lulu finds the path and leans forward to look at the nearest lantern\nEmotion: wonder, excitement, and a safe bedtime calm\nProps: blue knitted scarf, paper lantern\nComposition: Lulu large in the middle, lanterns receding down the path, face in the upper two-thirds\nLayer the scenery: a simple foreground, the protagonist in the middle ground, and a softer background.\nGenre “Adventure” may change only the setting, props, lighting, and mood. Palette: moss green, dusk blue, and a small warm paper-lantern light — exciting, bedtime-safe, never perilous, and not a harsh gold glow.\nUse one warm focal light on the protagonist. Keep the light soft.\nDo not replace the protagonist with a different species or a different person. If the protagonist is a human child, they stay a human child even when the genre is Animals.\nPlace the face in the upper two-thirds, fully visible, with a clear expression. Keep the bottom fifth as open ground or path, with no face or hands there.\nKeep the full character in frame. No text, letters, watermark, logo, caption, border, or collage.\nAdventure and mystery stay reassuring and suitable for bedtime.",
+  "usage": {
+    "inputTokens": 546,
+    "textInputTokens": 546,
+    "imageInputTokens": 0,
+    "outputTokens": 439,
+    "imageOutputTokens": 439,
+    "totalTokens": 985
+  },
+  "ratesUsdPerMillion": {
+    "textInput": 5,
+    "imageOutput": 30,
+    "imageInput": 8
+  },
+  "costUsd": 0.0159,
+  "costNote": "About 1.6 US cents. 546 text-input tokens at $5 per million plus 439 image-output tokens at $30 per million. No image-input tokens on this call. This is the measured Flare usage, not a GPT Image 2 per-image price.",
+  "notes": "CEO-approved visual reference for Lulu (grey rabbit, white chest, blue knitted scarf, brass bell) discovering the lantern path. Mock fixtures live under lib/providers/fixtures and are labelled MOCK. They are not this file. The live prompt builder may move on; this prompt field is the text that produced the image."
+}

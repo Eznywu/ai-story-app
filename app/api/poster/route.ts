@@ -62,7 +62,7 @@ export async function POST(req: Request) {
       },
       {
         store: createPrismaArtworkStore(),
-        provider: ({ prompt }) => generateOneIllustration(prompt),
+        provider: ({ prompt, referenceImage }) => generateOneIllustration(prompt, referenceImage),
         compose,
         transcodeToPng,
         legacyBrief: requestLegacyVisualBrief,

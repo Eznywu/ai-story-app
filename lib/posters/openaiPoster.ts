@@ -1,6 +1,8 @@
-import OpenAI from "openai";
+import OpenAI, { toFile } from "openai";
 import { createError, getErrorStatus } from "@/lib/errors";
 import { getOpenAiBaseUrl, getPosterHttpDispatcher } from "@/lib/providerHttp";
+import { posterImageQuality } from "@/lib/posters/artworkPricing";
+import type { ImageUsage } from "@/lib/posters/artworkService";
 import { posterProviderTransportFailureMessage } from "@/lib/posters/posterProviderErrors";
 import { providerTimeoutMs } from "@/lib/vercelDuration";
 
@@ -48,17 +50,45 @@ function isGptImageModel(model: string) {
 }
 
 function gptImageQuality(): "low" | "medium" | "high" | "auto" {
-  const raw = process.env.OPENAI_POSTER_IMAGE_QUALITY?.trim().toLowerCase();
-  if (raw === "low" || raw === "medium" || raw === "high" || raw === "auto") return raw;
-  if (raw === "hd") return "high";
-  return "low";
+  return posterImageQuality();
+}
+
+type ImageUsagePayload = {
+  usage?: {
+    input_tokens?: number;
+    output_tokens?: number;
+    input_tokens_details?: { image_tokens?: number; text_tokens?: number };
+    output_tokens_details?: { image_tokens?: number; text_tokens?: number };
+  };
+};
+
+function usageFrom(image: ImageUsagePayload): ImageUsage | null {
+  const usage = image.usage;
+  if (!usage) return null;
+  return {
+    inputTokens: usage.input_tokens,
+    outputTokens: usage.output_tokens,
+    textInputTokens: usage.input_tokens_details?.text_tokens,
+    imageInputTokens: usage.input_tokens_details?.image_tokens,
+    imageOutputTokens: usage.output_tokens_details?.image_tokens ?? usage.output_tokens,
+  };
+}
+
+async function readImage(
+  image: ImageUsagePayload & { data?: Array<{ b64_json?: string | null }> | null }
+): Promise<{ bytes: Buffer; usage: ImageUsage | null }> {
+  const b64 = image.data?.[0]?.b64_json;
+  if (!b64) {
+    throw createError("Image generation returned no image data.", 502);
+  }
+  return { bytes: Buffer.from(b64, "base64"), usage: usageFrom(image) };
 }
 
 async function generateOnce(
   client: OpenAI,
   model: string,
   prompt: string
-): Promise<{ bytes: Buffer; usage: { inputTokens?: number; outputTokens?: number } | null }> {
+): Promise<{ bytes: Buffer; usage: ImageUsage | null }> {
   const image = isGptImageModel(model)
     ? await client.images.generate({
         model,
@@ -76,29 +106,43 @@ async function generateOnce(
         quality: "standard",
         response_format: "b64_json",
       });
-
-  const b64 = image.data?.[0]?.b64_json;
-  if (!b64) {
-    throw createError("Image generation returned no image data.", 502);
-  }
-  const usage = (image as { usage?: { input_tokens?: number; output_tokens?: number } }).usage;
-  return {
-    bytes: Buffer.from(b64, "base64"),
-    usage: usage
-      ? { inputTokens: usage.input_tokens, outputTokens: usage.output_tokens }
-      : null,
-  };
+  return readImage(image);
 }
 
-/** One OpenAI image request. Timeouts are not retried here. */
+/**
+ * One edit that uses the character reference as image input.
+ * input_fidelity stays at the API default (low). High is not requested.
+ * A failure is not followed by a second generate call.
+ */
+async function editOnce(
+  client: OpenAI,
+  model: string,
+  prompt: string,
+  reference: Buffer
+): Promise<{ bytes: Buffer; usage: ImageUsage | null }> {
+  const image = await client.images.edit({
+    model,
+    image: await toFile(reference, "character-reference.png", { type: "image/png" }),
+    prompt,
+    n: 1,
+    size: IMAGE_SIZE,
+    quality: gptImageQuality(),
+    output_format: "png",
+    background: "opaque",
+  });
+  return readImage(image);
+}
+
+/** One OpenAI image request. Timeouts and edit failures are not retried here. */
 export async function generatePosterPngFromOpenAI(input: {
   prompt: string;
+  referenceImage?: Buffer | null;
 }): Promise<{
   bytes: Buffer;
   model: string;
   quality: string;
   size: string;
-  usage: { inputTokens?: number; outputTokens?: number } | null;
+  usage: ImageUsage | null;
 }> {
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   if (!apiKey) {
@@ -114,13 +158,17 @@ export async function generatePosterPngFromOpenAI(input: {
   });
 
   try {
+    const reference = input.referenceImage && isGptImageModel(IMAGE_MODEL) ? input.referenceImage : null;
     console.info("[poster] openai model", {
       model: IMAGE_MODEL,
       size: IMAGE_SIZE,
       quality: gptImageQuality(),
       timeoutMs: POSTER_TIMEOUT_MS,
+      referenceImage: Boolean(reference),
     });
-    const image = await generateOnce(client, IMAGE_MODEL, input.prompt);
+    const image = reference
+      ? await editOnce(client, IMAGE_MODEL, input.prompt, reference)
+      : await generateOnce(client, IMAGE_MODEL, input.prompt);
     return {
       bytes: image.bytes,
       model: IMAGE_MODEL,
