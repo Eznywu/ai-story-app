@@ -401,6 +401,8 @@ export const messages = {
     keepsakeBody: "この物語の縦長ポスター。保存や印刷ができます。",
     keepsakeAlt: "「{title}」の記念ポスター",
     audioLoadFailed: "この物語の録音を読み込めませんでした。",
+    tapToHear: "再生をタップすると物語が聞こえます",
+    mockNarration: "テスト版：朗読はテスト音で、声ではありません",
   },
   recorder: {
     fromCreate: "作成画面から声を追加してください。同意と、サインインしたアカウントが必要です。",

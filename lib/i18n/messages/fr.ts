@@ -401,6 +401,8 @@ export const messages = {
     keepsakeBody: "Une affiche verticale de cette histoire à enregistrer ou imprimer.",
     keepsakeAlt: "Affiche souvenir de {title}",
     audioLoadFailed: "L’enregistrement de cette histoire n’a pas pu être chargé.",
+    tapToHear: "Touchez Lecture pour entendre l’histoire",
+    mockNarration: "Version d’essai : la narration est une tonalité de test, pas une voix",
   },
   recorder: {
     fromCreate: "Ajoutez une voix depuis l’écran Créer. Cela demande un accord et un compte connecté.",

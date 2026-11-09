@@ -437,6 +437,8 @@ export const messages = {
     keepsakeBody: "A portrait poster of this story to save or print.",
     keepsakeAlt: "Keepsake poster for {title}",
     audioLoadFailed: "This story's recording couldn't load.",
+    tapToHear: "Tap Play to hear the story",
+    mockNarration: "Test build: narration is a test tone, not a voice",
   },
   recorder: {
     fromCreate: "Add a voice from the create screen. It asks for consent and a signed-in account.",

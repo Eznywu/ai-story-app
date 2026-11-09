@@ -401,6 +401,8 @@ export const messages = {
     keepsakeBody: "Um pôster vertical desta história para salvar ou imprimir.",
     keepsakeAlt: "Pôster de lembrança de {title}",
     audioLoadFailed: "Não foi possível carregar a gravação desta história.",
+    tapToHear: "Toque em Reproduzir para ouvir a história",
+    mockNarration: "Versão de teste: a narração é um tom de teste, não uma voz",
   },
   recorder: {
     fromCreate: "Adicione uma voz na tela Criar. Isso pede consentimento e uma conta conectada.",

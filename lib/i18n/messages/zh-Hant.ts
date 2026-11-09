@@ -436,6 +436,8 @@ export const messages = {
     keepsakeBody: "這個故事的直式海報，可以儲存或列印。",
     keepsakeAlt: "《{title}》的紀念海報",
     audioLoadFailed: "這個故事的錄音載入失敗。",
+    tapToHear: "點一下播放，就能聽到故事",
+    mockNarration: "測試版：朗讀是測試音，不是人聲",
   },
   recorder: {
     fromCreate: "請到建立故事的畫面加入我的聲音。需要先同意，而且要登入自己的帳號。",

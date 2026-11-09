@@ -13,7 +13,9 @@ import { friendlyVoiceName } from "@/app/components/voiceLabel";
 import { fill } from "@/lib/i18n/locales";
 import { useTts } from "@/app/hooks/useTts";
 import { useDocumentTheme } from "@/app/hooks/useDocumentTheme";
+import { classifyPlayRejection, showTapToHear } from "@/lib/audio/autoplayHint";
 import { skipWithin } from "@/lib/audio/skipWithin";
+import { mockNarrationLabelVisible } from "@/lib/stories/mockNarrationLabel";
 import { clearListenPosition, readListenPosition, writeListenPosition } from "@/lib/audio/listenPosition";
 import { downloadPosterPng, requestStoryArtwork } from "@/lib/posters/poster";
 import type { ArtworkRequestResult } from "@/lib/posters/poster";
@@ -192,6 +194,8 @@ export function StoryReader({ storyId }: { storyId: string }) {
   const [duration, setDuration] = useState(0);
   const [narrationSpeed, setNarrationSpeed] = useState(() => activeNarrationSpeed());
   const [audioError, setAudioError] = useState("");
+  const [needsTap, setNeedsTap] = useState(false);
+  const [mockNarration, setMockNarration] = useState(false);
   const [audioBroken, setAudioBroken] = useState(false);
   const [downloadError, setDownloadError] = useState("");
   const [savedAudioUrl, setSavedAudioUrl] = useState<string | null>(null);
@@ -229,6 +233,7 @@ export function StoryReader({ storyId }: { storyId: string }) {
       const row = data?.story as StoryRecord | undefined;
       if (!row?.id) throw new Error(copy.notFound);
       setStory(row);
+      setMockNarration(mockNarrationLabelVisible(data?.mockNarration));
       setSavedAudioUrl(row.audioUrl);
       const savedStatus =
         row.artworkStatus === "illustrated" || row.artworkStatus === "fallback" || row.artworkStatus === "error"
@@ -253,6 +258,7 @@ export function StoryReader({ storyId }: { storyId: string }) {
       }
       return row;
     } catch (error: unknown) {
+      setMockNarration(false);
       setLoadError(getErrorMessage(error, copy.openFailed));
       return null;
     } finally {
@@ -449,20 +455,25 @@ export function StoryReader({ storyId }: { storyId: string }) {
       next.playbackRate = playbackRate;
       const started = next.play();
       if (started) {
-        started.catch((error: unknown) => {
-          const message = error instanceof Error ? error.message : String(error);
-          if (next.paused && /interrupted by a call to pause/i.test(message)) return;
-          // iOS drops the tap once narration took a while to make; the audio is ready, so the next tap plays it.
-          if (error instanceof DOMException && error.name === "NotAllowedError") {
+        void started.then(
+          () => setNeedsTap(false),
+          (error: unknown) => {
+            const outcome = classifyPlayRejection(error, next.paused);
+            if (outcome === "ignore-pause") return;
+            if (outcome === "needs-tap") {
+              setPlaying(false);
+              setNeedsTap(true);
+              return;
+            }
+            setNeedsTap(false);
+            setAudioError(playbackErrorMessage(error, copy.voiceFailed));
             setPlaying(false);
-            return;
           }
-          setAudioError(playbackErrorMessage(error, copy.voiceFailed));
-          setPlaying(false);
-        });
+        );
       }
       if (story) onStoryPlayed(story.id, story.title?.trim() || copy.story);
     } catch (error: unknown) {
+      setNeedsTap(false);
       setAudioError(playbackErrorMessage(error, copy.voiceFailed));
       setPlaying(false);
     }
@@ -736,6 +747,17 @@ export function StoryReader({ storyId }: { storyId: string }) {
             </button>
           </div>
 
+          {mockNarration ? (
+            <p className="listenMockNote" data-testid="mock-narration">
+              {copy.mockNarration}
+            </p>
+          ) : null}
+          {showTapToHear({ needsTap, playing }) ? (
+            <p className="listenHint listenHint--tap" role="status" data-testid="tap-to-hear">
+              {copy.tapToHear}
+            </p>
+          ) : null}
+
           <div className="listenTools">
             <div className="listenSpeed">
               <button
@@ -862,7 +884,10 @@ export function StoryReader({ storyId }: { storyId: string }) {
             preload="metadata"
             playsInline
             className="listenAudio"
-            onPlay={() => setPlaying(true)}
+            onPlay={() => {
+              setPlaying(true);
+              setNeedsTap(false);
+            }}
             onPause={() => {
               setPlaying(false);
               savePosition(true);

@@ -401,6 +401,8 @@ export const messages = {
     keepsakeBody: "ملصق عمودي لهذه القصة لحفظه أو طباعته.",
     keepsakeAlt: "ملصق تذكاري لـ {title}",
     audioLoadFailed: "تعذّر تحميل تسجيل هذه القصة.",
+    tapToHear: "اضغط تشغيل لتسمع القصة",
+    mockNarration: "نسخة تجريبية: السرد نغمة اختبار، وليس صوتًا",
   },
   recorder: {
     fromCreate: "أضف صوتًا من شاشة الإنشاء. يطلب موافقة وحسابًا مسجّلًا.",

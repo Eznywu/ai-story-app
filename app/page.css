@@ -6903,6 +6903,25 @@ html[data-hh-theme="warm"] .quietSheet .keepsakeView__img {
   margin-top: 6px;
 }
 
+.storyPage .listenHint--tap {
+  width: min(100%, 20rem);
+  margin-top: 10px;
+  margin-inline: auto;
+  color: #f4f1eb;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.storyPage .listenMockNote {
+  width: min(100%, 22rem);
+  margin-top: 10px;
+  margin-inline: auto;
+  text-align: center;
+  color: #b6bdd4;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
 .storyPage .listenSkip {
   width: 56px;
   height: 56px;
