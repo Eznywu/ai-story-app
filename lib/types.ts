@@ -20,6 +20,9 @@ export type StoryDTO = {
   artworkStatus?: string | null;
   posterCaption?: string | null;
   dedication?: string | null;
+  /** True when this poster is listed under My Stories → Posters. */
+  posterSaved?: boolean;
+  posterSavedAt?: string | null;
   /** Present when narration MP3 was saved for this story. */
   audioUrl?: string | null;
   /** App voice id and language of the saved narration, when there is one. */

@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import "@/app/page.css";
 import { BrandMark } from "@/app/components/BrandMark";
-import { StoryArtwork } from "@/app/components/StoryArtwork";
 import { StoryCover } from "@/app/components/StoryCover";
 import { QuietSheet } from "@/app/components/QuietSheet";
 import { TtsControls } from "@/app/components/TtsControls";
@@ -43,6 +42,8 @@ type StoryRecord = {
   artworkStatus?: string | null;
   posterCaption?: string | null;
   dedication?: string | null;
+  posterSaved?: boolean;
+  posterSavedAt?: string | null;
   audioUrl: string | null;
   audioCacheKey?: string | null;
   audioVoiceId?: string | null;
@@ -198,6 +199,9 @@ export function StoryReader({ storyId }: { storyId: string }) {
   const [mockNarration, setMockNarration] = useState(false);
   const [audioBroken, setAudioBroken] = useState(false);
   const [downloadError, setDownloadError] = useState("");
+  const [posterSave, setPosterSave] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [savedPosterUrl, setSavedPosterUrl] = useState<string | null>(null);
+  const [posterSaveError, setPosterSaveError] = useState("");
   const [savedAudioUrl, setSavedAudioUrl] = useState<string | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
   const [narrationOpen, setNarrationOpen] = useState(false);
@@ -234,6 +238,13 @@ export function StoryReader({ storyId }: { storyId: string }) {
       if (!row?.id) throw new Error(copy.notFound);
       setStory(row);
       setMockNarration(mockNarrationLabelVisible(data?.mockNarration));
+      if (row.posterSaved && row.posterUrl) {
+        setPosterSave("saved");
+        setSavedPosterUrl(row.posterUrl);
+      } else {
+        setPosterSave("idle");
+        setSavedPosterUrl(null);
+      }
       setSavedAudioUrl(row.audioUrl);
       const savedStatus =
         row.artworkStatus === "illustrated" || row.artworkStatus === "fallback" || row.artworkStatus === "error"
@@ -525,6 +536,31 @@ export function StoryReader({ storyId }: { storyId: string }) {
     savePosition(true);
   }
 
+  async function onSavePoster() {
+    if (!story || !posterUrl || posterSave === "saving") return;
+    if (posterSave === "saved" && savedPosterUrl === posterUrl) return;
+    setPosterSave("saving");
+    setPosterSaveError("");
+    try {
+      const response = await fetch(`/api/stories/${encodeURIComponent(story.id)}/save-poster`, {
+        method: "POST",
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        posterSaved?: boolean;
+        posterSavedAt?: string | null;
+      };
+      if (!response.ok || data.posterSaved !== true) {
+        throw new Error(data.error || posterCopy.savePosterError);
+      }
+      setPosterSave("saved");
+      setSavedPosterUrl(posterUrl);
+    } catch (error: unknown) {
+      setPosterSave("error");
+      setPosterSaveError(getErrorMessage(error, posterCopy.savePosterError));
+    }
+  }
+
   async function onDownloadKeepsake() {
     setDownloadError("");
     try {
@@ -575,6 +611,8 @@ export function StoryReader({ storyId }: { storyId: string }) {
   const posterUrl = poster.posterUrl ?? story?.posterUrl ?? null;
   const hasSavedArt = Boolean(coverUrl || illustrationUrl || posterUrl);
   const painting = poster.status === "generating" || poster.status === "pending";
+  const posterReady = Boolean(posterUrl) && !painting;
+  const posterIsSaved = posterSave === "saved" && savedPosterUrl === posterUrl;
   const backHref = from === "home" ? "/?tab=home" : "/?tab=library";
   const backLabel = from === "home" ? messages.nav.home : copy.back;
 
@@ -832,51 +870,61 @@ export function StoryReader({ storyId }: { storyId: string }) {
           </section>
 
           {story && !loadError ? (
-            <section className="listenKeepsake" aria-labelledby="keepsake-heading">
-              <h2 id="keepsake-heading" className="listenKeepsake__title">
-                {copy.keepsakeTitle}
-              </h2>
-              <p className="listenKeepsake__body">{copy.keepsakeBody}</p>
-              {posterUrl ? (
-                <figure className="listenKeepsake__frame">
-                  {/* The saved 4:5 keepsake, shown whole at its own proportions: the same file Save my poster downloads. */}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={posterUrl}
-                    alt={fill(copy.keepsakeAlt, { title })}
-                    className="listenKeepsake__img"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                </figure>
-              ) : (
-                <StoryArtwork
-                  kind="keepsake"
-                  title={title}
-                  caption={poster.caption || story.posterCaption}
-                  dedication={poster.dedication || story.dedication}
-                  illustrationUrl={poster.status === "fallback" || poster.status === "error" ? null : illustrationUrl}
-                  status={poster.status}
-                  message={poster.message}
-                  large={readScale > 0}
-                />
-              )}
+            <div className="listenActions">
               <button
                 type="button"
-                className="savePoster"
+                className="listenAction"
                 data-testid="save-poster"
+                onClick={() => void onSavePoster()}
+                disabled={!posterReady || posterSave === "saving" || posterIsSaved}
+                aria-busy={posterSave === "saving"}
+              >
+                {posterSave === "saving"
+                  ? posterCopy.savingPoster
+                  : posterIsSaved
+                    ? posterCopy.savedPoster
+                    : posterCopy.savePoster}
+              </button>
+              <button
+                type="button"
+                className="listenAction"
+                data-testid="download-poster"
                 onClick={() => void onDownloadKeepsake()}
-                disabled={painting}
+                disabled={!posterReady}
               >
                 <IconDownload />
-                {posterCopy.save}
+                {messages.library.download}
               </button>
-              {downloadError ? (
-                <p className="listenStatus listenStatus--error" role="alert">
-                  {downloadError}
-                </p>
-              ) : null}
-            </section>
+            </div>
+          ) : null}
+          {story && !loadError && (posterSave === "error" || downloadError || posterIsSaved || !posterReady) ? (
+            <p
+              className={`listenHint listenHint--tap${posterSave === "error" || downloadError ? " listenStatus--error" : ""}`}
+              role={posterSave === "error" || downloadError ? "alert" : "status"}
+              data-testid="poster-save-status"
+            >
+              {posterSave === "error"
+                ? posterSaveError
+                : downloadError
+                  ? downloadError
+                  : posterIsSaved
+                    ? posterCopy.savedPosterHint
+                    : painting
+                      ? posterCopy.painting
+                      : posterCopy.posterNotReady}
+            </p>
+          ) : null}
+          {posterUrl && story && !loadError ? (
+            <figure className="listenKeepsake__frame listenPosterPreview">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={posterUrl}
+                alt={fill(copy.keepsakeAlt, { title })}
+                className="listenKeepsake__img"
+                loading="lazy"
+                decoding="async"
+              />
+            </figure>
           ) : null}
 
           <audio
@@ -935,10 +983,18 @@ export function StoryReader({ storyId }: { storyId: string }) {
           <button
             type="button"
             className="sheetAction"
-            onClick={() => void onDownloadKeepsake()}
-            disabled={!story || poster.status === "generating"}
+            onClick={() => void onSavePoster()}
+            disabled={!posterReady || posterSave === "saving" || posterIsSaved}
           >
-            {posterCopy.save}
+            {posterIsSaved ? posterCopy.savedPoster : posterCopy.savePoster}
+          </button>
+          <button
+            type="button"
+            className="sheetAction"
+            onClick={() => void onDownloadKeepsake()}
+            disabled={!posterReady}
+          >
+            {messages.library.download}
           </button>
           {coverFailed ? (
             <button type="button" className="sheetAction" onClick={retryCover}>

@@ -1,4 +1,5 @@
 import type { Story } from "@/generated/prisma/client";
+import { posterListing } from "@/lib/stories/posterLibrary";
 
 /** Private storage locations, the owner id, and artwork bookkeeping (cost estimates, cache keys) stay on the server. */
 const SERVER_ONLY = ["userId", "audioStorageUrl", "artworkMeta", "artworkCacheKey"] as const;
@@ -17,14 +18,18 @@ function posterRoute(filename: string | null | undefined) {
 
 /** The story shape the browser receives. */
 export function storyForClient(row: Story) {
+  const posterUrl = row.posterUrl?.trim() || posterRoute(row.posterFilename);
+  const listing = posterListing({ posterUrl, artworkMeta: row.artworkMeta });
   return {
     ...without(row, SERVER_ONLY),
     createdAt: row.createdAt.toISOString(),
     illustrationUrl: row.illustrationUrl?.trim() || posterRoute(row.illustrationFilename),
     coverUrl: row.coverUrl?.trim() || posterRoute(row.coverFilename),
-    posterUrl: row.posterUrl?.trim() || posterRoute(row.posterFilename),
+    posterUrl,
     audioUrl:
       row.audioUrl?.trim() || (row.audioFilename ? `/api/audio/${encodeURIComponent(row.audioFilename)}` : null),
+    posterSaved: listing.inLibrary,
+    posterSavedAt: listing.savedAt,
   };
 }
 
