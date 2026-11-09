@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import test from "node:test";
 import { parseAudienceAge } from "../lib/posters/audienceAge.ts";
@@ -6,7 +7,7 @@ import { artworkCacheKey } from "../lib/posters/artworkCacheKey.ts";
 import { artworkScopeKey } from "../lib/posters/artworkLimits.ts";
 import { buildArtworkPrompt } from "../lib/posters/artworkPrompt.ts";
 import { luluReferencePrompt } from "../lib/posters/luluReference.ts";
-import { keepsakePhonePx, keepsakeTextLayout } from "../lib/posters/composeArtwork.ts";
+import { coverTextLayout, keepsakePhonePx, keepsakeTextLayout } from "../lib/posters/composeArtwork.ts";
 import { posterFooter, savePosterLabel } from "../lib/posters/posterFooter.ts";
 import {
   runArtworkRequest,
@@ -20,6 +21,16 @@ import { generateOneIllustration, mockIllustrationPng } from "../lib/posters/pos
 import { mockProvidersEnabled } from "../lib/providers/mockProviders.ts";
 import { KEEPSAKE_HEIGHT, keepsakeArtRatio, posterCopy, wrapPosterText } from "../lib/posters/posterLayout.ts";
 import { encodeRgbaPng } from "../lib/posters/pngEncode.ts";
+import { renderScene, type SceneKind } from "../lib/posters/fixtureScenes.ts";
+import {
+  FLARE_MEDIUM_REFERENCE_USD,
+  FLARE_MEDIUM_REFERENCE_USAGE,
+  PRODUCTION_IMAGE_QUALITY,
+  estimatedImageUsd,
+  posterImageQuality,
+} from "../lib/posters/artworkPricing.ts";
+import { getMessages } from "../lib/i18n/catalog.ts";
+import { INTERFACE_LOCALES } from "../lib/i18n/locales.ts";
 import { buildCharacterSnapshot } from "../lib/posters/characterSnapshot.ts";
 import {
   deriveVisualBrief,
@@ -237,6 +248,9 @@ test("character appearance and audience age reach the prompt, and genre does not
     assert.match(prompt, new RegExp(example.character.appearance.colours));
     assert.match(prompt, new RegExp(example.character.appearance.clothing));
     assert.match(prompt, new RegExp(example.band.replace("+", "\\+")));
+    assert.doesNotMatch(prompt, /No harsh contrast/);
+    if (example.band === "0-2") assert.match(prompt, /simple setting/i);
+    if (example.band === "6-8" || example.band === "9+") assert.match(prompt, /less babyish/);
     assert.match(prompt, new RegExp(example.age));
     assert.doesNotMatch(prompt, /Story summary:/);
     assert.match(prompt, /must not change/i);
@@ -318,6 +332,13 @@ test("the child line is separate from the character, and phone type is large eno
   assert.equal(hero.childLines[0], "A story for Mia");
   assert.ok(keepsakePhonePx(hero.titlePx) >= 22);
   assert.ok(keepsakePhonePx(hero.childPx) >= 16);
+  const coverLayout = coverTextLayout({ title: older.title, childLine: older.childLine });
+  assert.equal(coverLayout.titleLines.length, 1);
+  assert.equal(coverLayout.childLine, "A story for Mia");
+  assert.ok(keepsakePhonePx(coverLayout.titlePx) >= 20, `cover title phone px ${keepsakePhonePx(coverLayout.titlePx)}`);
+  assert.ok(keepsakePhonePx(coverLayout.childPx) >= 16, `cover name phone px ${keepsakePhonePx(coverLayout.childPx)}`);
+  assert.ok(coverLayout.childBaseline > coverLayout.titleBaseline);
+  assert.ok(coverLayout.markY + coverLayout.markSize <= 1080);
   assert.ok(hero.gap >= 12);
   assert.ok(hero.childBaseline > hero.titleBaseline);
   assert.ok(hero.markY > hero.childBaseline);
@@ -422,6 +443,19 @@ test("visual brief validation keeps a valid story when the brief is missing or i
   });
   assert.equal(derived.ageBand, "0-2");
   assert.match(derived.protagonist, /human child/);
+  assert.doesNotMatch(derived.action, /gentle moment/i);
+  assert.match(derived.action, /Mei smiled/);
+  const olderBrief = deriveVisualBrief({
+    title: "Lantern",
+    story: "Lulu hopped toward the lantern.",
+    genre: "Adventure",
+    age: "7 years",
+    character: POSTER_EXAMPLES[1].character,
+  });
+  assert.equal(olderBrief.ageBand, "6-8");
+  assert.match(olderBrief.action, /hopped toward the lantern/);
+  assert.match(olderBrief.composition, /Less babyish/);
+  assert.match(olderBrief.emotion, /excitement/);
 });
 
 test("story generation returns text from one call when the brief is invalid", async () => {
@@ -814,6 +848,180 @@ test("mock poster mode returns a real PNG and does not need sharp or a provider 
       if (value === undefined) delete process.env[key];
       else process.env[key] = value;
     }
+  }
+});
+
+test("Flare prices come from tokens, and medium is the default quality", () => {
+  assert.equal(PRODUCTION_IMAGE_QUALITY, "medium");
+  assert.equal(posterImageQuality({}), "medium");
+  assert.equal(posterImageQuality({ OPENAI_POSTER_IMAGE_QUALITY: "low" }), "low");
+  assert.equal(posterImageQuality({ OPENAI_POSTER_IMAGE_QUALITY: "hd" }), "high");
+  assert.equal(estimatedImageUsd({ quality: "medium", usage: FLARE_MEDIUM_REFERENCE_USAGE }), 0.0159);
+  assert.equal(FLARE_MEDIUM_REFERENCE_USD, 0.0159);
+  assert.equal(estimatedImageUsd({ quality: "medium" }), 0.0159);
+  assert.notEqual(estimatedImageUsd({ quality: "low" }), 0.006);
+  assert.notEqual(estimatedImageUsd({ quality: "medium" }), 0.053);
+  assert.notEqual(estimatedImageUsd({ quality: "high" }), 0.211);
+  const withReference = estimatedImageUsd({
+    quality: "medium",
+    usage: { textInputTokens: 546, imageInputTokens: 1000, imageOutputTokens: 439 },
+  });
+  assert.equal(withReference, 0.0239);
+  assert.equal(
+    estimatedImageUsd({ quality: "medium", usage: { imageInputTokens: 1_000_000 } }),
+    8
+  );
+});
+
+test("the locked Lulu image is a real medium reference, separate from MOCK scenes", () => {
+  const provenance = JSON.parse(
+    fs.readFileSync(new URL("../lib/posters/fixtures/references/lulu-lantern-path-medium.json", import.meta.url), "utf8")
+  ) as {
+    model: string;
+    quality: string;
+    date: string;
+    costUsd: number;
+    imageSha256: string;
+    prompt: string;
+    notAMock: boolean;
+  };
+  const image = fs.readFileSync(
+    new URL("../lib/posters/fixtures/references/lulu-lantern-path-medium.png", import.meta.url)
+  );
+  assert.equal(createHash("sha256").update(image).digest("hex"), provenance.imageSha256);
+  assert.equal(provenance.model, "gpt-image-2.5-flare");
+  assert.equal(provenance.quality, "medium");
+  assert.equal(provenance.date, "2026-11-08");
+  assert.equal(provenance.costUsd, 0.0159);
+  assert.equal(provenance.notAMock, true);
+  assert.match(provenance.prompt, /Happy Horse palette: cream, brown, terracotta, and sage/);
+  const kinds: SceneKind[] = ["human", "rabbit", "dragon", "space"];
+  for (const kind of kinds) {
+    const painted = renderScene(kind, 640);
+    const saved = fs.readFileSync(
+      new URL(`../lib/providers/fixtures/mock-scene-${kind}-MOCK.png`, import.meta.url)
+    );
+    assert.ok(painted.equals(saved), `${kind} mock png drifted from the painter`);
+    assert.equal(saved.equals(image), false);
+  }
+});
+
+test("a stored character reference is attached once, and a foreign URL stays a text sheet", async () => {
+  const dataUrl = `data:image/png;base64,${PNG.toString("base64")}`;
+  const character = buildCharacterSnapshot({
+    id: "char_lulu",
+    name: "Lulu",
+    type: "rabbit",
+    characterAge: "3 years",
+    appearance: {
+      colours: "soft grey fur with a white chest",
+      proportions: "round storybook rabbit",
+      clothing: "a blue knitted scarf",
+      accessories: "one small brass bell",
+    },
+    referenceImageUrl: dataUrl,
+  });
+  const seen: Array<Buffer | null | undefined> = [];
+  const memory = createMemoryStore([
+    storyRow({
+      id: "story_ref_image_01",
+      age: "4 years",
+      genre: "Adventure",
+      text: "Lulu discovers a lantern path and hops toward the first glowing lantern.",
+      characterSnapshot: character,
+    }),
+  ]);
+  const result = await runArtworkRequest(
+    { userId: "user_1", email: "parent@example.com", storyId: "story_ref_image_01", intent: "create" },
+    {
+      store: memory.store,
+      env: baseEnv,
+      compose: composer().compose,
+      provider: async (input) => {
+        seen.push(input.referenceImage);
+        assert.match(input.prompt, /reference image is attached/i);
+        assert.match(input.prompt, /not a generic gentle moment/i);
+        assert.doesNotMatch(input.prompt, /No harsh contrast/);
+        assert.doesNotMatch(input.prompt, /Happy Horse palette: cream, brown, terracotta, and sage/);
+        assert.match(input.prompt, /less babyish|Age band 3/);
+        return {
+          bytes: PNG,
+          claimedMime: "image/png",
+          model: "mock",
+          quality: "medium",
+          provider: "mock",
+          size: "1024x1024",
+          usage: { textInputTokens: 546, imageInputTokens: 80, imageOutputTokens: 439 },
+        };
+      },
+    }
+  );
+  assert.equal(result.status, "illustrated");
+  assert.equal(seen.length, 1);
+  assert.ok(seen[0] && seen[0].length > 0);
+  assert.equal(sniffImageMime(seen[0] as Buffer), "image/png");
+  assert.equal(result.estimatedCostUsd, 0.0165);
+
+  const foreign = buildCharacterSnapshot({ ...character, referenceImageUrl: "https://evil.example/lulu.png" });
+  const foreignSeen: Array<Buffer | null | undefined> = [];
+  const foreignStore = createMemoryStore([
+    storyRow({ id: "story_ref_foreign1", age: "4 years", characterSnapshot: foreign, text: "Lulu hops." }),
+  ]);
+  await runArtworkRequest(
+    { userId: "user_1", email: "parent@example.com", storyId: "story_ref_foreign1", intent: "create" },
+    {
+      store: foreignStore.store,
+      env: baseEnv,
+      compose: composer().compose,
+      provider: async (input) => {
+        foreignSeen.push(input.referenceImage);
+        assert.match(input.prompt, /was not attached/i);
+        return {
+          bytes: PNG,
+          claimedMime: "image/png",
+          model: "mock",
+          quality: "medium",
+          provider: "mock",
+          size: "1024x1024",
+        };
+      },
+    }
+  );
+  assert.equal(foreignSeen[0] ?? null, null);
+  const withRef = artworkCacheKey({
+    userId: "family_1",
+    storyId: "story_fixed_0001",
+    brief: deriveVisualBrief({ title: "Lantern", story: "Lulu hops.", genre: "Adventure", age: "4 years", character }),
+    character,
+    audience: parseAudienceAge("4 years"),
+    genre: "Adventure",
+    provider: "openai",
+    model: "gpt-image-2.5-flare",
+    quality: "medium",
+    size: "1024x1024",
+    referenceAttached: true,
+  });
+  const withoutBytes = artworkCacheKey({
+    userId: "family_1",
+    storyId: "story_fixed_0001",
+    brief: deriveVisualBrief({ title: "Lantern", story: "Lulu hops.", genre: "Adventure", age: "4 years", character }),
+    character,
+    audience: parseAudienceAge("4 years"),
+    genre: "Adventure",
+    provider: "openai",
+    model: "gpt-image-2.5-flare",
+    quality: "medium",
+    size: "1024x1024",
+    referenceAttached: false,
+  });
+  assert.notEqual(withRef, withoutBytes);
+});
+
+test("every interface language can say Save my poster", () => {
+  assert.equal(getMessages("en").poster.save, "Save my poster");
+  assert.equal(getMessages("zh-Hant").poster.save, "儲存我的海報");
+  for (const locale of INTERFACE_LOCALES) {
+    assert.ok(getMessages(locale.code).poster.save.trim().length >= 2, locale.code);
   }
 });
 

@@ -3,6 +3,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { saveMediaBytes, deleteReplacedMedia, localMediaPath, isRemoteMediaUrl } from "@/lib/media/objectStore";
 import { isSafeStoryId } from "@/lib/stories/storyIds";
+import { artworkMetaAfterIllustration } from "@/lib/stories/posterLibrary";
 import type { ArtworkJobRow, ArtworkStore, ArtworkStoryRow } from "@/lib/posters/artworkService";
 import type { VisualBrief } from "@/lib/posters/visualBrief";
 
@@ -136,6 +137,7 @@ export function createPrismaArtworkStore(): ArtworkStore {
           coverUrl: true,
           posterFilename: true,
           posterUrl: true,
+          artworkMeta: true,
         },
       });
       const token = stamp();
@@ -177,7 +179,7 @@ export function createPrismaArtworkStore(): ArtworkStore {
           dedication: input.dedication,
           artworkStatus: "illustrated",
           artworkCacheKey: input.cacheKey,
-          artworkMeta: input.meta as Prisma.InputJsonValue,
+          artworkMeta: artworkMetaAfterIllustration(previous?.artworkMeta, input.meta, true) as Prisma.InputJsonValue,
         },
       });
       await prisma.artworkJob.update({
@@ -218,6 +220,10 @@ export function createPrismaArtworkStore(): ArtworkStore {
       };
     },
     async saveTerminal(input) {
+      const previous = await prisma.story.findUnique({
+        where: { id: input.storyId },
+        select: { artworkMeta: true },
+      });
       let coverUrl: string | null = null;
       let posterUrl: string | null = null;
       if (input.cover && input.poster) {
@@ -242,7 +248,11 @@ export function createPrismaArtworkStore(): ArtworkStore {
         data: {
           artworkStatus: input.status,
           artworkCacheKey: input.cacheKey,
-          artworkMeta: input.meta as Prisma.InputJsonValue,
+          artworkMeta: artworkMetaAfterIllustration(
+            previous?.artworkMeta,
+            input.meta,
+            Boolean(posterUrl)
+          ) as Prisma.InputJsonValue,
           ...(coverUrl ? { coverUrl } : {}),
           ...(posterUrl ? { posterUrl } : {}),
         },

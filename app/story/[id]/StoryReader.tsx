@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import "@/app/page.css";
 import { BrandMark } from "@/app/components/BrandMark";
-import { StoryArtwork } from "@/app/components/StoryArtwork";
 import { StoryCover } from "@/app/components/StoryCover";
 import { QuietSheet } from "@/app/components/QuietSheet";
 import { TtsControls } from "@/app/components/TtsControls";
@@ -13,7 +12,9 @@ import { friendlyVoiceName } from "@/app/components/voiceLabel";
 import { fill } from "@/lib/i18n/locales";
 import { useTts } from "@/app/hooks/useTts";
 import { useDocumentTheme } from "@/app/hooks/useDocumentTheme";
+import { classifyPlayRejection, showTapToHear } from "@/lib/audio/autoplayHint";
 import { skipWithin } from "@/lib/audio/skipWithin";
+import { mockNarrationLabelVisible } from "@/lib/stories/mockNarrationLabel";
 import { clearListenPosition, readListenPosition, writeListenPosition } from "@/lib/audio/listenPosition";
 import { downloadPosterPng, requestStoryArtwork } from "@/lib/posters/poster";
 import type { ArtworkRequestResult } from "@/lib/posters/poster";
@@ -41,6 +42,8 @@ type StoryRecord = {
   artworkStatus?: string | null;
   posterCaption?: string | null;
   dedication?: string | null;
+  posterSaved?: boolean;
+  posterSavedAt?: string | null;
   audioUrl: string | null;
   audioCacheKey?: string | null;
   audioVoiceId?: string | null;
@@ -125,6 +128,16 @@ function IconBook() {
   );
 }
 
+function IconDownload() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden className="savePoster__icon">
+      <path d="M12 4v10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M8 11l4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M5 19h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function IconCheck() {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden className="listenSaved__check">
@@ -182,8 +195,13 @@ export function StoryReader({ storyId }: { storyId: string }) {
   const [duration, setDuration] = useState(0);
   const [narrationSpeed, setNarrationSpeed] = useState(() => activeNarrationSpeed());
   const [audioError, setAudioError] = useState("");
+  const [needsTap, setNeedsTap] = useState(false);
+  const [mockNarration, setMockNarration] = useState(false);
   const [audioBroken, setAudioBroken] = useState(false);
   const [downloadError, setDownloadError] = useState("");
+  const [posterSave, setPosterSave] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [savedPosterUrl, setSavedPosterUrl] = useState<string | null>(null);
+  const [posterSaveError, setPosterSaveError] = useState("");
   const [savedAudioUrl, setSavedAudioUrl] = useState<string | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
   const [narrationOpen, setNarrationOpen] = useState(false);
@@ -219,6 +237,14 @@ export function StoryReader({ storyId }: { storyId: string }) {
       const row = data?.story as StoryRecord | undefined;
       if (!row?.id) throw new Error(copy.notFound);
       setStory(row);
+      setMockNarration(mockNarrationLabelVisible(data?.mockNarration));
+      if (row.posterSaved && row.posterUrl) {
+        setPosterSave("saved");
+        setSavedPosterUrl(row.posterUrl);
+      } else {
+        setPosterSave("idle");
+        setSavedPosterUrl(null);
+      }
       setSavedAudioUrl(row.audioUrl);
       const savedStatus =
         row.artworkStatus === "illustrated" || row.artworkStatus === "fallback" || row.artworkStatus === "error"
@@ -243,6 +269,7 @@ export function StoryReader({ storyId }: { storyId: string }) {
       }
       return row;
     } catch (error: unknown) {
+      setMockNarration(false);
       setLoadError(getErrorMessage(error, copy.openFailed));
       return null;
     } finally {
@@ -439,20 +466,25 @@ export function StoryReader({ storyId }: { storyId: string }) {
       next.playbackRate = playbackRate;
       const started = next.play();
       if (started) {
-        started.catch((error: unknown) => {
-          const message = error instanceof Error ? error.message : String(error);
-          if (next.paused && /interrupted by a call to pause/i.test(message)) return;
-          // iOS drops the tap once narration took a while to make; the audio is ready, so the next tap plays it.
-          if (error instanceof DOMException && error.name === "NotAllowedError") {
+        void started.then(
+          () => setNeedsTap(false),
+          (error: unknown) => {
+            const outcome = classifyPlayRejection(error, next.paused);
+            if (outcome === "ignore-pause") return;
+            if (outcome === "needs-tap") {
+              setPlaying(false);
+              setNeedsTap(true);
+              return;
+            }
+            setNeedsTap(false);
+            setAudioError(playbackErrorMessage(error, copy.voiceFailed));
             setPlaying(false);
-            return;
           }
-          setAudioError(playbackErrorMessage(error, copy.voiceFailed));
-          setPlaying(false);
-        });
+        );
       }
       if (story) onStoryPlayed(story.id, story.title?.trim() || copy.story);
     } catch (error: unknown) {
+      setNeedsTap(false);
       setAudioError(playbackErrorMessage(error, copy.voiceFailed));
       setPlaying(false);
     }
@@ -502,6 +534,31 @@ export function StoryReader({ storyId }: { storyId: string }) {
     audio.currentTime = next;
     setProgress(next);
     savePosition(true);
+  }
+
+  async function onSavePoster() {
+    if (!story || !posterUrl || posterSave === "saving") return;
+    if (posterSave === "saved" && savedPosterUrl === posterUrl) return;
+    setPosterSave("saving");
+    setPosterSaveError("");
+    try {
+      const response = await fetch(`/api/stories/${encodeURIComponent(story.id)}/save-poster`, {
+        method: "POST",
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        posterSaved?: boolean;
+        posterSavedAt?: string | null;
+      };
+      if (!response.ok || data.posterSaved !== true) {
+        throw new Error(data.error || posterCopy.savePosterError);
+      }
+      setPosterSave("saved");
+      setSavedPosterUrl(posterUrl);
+    } catch (error: unknown) {
+      setPosterSave("error");
+      setPosterSaveError(getErrorMessage(error, posterCopy.savePosterError));
+    }
   }
 
   async function onDownloadKeepsake() {
@@ -554,6 +611,8 @@ export function StoryReader({ storyId }: { storyId: string }) {
   const posterUrl = poster.posterUrl ?? story?.posterUrl ?? null;
   const hasSavedArt = Boolean(coverUrl || illustrationUrl || posterUrl);
   const painting = poster.status === "generating" || poster.status === "pending";
+  const posterReady = Boolean(posterUrl) && !painting;
+  const posterIsSaved = posterSave === "saved" && savedPosterUrl === posterUrl;
   const backHref = from === "home" ? "/?tab=home" : "/?tab=library";
   const backLabel = from === "home" ? messages.nav.home : copy.back;
 
@@ -726,11 +785,22 @@ export function StoryReader({ storyId }: { storyId: string }) {
             </button>
           </div>
 
-          <div className="listenTools">
+          {mockNarration ? (
+            <p className="listenMockNote" data-testid="mock-narration">
+              {copy.mockNarration}
+            </p>
+          ) : null}
+          {showTapToHear({ needsTap, playing }) ? (
+            <p className="listenHint listenHint--tap" role="status" data-testid="tap-to-hear">
+              {copy.tapToHear}
+            </p>
+          ) : null}
+
+          <div className="listenActions" data-testid="story-actions">
             <div className="listenSpeed">
               <button
                 type="button"
-                className="listenSpeed__button"
+                className="listenSpeed__button listenAction"
                 aria-haspopup="listbox"
                 aria-expanded={speedOpen}
                 aria-label={fill(copy.speedValue, { rate: formatRate(playbackRate) })}
@@ -761,16 +831,13 @@ export function StoryReader({ storyId }: { storyId: string }) {
                 </ul>
               ) : null}
             </div>
-            <button type="button" className="listenNarration" onClick={() => setNarrationOpen(true)}>
+            <button type="button" className="listenAction" onClick={() => setNarrationOpen(true)}>
               <IconWave />
               {copy.narration}
             </button>
-          </div>
-
-          <section className="listenScriptCard" aria-label={copy.readStory}>
             <button
               type="button"
-              className="listenScript"
+              className="listenAction"
               aria-expanded={scriptOpen}
               onClick={() => setScriptOpen((open) => !open)}
             >
@@ -778,7 +845,38 @@ export function StoryReader({ storyId }: { storyId: string }) {
               <span>{copy.readStory}</span>
               <IconChevron down={!scriptOpen} />
             </button>
-            {scriptOpen ? (
+            {story && !loadError ? (
+              <button
+                type="button"
+                className="listenAction"
+                data-testid="save-poster"
+                onClick={() => void onSavePoster()}
+                disabled={!posterReady || posterSave === "saving" || posterIsSaved}
+                aria-busy={posterSave === "saving"}
+              >
+                {posterSave === "saving"
+                  ? posterCopy.savingPoster
+                  : posterIsSaved
+                    ? posterCopy.savedPoster
+                    : posterCopy.savePoster}
+              </button>
+            ) : null}
+            {story && !loadError ? (
+              <button
+                type="button"
+                className="listenAction"
+                data-testid="download-poster"
+                onClick={() => void onDownloadKeepsake()}
+                disabled={!posterReady}
+              >
+                <IconDownload />
+                {messages.library.download}
+              </button>
+            ) : null}
+          </div>
+
+          {scriptOpen ? (
+            <section className="listenScriptCard" aria-label={copy.readStory}>
               <div
                 className="listenScript__body"
                 style={{ ["--read-size" as string]: ["1.125rem", "1.25rem", "1.45rem"][readScale] }}
@@ -796,53 +894,36 @@ export function StoryReader({ storyId }: { storyId: string }) {
                 {story?.text ? <p className="listenScript__text">{story.text}</p> : null}
                 {!loading && !story?.text ? <p className="listenHint">{copy.noScript}</p> : null}
               </div>
-            ) : null}
-          </section>
-
-          {story && !loadError ? (
-            <section className="listenKeepsake" aria-labelledby="keepsake-heading">
-              <h2 id="keepsake-heading" className="listenKeepsake__title">
-                {copy.keepsakeTitle}
-              </h2>
-              <p className="listenKeepsake__body">{copy.keepsakeBody}</p>
-              {posterUrl ? (
-                <figure className="listenKeepsake__frame">
-                  {/* The saved 4:5 keepsake, shown whole at its own proportions: the same file Save my poster downloads. */}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={posterUrl}
-                    alt={fill(copy.keepsakeAlt, { title })}
-                    className="listenKeepsake__img"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                </figure>
-              ) : (
-                <StoryArtwork
-                  kind="keepsake"
-                  title={title}
-                  caption={poster.caption || story.posterCaption}
-                  dedication={poster.dedication || story.dedication}
-                  illustrationUrl={poster.status === "fallback" || poster.status === "error" ? null : illustrationUrl}
-                  status={poster.status}
-                  message={poster.message}
-                  large={readScale > 0}
-                />
-              )}
-              <button
-                type="button"
-                className="savePoster"
-                onClick={() => void onDownloadKeepsake()}
-                disabled={painting}
-              >
-                {posterCopy.save}
-              </button>
-              {downloadError ? (
-                <p className="listenStatus listenStatus--error" role="alert">
-                  {downloadError}
-                </p>
-              ) : null}
             </section>
+          ) : null}
+          {story && !loadError && (posterSave === "error" || downloadError || posterIsSaved || !posterReady) ? (
+            <p
+              className={`listenHint listenHint--tap${posterSave === "error" || downloadError ? " listenStatus--error" : ""}`}
+              role={posterSave === "error" || downloadError ? "alert" : "status"}
+              data-testid="poster-save-status"
+            >
+              {posterSave === "error"
+                ? posterSaveError
+                : downloadError
+                  ? downloadError
+                  : posterIsSaved
+                    ? posterCopy.savedPosterHint
+                    : painting
+                      ? posterCopy.painting
+                      : posterCopy.posterNotReady}
+            </p>
+          ) : null}
+          {posterUrl && story && !loadError ? (
+            <figure className="listenKeepsake__frame listenPosterPreview">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={posterUrl}
+                alt={fill(copy.keepsakeAlt, { title })}
+                className="listenKeepsake__img"
+                loading="lazy"
+                decoding="async"
+              />
+            </figure>
           ) : null}
 
           <audio
@@ -850,7 +931,10 @@ export function StoryReader({ storyId }: { storyId: string }) {
             preload="metadata"
             playsInline
             className="listenAudio"
-            onPlay={() => setPlaying(true)}
+            onPlay={() => {
+              setPlaying(true);
+              setNeedsTap(false);
+            }}
             onPause={() => {
               setPlaying(false);
               savePosition(true);
@@ -898,10 +982,18 @@ export function StoryReader({ storyId }: { storyId: string }) {
           <button
             type="button"
             className="sheetAction"
-            onClick={() => void onDownloadKeepsake()}
-            disabled={!story || poster.status === "generating"}
+            onClick={() => void onSavePoster()}
+            disabled={!posterReady || posterSave === "saving" || posterIsSaved}
           >
-            {posterCopy.save}
+            {posterIsSaved ? posterCopy.savedPoster : posterCopy.savePoster}
+          </button>
+          <button
+            type="button"
+            className="sheetAction"
+            onClick={() => void onDownloadKeepsake()}
+            disabled={!posterReady}
+          >
+            {messages.library.download}
           </button>
           {coverFailed ? (
             <button type="button" className="sheetAction" onClick={retryCover}>

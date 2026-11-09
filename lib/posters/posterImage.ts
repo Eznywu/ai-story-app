@@ -47,12 +47,15 @@ export function mockIllustrationPng(kind: SceneKind = "human"): Buffer {
  * One illustration from the selected provider.
  * Production does not fall through to a second provider.
  */
-export async function generateOneIllustration(prompt: string): Promise<ImageProviderResult> {
+export async function generateOneIllustration(
+  prompt: string,
+  referenceImage?: Buffer | null
+): Promise<ImageProviderResult> {
   if (mockPosterFallbackEnabled()) {
     throw createError("OpenAI timed out or was blocked on the network.", 503);
   }
   if (mockProvidersEnabled()) {
-    console.info("[poster] mock png");
+    console.info("[poster] mock png", { referenceImage: Boolean(referenceImage) });
     return {
       bytes: mockIllustrationPng(sceneKindFromPrompt(prompt)),
       claimedMime: "image/png",
@@ -92,7 +95,7 @@ export async function generateOneIllustration(prompt: string): Promise<ImageProv
     throw createError("Illustrated artwork needs OPENAI_API_KEY for the selected image provider.", 500);
   }
   try {
-    const image = await generatePosterPngFromOpenAI({ prompt });
+    const image = await generatePosterPngFromOpenAI({ prompt, referenceImage });
     return {
       bytes: image.bytes,
       claimedMime: "image/png",

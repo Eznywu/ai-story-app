@@ -117,14 +117,14 @@ export function visualBriefInstructions(isZh: boolean): string {
       `故事正文結束後，另起一行，只寫 ${VISUAL_BRIEF_MARKER}`,
       "下一行只放一個 JSON 物件，不要再寫別的文字。",
       `欄位：${shape}`,
-      "moment 是一個看得懂的畫面。protagonist 必須是選定的角色，不可換成另一種生物。props 一到兩個。composition 要適合該年齡帶。",
+      "moment 是一個看得懂的畫面。protagonist 必須是選定的角色，不可換成另一種生物。action 必須是這個故事裡角色正在做的一件事，不要寫成空泛的安靜片刻。0–2 歲只要一個簡單動作。6–8 和 9+ 要更豐富的情節，不要畫成幼兒圖。props 一到兩個。composition 要適合該年齡帶。",
     ].join("\n");
   }
   return [
     `After the story, on its own line, write ${VISUAL_BRIEF_MARKER}`,
     "Then one JSON object and nothing else.",
     `Fields: ${shape}`,
-    "moment is one clear picture. protagonist must stay the selected character and must not change species. props has one or two items. composition matches the audience age band.",
+    "moment is one clear picture. protagonist must stay the selected character and must not change species. action is one specific thing the protagonist does in this story, not a generic gentle moment. Ages 0–2 stay one simple action. Ages 6–8 and 9+ need a richer story beat and less babyish styling. props has one or two items. composition matches the audience age band.",
   ].join("\n");
 }
 
@@ -153,24 +153,29 @@ export function deriveVisualBrief(input: {
   const moment =
     firstSentence ||
     (title
-      ? `${character.name} in a quiet ${genre.toLowerCase()} moment from “${title}”`
-      : `${character.name} in a quiet ${genre.toLowerCase()} bedtime moment`);
+      ? `${character.name} discovers something in “${title}”`
+      : `${character.name} discovers something in a ${genre.toLowerCase()} scene`);
+  const younger = audience.band === "0-2";
   const composition =
     audience.band === "0-2"
-      ? "One friendly character, simple setting, gentle expression, lots of calm space."
+      ? "One friendly character, a very simple setting, a gentle expression, and lots of calm space."
       : audience.band === "3-5"
-        ? "One clear action, one or two characters, a recognisable place."
+        ? "One clear action or discovery, one or two characters, a recognisable place."
         : audience.band === "6-8"
-          ? "A richer place, a small exploration, and an expressive interaction."
-          : "A more sophisticated composition with the same gentle bedtime mood.";
+          ? "A richer layered place, a specific exploration, and an expressive interaction. Less babyish than a toddler picture."
+          : "A more sophisticated story beat, finer costume and scenery, less babyish styling, still calm and kind.";
   return {
     version: VISUAL_BRIEF_VERSION,
     moment: clip(moment),
     protagonist: clip(look),
-    setting: clip(`A bedtime-safe ${genre.toLowerCase()} place`),
-    action: clip(`${character.name} is the clear focus of one gentle moment`),
-    emotion: "calm and safe",
-    props: ["a small comforting object"],
+    setting: clip(
+      younger
+        ? `A very simple bedtime-safe ${genre.toLowerCase()} place`
+        : `A layered bedtime-safe ${genre.toLowerCase()} place with a foreground and a deeper background`
+    ),
+    action: clip(firstSentence || `${character.name} takes one clear action in this scene`),
+    emotion: younger ? "calm and safe" : "wonder, excitement, and a safe bedtime calm",
+    props: younger ? ["a small comforting object"] : ["one story prop"],
     composition,
     ageBand: audience.band,
     genre,

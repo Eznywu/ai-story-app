@@ -8,6 +8,8 @@ import { useInterfaceLocale } from "@/app/components/LocaleProvider";
 import { QuietSheet } from "@/app/components/QuietSheet";
 import { StoryCover } from "@/app/components/StoryCover";
 import { fill } from "@/lib/i18n/locales";
+import { downloadPosterPng } from "@/lib/posters/poster";
+import { libraryView, type LibraryFilterId } from "@/lib/stories/libraryView";
 
 type Props = {
   library: StoryLibraryItem[];
@@ -23,7 +25,7 @@ type Props = {
   panelTitle?: string;
 };
 
-type LibraryFilter = "all" | "stories" | "posters" | "audio";
+type LibraryFilter = LibraryFilterId;
 
 function libraryMetaLine(
   story: StoryLibraryItem,
@@ -58,19 +60,36 @@ export function LibraryPanel({
   const [pendingDelete, setPendingDelete] = useState<StoryLibraryItem | null>(null);
   const [keepsake, setKeepsake] = useState<StoryLibraryItem | null>(null);
 
-  const filteredLibrary = useMemo(() => {
-    if (filter === "all") return library;
-    if (filter === "stories") return library.filter((story) => Boolean(story.story.trim()));
-    if (filter === "posters") return library.filter((story) => Boolean(story.posterUrl || story.coverUrl));
-    return library.filter((story) => Boolean(story.audioUrl));
-  }, [filter, library]);
-
+  const view = useMemo(() => libraryView(library, filter), [filter, library]);
   const filters = [
-    ["all", copy.all],
-    ["stories", copy.stories],
-    ["audio", copy.audio],
-    ["posters", copy.keepsakes],
+    ["all", copy.all, view.counts.all],
+    ["stories", copy.stories, view.counts.stories],
+    ["posters", copy.posters, view.counts.posters],
   ] as const;
+
+  async function downloadPoster(story: StoryLibraryItem) {
+    const url = story.posterUrl;
+    if (!url) return;
+    const response = await fetch(url);
+    if (!response.ok) return;
+    downloadPosterPng(await response.blob(), story.title?.trim() || copy.posterKind);
+  }
+
+  async function sharePoster(story: StoryLibraryItem) {
+    const url = story.posterUrl;
+    if (!url) return;
+    const absolute = new URL(url, window.location.origin).href;
+    const title = story.title?.trim() || copy.posterKind;
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title, url: absolute });
+        return;
+      } catch {
+        /* The parent dismissed the sheet, or this browser has no share target. */
+      }
+    }
+    await downloadPoster(story);
+  }
 
   return (
     <section className="storyShelf" aria-labelledby="library-heading">
@@ -84,7 +103,7 @@ export function LibraryPanel({
       </div>
 
       <div className="libraryFilters" role="tablist" aria-label={copy.filterLabel}>
-        {filters.map(([id, label]) => (
+        {filters.map(([id, label, count]) => (
           <button
             key={id}
             type="button"
@@ -92,8 +111,10 @@ export function LibraryPanel({
             onClick={() => setFilter(id)}
             role="tab"
             aria-selected={filter === id}
+            data-testid={`library-filter-${id}`}
           >
-            {label}
+            <span>{label}</span>
+            <span className="libraryFilterChip__count">{count}</span>
           </button>
         ))}
       </div>
@@ -112,29 +133,57 @@ export function LibraryPanel({
         </div>
       ) : null}
 
-      {!libraryError && filteredLibrary.length === 0 && !loadingLibrary ? (
+      {!libraryError && view.entries.length === 0 && !loadingLibrary ? (
         <AppStateCard
-          title={filter === "audio" ? copy.noNarration : filter === "posters" ? copy.noKeepsakes : copy.nothing}
-          body={
-            filter === "audio"
-              ? copy.noNarrationBody
-              : filter === "posters"
-                ? copy.noKeepsakesBody
-                : copy.nothingBody
-          }
+          title={filter === "posters" ? copy.noPosters : filter === "stories" ? copy.nothing : copy.nothing}
+          body={filter === "posters" ? copy.noPostersBody : copy.nothingBody}
         />
       ) : null}
 
-      {filteredLibrary.length > 0 ? (
-        <div className="storyGrid">
-          {filteredLibrary.map((story) => {
+      {view.entries.length > 0 && filter === "posters" ? (
+        <div className="posterGrid" data-testid="poster-grid">
+          {view.entries.map((entry) => {
+            const story = entry.item;
             const title = story.title?.trim() || copy.untitled;
             return (
-              <article key={story.id} className="storyCard">
+              <article key={entry.key} className="posterCard">
+                <button type="button" className="posterCard__open" onClick={() => setKeepsake(story)}>
+                  <span className="posterCard__frame">
+                    <StoryCover coverUrl={null} illustrationUrl={null} posterUrl={story.posterUrl} />
+                  </span>
+                  <span className="posterCard__title">{title}</span>
+                </button>
+              </article>
+            );
+          })}
+        </div>
+      ) : null}
+
+      {view.entries.length > 0 && filter !== "posters" ? (
+        <div className="storyGrid">
+          {view.entries.map((entry) => {
+            const story = entry.item;
+            const title = story.title?.trim() || copy.untitled;
+            if (entry.kind === "poster") {
+              return (
+                <article key={entry.key} className="storyCard">
+                  <button type="button" className="storyCard__open" onClick={() => setKeepsake(story)}>
+                    <span className="storyCard__cover">
+                      <StoryCover coverUrl={null} illustrationUrl={null} posterUrl={story.posterUrl} />
+                    </span>
+                    <span className="libraryKind">{copy.posterKind}</span>
+                    <span className="storyCard__title">{title}</span>
+                  </button>
+                </article>
+              );
+            }
+            return (
+              <article key={entry.key} className="storyCard">
                 <button type="button" className="storyCard__open" onClick={() => onLoadStory(story)}>
                   <span className="storyCard__cover">
                     <StoryCover coverUrl={story.coverUrl} illustrationUrl={story.illustrationUrl} posterUrl={story.posterUrl} />
                   </span>
+                  {filter === "all" ? <span className="libraryKind">{copy.storyKind}</span> : null}
                   <span className="storyCard__title">{title}</span>
                   <span className="storyCard__meta">
                     {libraryMetaLine(story, {
@@ -248,6 +297,12 @@ export function LibraryPanel({
           <div className="keepsakeView">
             <Image src={keepsake.posterUrl} alt="" width={640} height={800} unoptimized className="keepsakeView__img" />
             <p className="listenHint">{keepsake.title?.trim() || copy.artwork}</p>
+            <button type="button" className="sheetAction" onClick={() => void downloadPoster(keepsake)}>
+              {copy.download}
+            </button>
+            <button type="button" className="sheetAction" onClick={() => void sharePoster(keepsake)}>
+              {copy.share}
+            </button>
             <button
               type="button"
               className="sheetAction"

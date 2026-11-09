@@ -41,6 +41,8 @@ function toLibraryItem(raw: Record<string, unknown>): StoryLibraryItem {
       raw?.audioUrl != null && String(raw.audioUrl).trim() !== "" ? String(raw.audioUrl) : null,
     audioVoiceId: raw?.audioVoiceId ? String(raw.audioVoiceId) : null,
     audioLanguage: raw?.audioLanguage ? String(raw.audioLanguage) : null,
+    posterSaved: raw?.posterSaved === true,
+    posterSavedAt: raw?.posterSavedAt ? String(raw.posterSavedAt) : null,
   };
 }
 

@@ -34,7 +34,7 @@ export const openaiPosterQuality: "low" | "medium" | "high" | "auto" =
   posterQualityRaw === "high" ||
   posterQualityRaw === "auto"
     ? posterQualityRaw
-    : "low";
+    : "medium";
 
 export const geminiNativeModel = process.env.GEMINI_NATIVE_IMAGE_MODEL ?? "gemini-3.1-flash-lite-image";
 export const geminiNativeAspectRatio = process.env.GEMINI_NATIVE_IMAGE_ASPECT_RATIO ?? "1:1";

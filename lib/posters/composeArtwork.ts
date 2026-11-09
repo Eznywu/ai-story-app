@@ -49,9 +49,106 @@ const KEEPSAKE_MARK_PX = 52;
 const KEEPSAKE_WORDMARK_PX = 30;
 const PHONE_DISPLAY_WIDTH = 390;
 
-/** Canvas pixels converted to CSS pixels when the keepsake is shown at phone width. */
+/** Canvas pixels converted to CSS pixels when a 1080-wide poster is shown at phone width. */
 export function keepsakePhonePx(canvasPx: number): number {
   return (canvasPx * PHONE_DISPLAY_WIDTH) / KEEPSAKE_WIDTH;
+}
+
+/** Square cover bar. Stays inside the bottom fifth the prompt leaves as open ground. */
+export const COVER_BAR_HEIGHT = 216;
+/** Preferred cover title. 64px is about 23px when the cover is shown at 390 wide. */
+export const COVER_TITLE_PX = 64;
+const COVER_TITLE_MIN_PX = 56;
+/** Child line. 52px is about 19px at the same 390-wide display. */
+export const COVER_CHILD_PX = 52;
+const COVER_CHILD_MIN_PX = 46;
+const COVER_MARK_PX = 36;
+const COVER_WORDMARK_PX = 16;
+
+export type CoverTextLayout = {
+  barHeight: number;
+  barTop: number;
+  margin: number;
+  titlePx: number;
+  childPx: number;
+  titleLines: string[];
+  childLine: string;
+  titleBaseline: number;
+  titleStep: number;
+  childBaseline: number;
+  markSize: number;
+  markX: number;
+  markY: number;
+  wordmarkPx: number;
+  wordmarkX: number;
+  wordmarkBaseline: number;
+};
+
+function coverUnits(text: string, width: number, px: number): number {
+  const sample = text.trim() || "Mia";
+  const cjk = /[\u3400-\u9fff]/.test(sample);
+  const advance = cjk ? px : px * 0.6;
+  return Math.max(8, Math.floor(width / advance));
+}
+
+/**
+ * Title and child line for the square cover, sized so both stay readable
+ * when the 1080 canvas is shown at about 390px.
+ */
+export function coverTextLayout(input: { title: string; childLine: string }): CoverTextLayout {
+  const margin = POSTER_TEXT_MARGIN;
+  const barHeight = COVER_BAR_HEIGHT;
+  const barTop = COVER_SIZE - barHeight;
+  const textWidth = COVER_SIZE - margin * 2;
+  const title = input.title.trim() || "Happy Horse";
+  let titlePx = COVER_TITLE_PX;
+  let titleWrapped = wrapPosterText(title, coverUnits(title, textWidth, titlePx), 1);
+  while (titlePx > COVER_TITLE_MIN_PX && titleWrapped.truncated) {
+    titlePx -= 2;
+    titleWrapped = wrapPosterText(title, coverUnits(title, textWidth, titlePx), 1);
+  }
+  let titleLines = titleWrapped.lines.length ? titleWrapped.lines : ["Happy Horse"];
+  if (titleWrapped.truncated) {
+    titleLines = wrapPosterText(title, coverUnits(title, textWidth, titlePx), 2).lines;
+    if (!titleLines.length) titleLines = ["Happy Horse"];
+  }
+
+  const markSize = COVER_MARK_PX;
+  const markX = COVER_SIZE - margin - markSize;
+  const childRoom = markX - margin - 150;
+  const childText = input.childLine.trim();
+  const childPx = childText ? fitLineFont(childText, childRoom, COVER_CHILD_PX, COVER_CHILD_MIN_PX) : 0;
+  const titleStep = Math.round(titlePx * 1.12);
+  const titleHeight =
+    ascent(titlePx) + Math.max(0, titleLines.length - 1) * titleStep + descent(titlePx);
+  const childHeight = childText ? ascent(childPx) + descent(childPx) : 0;
+  const gap = childText ? 16 : 0;
+  const used = titleHeight + gap + childHeight;
+  const topPad = Math.max(18, Math.floor((barHeight - used) / 2));
+  const titleTop = barTop + topPad;
+  const childTop = titleTop + titleHeight + gap;
+  const markY = childText
+    ? childTop + Math.max(0, Math.round((childHeight - markSize) / 2))
+    : barTop + barHeight - markSize - 18;
+
+  return {
+    barHeight,
+    barTop,
+    margin,
+    titlePx,
+    childPx,
+    titleLines,
+    childLine: childText,
+    titleBaseline: titleTop + ascent(titlePx),
+    titleStep,
+    childBaseline: childText ? childTop + ascent(childPx) : 0,
+    markSize,
+    markX,
+    markY,
+    wordmarkPx: COVER_WORDMARK_PX,
+    wordmarkX: markX - 8,
+    wordmarkBaseline: markY + Math.round(markSize * 0.72),
+  };
 }
 
 function ascent(size: number): number {
@@ -219,31 +316,31 @@ async function composeCover(illustration: Buffer, input: FooterInput): Promise<B
     .png()
     .toBuffer();
   const lines = footerLines(input);
-  const markSize = 44;
-  const barHeight = 128;
-  const barTop = COVER_SIZE - barHeight;
-  const textWidth = COVER_SIZE - POSTER_TEXT_MARGIN * 2 - markSize - 140;
-  const titlePx = 40;
-  const titleLines = wrapPosterText(lines.title, charsForWidth(lines.title, textWidth, titlePx), 1).lines;
+  const layout = coverTextLayout({ title: lines.title, childLine: lines.name });
   const title = textBlock(
-    titleLines.length ? titleLines : ["Happy Horse"],
-    POSTER_TEXT_MARGIN,
-    barTop + 46,
-    titlePx,
+    layout.titleLines,
+    layout.margin,
+    layout.titleBaseline,
+    layout.titlePx,
+    BRAND_IDENTITY.brown,
+    700,
+    layout.titleStep
+  );
+  const child = textBlock(
+    layout.childLine ? [layout.childLine] : [],
+    layout.margin,
+    layout.childBaseline,
+    layout.childPx,
     BRAND_IDENTITY.brown,
     700
   );
-  const rowY = COVER_SIZE - 34;
-  const child = textBlock(lines.name ? [lines.name] : [], POSTER_TEXT_MARGIN, rowY, 26, BRAND_IDENTITY.brown, 650);
-  const markX = COVER_SIZE - POSTER_TEXT_MARGIN - markSize;
-  const markY = COVER_SIZE - markSize - 14;
   const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="${COVER_SIZE}" height="${COVER_SIZE}" xmlns="http://www.w3.org/2000/svg">
-  <rect x="0" y="${barTop}" width="${COVER_SIZE}" height="${barHeight}" fill="${BRAND_IDENTITY.cream}"/>
+  <rect x="0" y="${layout.barTop}" width="${COVER_SIZE}" height="${layout.barHeight}" fill="${BRAND_IDENTITY.cream}"/>
   ${title.svg}
   ${child.svg}
-  ${happyHorseMarkSvg(markX, markY, markSize)}
-  <text x="${markX - 10}" y="${markY + 30}" text-anchor="end" fill="${BRAND_IDENTITY.brown}" font-size="18" font-weight="700" font-family="sans-serif">${escapeXml(BRAND_NAME)}</text>
+  ${happyHorseMarkSvg(layout.markX, layout.markY, layout.markSize)}
+  <text x="${layout.wordmarkX}" y="${layout.wordmarkBaseline}" text-anchor="end" fill="${BRAND_IDENTITY.brown}" font-size="${layout.wordmarkPx}" font-weight="700" font-family="sans-serif">${escapeXml(BRAND_NAME)}</text>
 </svg>`;
   return sharp(art)
     .composite([{ input: Buffer.from(svg), left: 0, top: 0 }])

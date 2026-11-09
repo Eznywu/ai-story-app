@@ -15,6 +15,8 @@ export type ArtworkCacheInput = {
   model: string;
   quality: string;
   size: string;
+  /** True when reference bytes are sent with this illustration. The URL already lives on the character. */
+  referenceAttached?: boolean;
 };
 
 /**
@@ -34,6 +36,7 @@ export function artworkCacheKey(input: ArtworkCacheInput): string {
     model: input.model,
     quality: input.quality,
     size: input.size,
+    referenceAttached: input.referenceAttached === true,
     promptVersion: PROMPT_VERSION,
   });
   return createHash("sha256").update(payload).digest("hex");

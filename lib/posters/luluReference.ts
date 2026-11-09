@@ -3,7 +3,12 @@ import { buildArtworkPrompt } from "@/lib/posters/artworkPrompt";
 import { buildCharacterSnapshot } from "@/lib/posters/characterSnapshot";
 import type { VisualBrief } from "@/lib/posters/visualBrief";
 
-/** The one authorised reference scene. Do not vary this when comparing qualities. */
+/**
+ * The one authorised reference scene. Do not vary this when comparing qualities.
+ * The CEO-approved medium illustration is
+ * fixtures/references/lulu-lantern-path-medium.png, with provenance in the
+ * JSON beside it. Mock scenes stay in lib/providers/fixtures and are labelled MOCK.
+ */
 export const LULU_REFERENCE = {
   title: "Lulu and the Lantern Path",
   childName: "Lulu",

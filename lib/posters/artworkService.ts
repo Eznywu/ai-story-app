@@ -7,9 +7,12 @@ import {
   PRODUCTION_IMAGE_QUALITY,
   PRODUCTION_IMAGE_SIZE,
   estimatedImageUsd,
+  posterImageQuality,
   selectedImageProvider,
+  type FlareTokenUsage,
 } from "@/lib/posters/artworkPricing";
-import { buildArtworkPrompt } from "@/lib/posters/artworkPrompt";
+import { PROMPT_VERSION, buildArtworkPrompt } from "@/lib/posters/artworkPrompt";
+import { loadCharacterReference } from "@/lib/posters/characterReference";
 import { parseAudienceAge } from "@/lib/posters/audienceAge";
 import {
   buildCharacterSnapshot,
@@ -23,7 +26,7 @@ export type ArtworkIntent = "create" | "read" | "download" | "reload" | "regener
 
 export type ArtworkStatus = "pending" | "illustrated" | "fallback" | "error";
 
-export type ImageUsage = { inputTokens?: number; outputTokens?: number };
+export type ImageUsage = FlareTokenUsage;
 
 export type ArtworkStoryRow = {
   id: string;
@@ -112,7 +115,10 @@ export type ImageProviderResult = {
 export type ArtworkDeps = {
   store: ArtworkStore;
   now?: () => number;
-  provider: (input: { prompt: string }) => Promise<ImageProviderResult>;
+  provider: (input: {
+    prompt: string;
+    referenceImage?: Buffer | null;
+  }) => Promise<ImageProviderResult>;
   compose: (input: {
     illustration: Buffer;
     kind: "cover" | "keepsake";
@@ -257,7 +263,7 @@ export async function runArtworkRequest(
   const quality =
     providerName === "gemini"
       ? "1K"
-      : env.OPENAI_POSTER_IMAGE_QUALITY?.trim().toLowerCase() || PRODUCTION_IMAGE_QUALITY;
+      : posterImageQuality(env);
   const size = PRODUCTION_IMAGE_SIZE;
   let providerCalls = 0;
 
@@ -281,6 +287,9 @@ export async function runArtworkRequest(
   const character = characterFor(story);
   const audience = parseAudienceAge(story.age);
   const brief = await resolveBrief(story, character, deps);
+  const reference = character.referenceImageUrl
+    ? await loadCharacterReference(character.referenceImageUrl)
+    : null;
   const footer = posterFooter({
     audienceBand: audience.band,
     language: story.language,
@@ -307,6 +316,7 @@ export async function runArtworkRequest(
     model,
     quality,
     size,
+    referenceAttached: Boolean(reference),
   });
   const scopeKey = artworkScopeKey({
     userId: input.userId,
@@ -566,11 +576,17 @@ export async function runArtworkRequest(
     };
   }
 
-  const prompt = buildArtworkPrompt({ audience, character, brief, genre: story.genre });
+  const prompt = buildArtworkPrompt({
+    audience,
+    character,
+    brief,
+    genre: story.genre,
+    referenceAttached: Boolean(reference),
+  });
   const started = now();
   try {
     providerCalls += 1;
-    const image = await deps.provider({ prompt });
+    const image = await deps.provider({ prompt, referenceImage: reference?.bytes ?? null });
     const png = await pngBytes(image.bytes, image.claimedMime, deps);
     const spent = estimatedImageUsd({ quality: image.quality || quality, usage: image.usage });
     const cover = await deps.compose({ illustration: png, kind: "cover", title, caption, dedication, ...composeLabels });
@@ -597,7 +613,7 @@ export async function runArtworkRequest(
         costIsEstimate: true,
         cacheHit: false,
         attemptCount: attemptsSoFar + 1,
-        promptVersion: "ab13-1",
+        promptVersion: PROMPT_VERSION,
       },
     });
     return {
