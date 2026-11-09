@@ -796,11 +796,11 @@ export function StoryReader({ storyId }: { storyId: string }) {
             </p>
           ) : null}
 
-          <div className="listenTools">
+          <div className="listenActions" data-testid="story-actions">
             <div className="listenSpeed">
               <button
                 type="button"
-                className="listenSpeed__button"
+                className="listenSpeed__button listenAction"
                 aria-haspopup="listbox"
                 aria-expanded={speedOpen}
                 aria-label={fill(copy.speedValue, { rate: formatRate(playbackRate) })}
@@ -831,16 +831,13 @@ export function StoryReader({ storyId }: { storyId: string }) {
                 </ul>
               ) : null}
             </div>
-            <button type="button" className="listenNarration" onClick={() => setNarrationOpen(true)}>
+            <button type="button" className="listenAction" onClick={() => setNarrationOpen(true)}>
               <IconWave />
               {copy.narration}
             </button>
-          </div>
-
-          <section className="listenScriptCard" aria-label={copy.readStory}>
             <button
               type="button"
-              className="listenScript"
+              className="listenAction"
               aria-expanded={scriptOpen}
               onClick={() => setScriptOpen((open) => !open)}
             >
@@ -848,7 +845,38 @@ export function StoryReader({ storyId }: { storyId: string }) {
               <span>{copy.readStory}</span>
               <IconChevron down={!scriptOpen} />
             </button>
-            {scriptOpen ? (
+            {story && !loadError ? (
+              <button
+                type="button"
+                className="listenAction"
+                data-testid="save-poster"
+                onClick={() => void onSavePoster()}
+                disabled={!posterReady || posterSave === "saving" || posterIsSaved}
+                aria-busy={posterSave === "saving"}
+              >
+                {posterSave === "saving"
+                  ? posterCopy.savingPoster
+                  : posterIsSaved
+                    ? posterCopy.savedPoster
+                    : posterCopy.savePoster}
+              </button>
+            ) : null}
+            {story && !loadError ? (
+              <button
+                type="button"
+                className="listenAction"
+                data-testid="download-poster"
+                onClick={() => void onDownloadKeepsake()}
+                disabled={!posterReady}
+              >
+                <IconDownload />
+                {messages.library.download}
+              </button>
+            ) : null}
+          </div>
+
+          {scriptOpen ? (
+            <section className="listenScriptCard" aria-label={copy.readStory}>
               <div
                 className="listenScript__body"
                 style={{ ["--read-size" as string]: ["1.125rem", "1.25rem", "1.45rem"][readScale] }}
@@ -866,36 +894,7 @@ export function StoryReader({ storyId }: { storyId: string }) {
                 {story?.text ? <p className="listenScript__text">{story.text}</p> : null}
                 {!loading && !story?.text ? <p className="listenHint">{copy.noScript}</p> : null}
               </div>
-            ) : null}
-          </section>
-
-          {story && !loadError ? (
-            <div className="listenActions">
-              <button
-                type="button"
-                className="listenAction"
-                data-testid="save-poster"
-                onClick={() => void onSavePoster()}
-                disabled={!posterReady || posterSave === "saving" || posterIsSaved}
-                aria-busy={posterSave === "saving"}
-              >
-                {posterSave === "saving"
-                  ? posterCopy.savingPoster
-                  : posterIsSaved
-                    ? posterCopy.savedPoster
-                    : posterCopy.savePoster}
-              </button>
-              <button
-                type="button"
-                className="listenAction"
-                data-testid="download-poster"
-                onClick={() => void onDownloadKeepsake()}
-                disabled={!posterReady}
-              >
-                <IconDownload />
-                {messages.library.download}
-              </button>
-            </div>
+            </section>
           ) : null}
           {story && !loadError && (posterSave === "error" || downloadError || posterIsSaved || !posterReady) ? (
             <p
